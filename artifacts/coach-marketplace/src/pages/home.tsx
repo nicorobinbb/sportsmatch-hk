@@ -63,17 +63,17 @@ export default function Home() {
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
-              香港運動教練平台
+              香港運動教練審核與搜尋平台
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold font-display tracking-tight text-foreground">
-              搵到最啱你的教練。<br />
+            <h1 className="text-3xl md:text-5xl font-bold font-display tracking-tight text-foreground">
+              香港最透明、<br />最值得信賴的<br />
               <span className="text-primary relative inline-block mt-2">
-                明碼實價，絕無隱費。
+                運動教練審核與搜尋平台
                 <div className="absolute -bottom-2 left-0 w-full h-3 bg-secondary/40 -z-10 transform -rotate-1" />
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              透明收費，真實評價，本地優質教練。提升你的運動水平，由搵到啱嘅教練開始。
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              針對香港運動教練市場資訊不對稱的痛點，建立標準化資歷與評價體系。透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練，消除盲目嘗試的時間與金錢浪費。
             </p>
 
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
