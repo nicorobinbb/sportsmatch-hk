@@ -28,6 +28,7 @@ const sportEmojiMap: Record<string, string> = {
   "排球": "🏐",
   "劍擊": "🤺",
   "個人訓練": "💪",
+  "田徑": "🏅",
 };
 
 export default function Home() {
