@@ -15,22 +15,22 @@ import { Dumbbell, DollarSign, User, MapPin } from "lucide-react";
 import { Show } from "@clerk/react";
 
 const coachSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  sportsCategory: z.string().min(1, "Please select a category"),
-  location: z.string().min(2, "Location is required"),
-  bio: z.string().min(20, "Bio should be at least 20 characters to attract students"),
-  trialPrice: z.coerce.number().min(0, "Price cannot be negative"),
-  regularPrice: z.coerce.number().min(0, "Price cannot be negative"),
+  name: z.string().min(2, "姓名至少需要2個字元"),
+  sportsCategory: z.string().min(1, "請選擇運動類別"),
+  location: z.string().min(2, "請填寫訓練地點"),
+  bio: z.string().min(20, "個人簡介至少需要20個字元以吸引學員"),
+  trialPrice: z.coerce.number().min(0, "收費不能為負數"),
+  regularPrice: z.coerce.number().min(0, "收費不能為負數"),
   packageDetails: z.string().optional(),
-  experienceLevel: z.string().min(1, "Please select experience level"),
-  ageGroups: z.array(z.string()).min(1, "Select at least one age group"),
-  profileImageUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  experienceLevel: z.string().min(1, "請選擇經驗等級"),
+  ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
+  profileImageUrl: z.string().url("必須是有效的網址").optional().or(z.literal('')),
 });
 
 type CoachFormValues = z.infer<typeof coachSchema>;
 
-const AGE_GROUPS = ["Kids (Under 12)", "Teens (12-17)", "Adults (18+)", "Seniors (60+)"];
-const EXPERIENCE_LEVELS = ["Professional Athlete", "Certified Instructor", "Club Level", "Enthusiast"];
+const AGE_GROUPS = ["兒童（12歲以下）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
+const EXPERIENCE_LEVELS = ["職業運動員", "持牌教練", "俱樂部水平", "運動愛好者"];
 
 export default function CoachRegister() {
   const { toast } = useToast();
@@ -64,15 +64,15 @@ export default function CoachRegister() {
     }, {
       onSuccess: () => {
         toast({
-          title: "Application Submitted!",
-          description: "Your coach profile is pending admin approval.",
+          title: "申請已提交！",
+          description: "你的教練資料正等候管理員審核。",
         });
         setLocation("/");
       },
       onError: (err) => {
         toast({
-          title: "Error submitting application",
-          description: "Please check your inputs and try again.",
+          title: "提交失敗",
+          description: "請檢查輸入內容後再試。",
           variant: "destructive",
         });
       }
@@ -85,9 +85,9 @@ export default function CoachRegister() {
         <div className="container max-w-3xl px-4 md:px-6">
           <Show when="signed-out">
             <div className="text-center py-20 bg-white dark:bg-card rounded-2xl border shadow-sm">
-              <h2 className="text-2xl font-bold font-display mb-4">Please sign in first</h2>
-              <p className="text-muted-foreground mb-6">You need an account to register as a coach.</p>
-              <Button onClick={() => setLocation("/sign-in")}>Sign In</Button>
+              <h2 className="text-2xl font-bold font-display mb-4">請先登入</h2>
+              <p className="text-muted-foreground mb-6">你需要帳戶才能登記成為教練。</p>
+              <Button onClick={() => setLocation("/sign-in")}>登入</Button>
             </div>
           </Show>
 
@@ -96,9 +96,9 @@ export default function CoachRegister() {
               <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-full mb-4">
                 <Dumbbell className="w-8 h-8" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold font-display tracking-tight mb-3">Join CoachMatch HK</h1>
+              <h1 className="text-3xl md:text-4xl font-bold font-display tracking-tight mb-3">加入運動教練平台</h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                Reach more students, manage your bookings, and grow your sports coaching business.
+                接觸更多學員，管理你的預約，讓你的運動教練事業更上一層樓。
               </p>
             </div>
 
@@ -110,7 +110,7 @@ export default function CoachRegister() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 border-b pb-2">
                       <User className="w-5 h-5 text-primary" />
-                      <h2 className="text-xl font-bold font-display">Basic Profile</h2>
+                      <h2 className="text-xl font-bold font-display">基本資料</h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -119,9 +119,9 @@ export default function CoachRegister() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Name / Coach Name</FormLabel>
+                            <FormLabel>全名 / 教練名稱</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. Coach David" {...field} />
+                              <Input placeholder="例如：David 教練" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -133,18 +133,18 @@ export default function CoachRegister() {
                         name="sportsCategory"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Primary Sport</FormLabel>
+                            <FormLabel>主要運動</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select a sport" />
+                                  <SelectValue placeholder="選擇運動項目" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 {categories?.map(cat => (
                                   <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
                                 ))}
-                                <SelectItem value="Other">Other</SelectItem>
+                                <SelectItem value="Other">其他</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -158,9 +158,9 @@ export default function CoachRegister() {
                       name="location"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Usual Training Locations</FormLabel>
+                          <FormLabel>常用訓練地點</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Victoria Park, HK Island East" {...field} />
+                            <Input placeholder="例如：維多利亞公園，港島東" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -172,7 +172,7 @@ export default function CoachRegister() {
                       name="profileImageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Profile Image URL (Optional)</FormLabel>
+                          <FormLabel>個人照片網址（選填）</FormLabel>
                           <FormControl>
                             <Input placeholder="https://example.com/photo.jpg" {...field} />
                           </FormControl>
@@ -186,10 +186,10 @@ export default function CoachRegister() {
                       name="bio"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Coach Bio</FormLabel>
-                          <FormDescription>Tell students about your coaching philosophy and background.</FormDescription>
+                          <FormLabel>教練簡介</FormLabel>
+                          <FormDescription>向學員介紹你的教練理念和背景。</FormDescription>
                           <FormControl>
-                            <Textarea placeholder="I have been coaching for 5 years..." className="h-32" {...field} />
+                            <Textarea placeholder="我有5年的教練經驗…" className="h-32" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -201,7 +201,7 @@ export default function CoachRegister() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 border-b pb-2">
                       <MapPin className="w-5 h-5 text-primary" />
-                      <h2 className="text-xl font-bold font-display">Experience & Targets</h2>
+                      <h2 className="text-xl font-bold font-display">經驗與目標學員</h2>
                     </div>
 
                     <FormField
@@ -209,11 +209,11 @@ export default function CoachRegister() {
                       name="experienceLevel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Experience Level</FormLabel>
+                          <FormLabel>經驗等級</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select your qualification level" />
+                                <SelectValue placeholder="選擇你的資歷等級" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -233,8 +233,8 @@ export default function CoachRegister() {
                       render={() => (
                         <FormItem>
                           <div className="mb-4">
-                            <FormLabel className="text-base">Target Age Groups</FormLabel>
-                            <FormDescription>Select all that apply</FormDescription>
+                            <FormLabel className="text-base">目標年齡組別</FormLabel>
+                            <FormDescription>請選擇所有適用的選項</FormDescription>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {AGE_GROUPS.map((item) => (
@@ -282,9 +282,9 @@ export default function CoachRegister() {
                     <div className="flex flex-col mb-2">
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="w-5 h-5 text-primary" />
-                        <h2 className="text-xl font-bold font-display text-primary">明碼實價 (Transparent Pricing)</h2>
+                        <h2 className="text-xl font-bold font-display text-primary">明碼實價</h2>
                       </div>
-                      <p className="text-sm text-muted-foreground">Clear pricing builds trust. We require all coaches to display standard rates.</p>
+                      <p className="text-sm text-muted-foreground">清晰的收費標準建立信任。我們要求所有教練公開標準收費。</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -293,7 +293,7 @@ export default function CoachRegister() {
                         name="trialPrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Trial Session Price (HKD)</FormLabel>
+                            <FormLabel>體驗堂收費（港幣）</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
@@ -310,7 +310,7 @@ export default function CoachRegister() {
                         name="regularPrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Regular Hourly Rate (HKD)</FormLabel>
+                            <FormLabel>正課每小時收費（港幣）</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
@@ -328,9 +328,9 @@ export default function CoachRegister() {
                       name="packageDetails"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Package Deals / Discounts (Optional)</FormLabel>
+                          <FormLabel>套餐優惠（選填）</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. $4000 for 10 sessions" className="bg-white" {...field} />
+                            <Input placeholder="例如：$4000 / 10堂" className="bg-white" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -340,7 +340,7 @@ export default function CoachRegister() {
 
                   <div className="flex justify-end pt-4">
                     <Button type="submit" size="lg" className="w-full md:w-auto px-10 h-12 text-base" disabled={createCoach.isPending}>
-                      {createCoach.isPending ? "Submitting..." : "Submit Application"}
+                      {createCoach.isPending ? "提交中…" : "提交申請"}
                     </Button>
                   </div>
                 </form>

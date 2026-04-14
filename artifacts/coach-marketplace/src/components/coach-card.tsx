@@ -14,7 +14,7 @@ export function CoachCard({ coach }: { coach: Coach }) {
           <div className="absolute top-4 left-4 flex flex-col gap-2">
             {coach.isFeatured && (
               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 text-white font-semibold flex items-center gap-1">
-                <Crown className="w-3 h-3" /> Featured
+                <Crown className="w-3 h-3" /> 精選
               </Badge>
             )}
             <Badge variant="secondary" className="w-fit font-medium bg-white/80 backdrop-blur-sm">
@@ -49,15 +49,15 @@ export function CoachCard({ coach }: { coach: Coach }) {
           <p className="text-sm text-muted-foreground line-clamp-2 mt-3">{coach.bio}</p>
         </CardContent>
         <CardFooter className="bg-slate-50 dark:bg-card-foreground/5 border-t p-4 flex flex-col items-start gap-1">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">明碼實價 (Transparent Pricing)</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">明碼實價</div>
           <div className="flex justify-between w-full items-baseline">
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Trial</span>
+              <span className="text-xs text-muted-foreground">體驗堂</span>
               <span className="font-display font-bold text-primary text-lg">${coach.trialPrice}</span>
             </div>
             <div className="w-px h-8 bg-border mx-4" />
             <div className="flex flex-col text-right">
-              <span className="text-xs text-muted-foreground">Regular / hr</span>
+              <span className="text-xs text-muted-foreground">正課 / 小時</span>
               <span className="font-display font-bold text-foreground text-lg">${coach.regularPrice}</span>
             </div>
           </div>

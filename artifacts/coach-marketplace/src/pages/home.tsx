@@ -63,24 +63,24 @@ export default function Home() {
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
-              Hong Kong's Trusted Sports Network
+              香港運動教練平台
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold font-display tracking-tight text-foreground">
-              Find your perfect coach. <br />
+              搵到最啱你的教練。<br />
               <span className="text-primary relative inline-block mt-2">
-                No hidden fees.
+                明碼實價，絕無隱費。
                 <div className="absolute -bottom-2 left-0 w-full h-3 bg-secondary/40 -z-10 transform -rotate-1" />
               </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Transparent pricing, verified reviews, and real local coaches. Elevate your game with the right guidance.
+              透明收費，真實評價，本地優質教練。提升你的運動水平，由搵到啱嘅教練開始。
             </p>
 
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
               <div className="relative flex-1 flex items-center">
                 <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <Input 
-                  placeholder="Search by name or sport..." 
+                  placeholder="搜尋教練姓名或運動項目…" 
                   className="w-full pl-11 border-0 shadow-none focus-visible:ring-0 text-base h-12"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -90,14 +90,14 @@ export default function Home() {
               <div className="relative flex-1 flex items-center">
                 <MapPin className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <Input 
-                  placeholder="Location (e.g. Mong Kok)" 
+                  placeholder="地區（例如：旺角）" 
                   className="w-full pl-11 border-0 shadow-none focus-visible:ring-0 text-base h-12"
                   value={selectedLocation || ""}
                   onChange={(e) => setSelectedLocation(e.target.value || undefined)}
                 />
               </div>
               <Button type="submit" size="lg" className="rounded-xl h-12 px-8 font-bold text-base shadow-md">
-                Search
+                搜尋
               </Button>
             </form>
 
@@ -105,15 +105,15 @@ export default function Home() {
               <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground font-display">{stats.totalCoaches}</span>
-                  Active Coaches
+                  位活躍教練
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground font-display">{stats.totalReviews}</span>
-                  Verified Reviews
+                  個已驗證評價
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground font-display">{stats.totalCategories}</span>
-                  Sports Categories
+                  個運動類別
                 </div>
               </div>
             )}
@@ -124,7 +124,7 @@ export default function Home() {
       {/* Categories */}
       <section className="py-12 bg-white dark:bg-background border-b">
         <div className="container px-4 md:px-6">
-          <h2 className="text-xl font-bold font-display mb-6">Browse by Sport</h2>
+          <h2 className="text-xl font-bold font-display mb-6">按運動類別瀏覽</h2>
           <div className="flex overflow-x-auto pb-4 gap-4 snap-x hide-scrollbar">
             {categories?.map((cat) => {
               const isPreferred = userPreferences?.preferredCategories.includes(cat.name);
@@ -146,7 +146,7 @@ export default function Home() {
                   </div>
                   <span className="font-medium text-sm">{cat.name}</span>
                   <span className={`text-xs mt-1 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                    {cat.coachCount} coaches
+                    {cat.coachCount} 位教練
                   </span>
                 </button>
               );
@@ -165,7 +165,7 @@ export default function Home() {
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold font-display flex items-center gap-2">
                   <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
-                  Featured Coaches
+                  精選教練
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -180,12 +180,12 @@ export default function Home() {
           <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
               <h2 className="text-2xl font-bold font-display">
-                {selectedSport ? `${selectedSport} Coaches` : 'Discover Coaches'}
-                {selectedLocation && <span className="text-muted-foreground font-normal ml-2">in {selectedLocation}</span>}
+                {selectedSport ? `${selectedSport} 教練` : '探索教練'}
+                {selectedLocation && <span className="text-muted-foreground font-normal ml-2">於 {selectedLocation}</span>}
               </h2>
               {coachesData && (
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                  Showing {coachesData.coaches.length} of {coachesData.total} results
+                  顯示 {coachesData.coaches.length} / {coachesData.total} 個結果
                 </span>
               )}
             </div>
@@ -207,8 +207,8 @@ export default function Home() {
             ) : coachesData?.coaches.length === 0 ? (
               <Empty
                 icon={<Search className="w-12 h-12 text-muted-foreground" />}
-                title="No coaches found"
-                description="Try adjusting your search filters or browse a different category."
+                title="找不到教練"
+                description="請嘗試調整搜尋條件或瀏覽其他類別。"
                 action={
                   <Button variant="outline" onClick={() => {
                     setSearch("");
@@ -216,7 +216,7 @@ export default function Home() {
                     setSelectedSport(undefined);
                     setSelectedLocation(undefined);
                   }}>
-                    Clear Filters
+                    清除篩選
                   </Button>
                 }
               />

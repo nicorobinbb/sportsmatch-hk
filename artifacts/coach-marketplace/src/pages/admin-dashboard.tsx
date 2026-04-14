@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   const handleApproveCoach = (id: number) => {
     approveCoach.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "Coach approved" });
+        toast({ title: "教練已批准" });
         queryClient.invalidateQueries({ queryKey: getAdminListPendingCoachesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListCoachesQueryKey() });
       }
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const handleRejectCoach = (id: number) => {
     rejectCoach.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "Coach rejected" });
+        toast({ title: "教練已拒絕" });
         queryClient.invalidateQueries({ queryKey: getAdminListPendingCoachesQueryKey() });
       }
     });
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   const handleApproveReview = (id: number) => {
     approveReview.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "Review approved" });
+        toast({ title: "評價已批准" });
         queryClient.invalidateQueries({ queryKey: getAdminListPendingReviewsQueryKey() });
       }
     });
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   const handleRejectReview = (id: number) => {
     rejectReview.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "Review rejected" });
+        toast({ title: "評價已拒絕" });
         queryClient.invalidateQueries({ queryKey: getAdminListPendingReviewsQueryKey() });
       }
     });
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   const handleApprovePhoto = (id: number) => {
     approvePhoto.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "Photo approved" });
+        toast({ title: "相片已批准" });
         queryClient.invalidateQueries({ queryKey: getAdminListPendingPhotosQueryKey() });
       }
     });
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   const handleRejectPhoto = (id: number) => {
     rejectPhoto.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "Photo rejected" });
+        toast({ title: "相片已拒絕" });
         queryClient.invalidateQueries({ queryKey: getAdminListPendingPhotosQueryKey() });
       }
     });
@@ -86,33 +86,33 @@ export default function AdminDashboard() {
         <Show when="signed-out">
           <div className="text-center py-20 bg-white dark:bg-card rounded-2xl border shadow-sm">
             <ShieldAlert className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold font-display mb-4">Admin Access Required</h2>
-            <p className="text-muted-foreground">You must be signed in as an admin to view this page.</p>
+            <h2 className="text-2xl font-bold font-display mb-4">需要管理員權限</h2>
+            <p className="text-muted-foreground">你必須以管理員身份登入才能瀏覽此頁面。</p>
           </div>
         </Show>
 
         <Show when="signed-in">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold font-display mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage pending marketplace content.</p>
+            <h1 className="text-3xl font-bold font-display mb-2">管理後台</h1>
+            <p className="text-muted-foreground">管理待審核的平台內容。</p>
           </div>
 
           <Tabs defaultValue="coaches" className="w-full">
             <TabsList className="mb-6">
               <TabsTrigger value="coaches" className="flex gap-2">
-                Pending Coaches
+                待審核教練
                 {pendingCoaches && pendingCoaches.length > 0 && (
                   <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingCoaches.length}</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="reviews" className="flex gap-2">
-                Pending Reviews
+                待審核評價
                 {pendingReviews && pendingReviews.length > 0 && (
                   <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingReviews.length}</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="photos" className="flex gap-2">
-                Pending Photos
+                待審核相片
                 {pendingPhotos && pendingPhotos.length > 0 && (
                   <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPhotos.length}</Badge>
                 )}
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
             <TabsContent value="coaches" className="space-y-4">
               {pendingCoaches?.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
-                  No pending coaches.
+                  暫無待審核的教練。
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -135,17 +135,17 @@ export default function AdminDashboard() {
                         </div>
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{coach.bio}</p>
                         <div className="flex gap-4 text-sm font-medium">
-                          <span>Trial: ${coach.trialPrice}</span>
-                          <span>Regular: ${coach.regularPrice}</span>
-                          <span>Location: {coach.location}</span>
+                          <span>體驗堂：${coach.trialPrice}</span>
+                          <span>正課：${coach.regularPrice}</span>
+                          <span>地點：{coach.location}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveCoach(coach.id)} disabled={approveCoach.isPending}>
-                          <Check className="w-4 h-4 mr-1" /> Approve
+                          <Check className="w-4 h-4 mr-1" /> 批准
                         </Button>
                         <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectCoach(coach.id)} disabled={rejectCoach.isPending}>
-                          <X className="w-4 h-4 mr-1" /> Reject
+                          <X className="w-4 h-4 mr-1" /> 拒絕
                         </Button>
                       </div>
                     </div>
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
             <TabsContent value="reviews" className="space-y-4">
               {pendingReviews?.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
-                  No pending reviews.
+                  暫無待審核的評價。
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -165,18 +165,18 @@ export default function AdminDashboard() {
                     <div key={review.id} className="bg-white dark:bg-card p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between gap-6">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-bold">{review.userName || "Anonymous"}</span>
-                          <Badge variant="secondary">Rating: {review.rating}/5</Badge>
-                          <span className="text-xs text-muted-foreground">Coach ID: {review.coachId}</span>
+                          <span className="font-bold">{review.userName || "匿名用戶"}</span>
+                          <Badge variant="secondary">評分：{review.rating}/5</Badge>
+                          <span className="text-xs text-muted-foreground">教練 ID：{review.coachId}</span>
                         </div>
                         <p className="text-sm">{review.comment}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveReview(review.id)} disabled={approveReview.isPending}>
-                          <Check className="w-4 h-4 mr-1" /> Approve
+                          <Check className="w-4 h-4 mr-1" /> 批准
                         </Button>
                         <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectReview(review.id)} disabled={rejectReview.isPending}>
-                          <X className="w-4 h-4 mr-1" /> Reject
+                          <X className="w-4 h-4 mr-1" /> 拒絕
                         </Button>
                       </div>
                     </div>
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
             <TabsContent value="photos" className="space-y-4">
               {pendingPhotos?.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
-                  No pending photos.
+                  暫無待審核的相片。
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

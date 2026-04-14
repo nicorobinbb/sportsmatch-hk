@@ -44,21 +44,21 @@ export default function CoachProfile() {
         coachId: id,
         rating: reviewRating,
         comment: reviewText,
-        userName: user?.fullName || user?.firstName || "Anonymous User"
+        userName: user?.fullName || user?.firstName || "匿名用戶"
       }
     }, {
       onSuccess: () => {
         toast({
-          title: "Review submitted",
-          description: "Your review has been submitted and is pending approval.",
+          title: "評價已提交",
+          description: "你的評價已收到，正等候審核。",
         });
         setReviewText("");
         setReviewRating(5);
       },
       onError: (err) => {
         toast({
-          title: "Error",
-          description: "Failed to submit review.",
+          title: "提交失敗",
+          description: "無法提交評價，請稍後再試。",
           variant: "destructive",
         });
       }
@@ -88,7 +88,7 @@ export default function CoachProfile() {
     return (
       <Layout>
         <div className="container px-4 py-24 text-center">
-          <h1 className="text-2xl font-bold">Coach not found</h1>
+          <h1 className="text-2xl font-bold">找不到此教練</h1>
         </div>
       </Layout>
     );
@@ -120,7 +120,7 @@ export default function CoachProfile() {
                     </Badge>
                     {coach.isApproved && (
                       <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Verified
+                        <CheckCircle2 className="w-3 h-3" /> 已認證
                       </Badge>
                     )}
                   </div>
@@ -135,8 +135,8 @@ export default function CoachProfile() {
                     </span>
                     <span className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-md">
                       <Star className="w-4 h-4 fill-current" /> 
-                      {coach.averageRating ? coach.averageRating.toFixed(1) : "New"} 
-                      <span className="opacity-70 font-normal">({coach.reviewCount} reviews)</span>
+                      {coach.averageRating ? coach.averageRating.toFixed(1) : "新"} 
+                      <span className="opacity-70 font-normal">（{coach.reviewCount} 個評價）</span>
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Award className="w-4 h-4" /> {coach.experienceLevel}
@@ -147,21 +147,21 @@ export default function CoachProfile() {
 
               <Tabs defaultValue="about" className="w-full">
                 <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent mb-6">
-                  <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">About</TabsTrigger>
-                  <TabsTrigger value="photos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">Photos</TabsTrigger>
-                  <TabsTrigger value="reviews" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">Reviews</TabsTrigger>
+                  <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">關於教練</TabsTrigger>
+                  <TabsTrigger value="photos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">相片</TabsTrigger>
+                  <TabsTrigger value="reviews" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">學員評價</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="about" className="space-y-6 animate-in fade-in-50">
                   <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border">
-                    <h3 className="text-xl font-bold font-display mb-4">About Coach</h3>
+                    <h3 className="text-xl font-bold font-display mb-4">關於此教練</h3>
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">{coach.bio}</p>
                     </div>
 
                     <div className="mt-8 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">Target Age Groups</h4>
+                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">適合年齡組別</h4>
                         <div className="flex flex-wrap gap-2">
                           {coach.ageGroups.map(age => (
                             <Badge key={age} variant="secondary" className="bg-slate-100">{age}</Badge>
@@ -169,8 +169,8 @@ export default function CoachProfile() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">Package Details</h4>
-                        <p className="text-sm text-foreground">{coach.packageDetails || "Standard hourly sessions."}</p>
+                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">課程套餐詳情</h4>
+                        <p className="text-sm text-foreground">{coach.packageDetails || "標準按小時計費。"}</p>
                       </div>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export default function CoachProfile() {
                 <TabsContent value="photos" className="animate-in fade-in-50">
                   <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border">
                     <h3 className="text-xl font-bold font-display mb-6 flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5 text-primary" /> Training Photos
+                      <ImageIcon className="w-5 h-5 text-primary" /> 訓練相片
                     </h3>
                     
                     {isPhotosLoading ? (
@@ -196,7 +196,7 @@ export default function CoachProfile() {
                       </div>
                     ) : (
                       <div className="text-center py-12 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed">
-                        No photos uploaded yet.
+                        暫未上傳相片。
                       </div>
                     )}
                   </div>
@@ -206,7 +206,7 @@ export default function CoachProfile() {
                   <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-xl font-bold font-display flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5 text-primary" /> Student Reviews
+                        <MessageSquare className="w-5 h-5 text-primary" /> 學員評價
                       </h3>
                       <div className="flex items-center gap-1 text-lg font-bold">
                         <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
@@ -216,7 +216,7 @@ export default function CoachProfile() {
 
                     <Show when="signed-in">
                       <form onSubmit={handleSubmitReview} className="mb-8 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border">
-                        <h4 className="font-semibold mb-3">Write a review</h4>
+                        <h4 className="font-semibold mb-3">撰寫評價</h4>
                         <div className="flex gap-1 mb-3">
                           {[1, 2, 3, 4, 5].map((rating) => (
                             <button
@@ -230,21 +230,21 @@ export default function CoachProfile() {
                           ))}
                         </div>
                         <Textarea 
-                          placeholder="Share your experience with this coach..."
+                          placeholder="分享你與此教練的上課體驗…"
                           value={reviewText}
                           onChange={(e) => setReviewText(e.target.value)}
                           className="mb-3 bg-white"
                           required
                         />
                         <Button type="submit" disabled={createReview.isPending}>
-                          {createReview.isPending ? "Submitting..." : "Submit Review"}
+                          {createReview.isPending ? "提交中…" : "提交評價"}
                         </Button>
                       </form>
                     </Show>
 
                     <Show when="signed-out">
                       <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border text-center">
-                        <p className="text-muted-foreground mb-3">Please sign in to leave a review.</p>
+                        <p className="text-muted-foreground mb-3">請先登入才能留下評價。</p>
                       </div>
                     </Show>
                     
@@ -257,7 +257,7 @@ export default function CoachProfile() {
                         reviews.map(review => (
                           <div key={review.id} className="pb-6 border-b last:border-0 last:pb-0">
                             <div className="flex items-center justify-between mb-2">
-                              <div className="font-semibold">{review.userName || "Anonymous"}</div>
+                              <div className="font-semibold">{review.userName || "匿名用戶"}</div>
                               <div className="flex gap-0.5">
                                 {[1, 2, 3, 4, 5].map(star => (
                                   <Star key={star} className={`w-3.5 h-3.5 ${star <= review.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200'}`} />
@@ -269,7 +269,7 @@ export default function CoachProfile() {
                         ))
                       ) : (
                         <div className="text-center py-8 text-muted-foreground">
-                          No reviews yet. Be the first to review!
+                          暫無評價，成為第一個留下評價的人！
                         </div>
                       )}
                     </div>
@@ -282,14 +282,14 @@ export default function CoachProfile() {
             <div className="w-full md:w-80 lg:w-96 shrink-0 md:sticky md:top-24">
               <Card className="border-primary/20 shadow-lg overflow-hidden">
                 <div className="bg-primary/5 p-4 border-b text-center">
-                  <span className="font-display font-bold text-primary tracking-wide">明碼實價 (Transparent Pricing)</span>
+                  <span className="font-display font-bold text-primary tracking-wide">明碼實價</span>
                 </div>
                 <CardContent className="p-6 space-y-6">
                   
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
-                      <span>Trial Session</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">First time</Badge>
+                      <span>體驗堂</span>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">首次優惠</Badge>
                     </div>
                     <div className="text-4xl font-display font-bold text-foreground">
                       ${coach.trialPrice}
@@ -300,8 +300,8 @@ export default function CoachProfile() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
-                      <span>Regular Session</span>
-                      <span>Per hour</span>
+                      <span>正課</span>
+                      <span>每小時</span>
                     </div>
                     <div className="text-3xl font-display font-bold text-foreground">
                       ${coach.regularPrice}
@@ -311,10 +311,10 @@ export default function CoachProfile() {
                   <div className="pt-4">
                     <Button className="w-full text-lg h-12 rounded-xl font-bold" size="lg">
                       <Calendar className="w-5 h-5 mr-2" />
-                      Contact Coach
+                      聯絡教練
                     </Button>
                     <p className="text-xs text-center text-muted-foreground mt-3">
-                      Secure payment handled via CoachMatch.
+                      透過運動平台安全付款。
                     </p>
                   </div>
 
