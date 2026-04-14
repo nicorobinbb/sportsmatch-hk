@@ -7,14 +7,15 @@ interface AdminStatus {
 }
 
 export function useAdminStatus() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
 
   return useQuery<AdminStatus>({
     queryKey: ["admin-status"],
     enabled: !!isSignedIn,
     queryFn: async () => {
+      const token = await getToken();
       const res = await fetch("/api/admin/status", {
-        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("Failed to fetch admin status");
       return res.json();

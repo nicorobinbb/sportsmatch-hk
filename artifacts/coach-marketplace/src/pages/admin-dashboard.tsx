@@ -17,9 +17,9 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const { data: adminStatus, isLoading: isAdminLoading } = useAdminStatus();
 
-  const { data: pendingCoaches } = useAdminListPendingCoaches({ request: { credentials: "include" } });
-  const { data: pendingReviews } = useAdminListPendingReviews({ request: { credentials: "include" } });
-  const { data: pendingPhotos } = useAdminListPendingPhotos({ request: { credentials: "include" } });
+  const { data: pendingCoaches } = useAdminListPendingCoaches();
+  const { data: pendingReviews } = useAdminListPendingReviews();
+  const { data: pendingPhotos } = useAdminListPendingPhotos();
 
   const approveCoach = useAdminApproveCoach();
   const rejectCoach = useAdminRejectCoach();

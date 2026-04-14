@@ -2,9 +2,10 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
 import { useEffect, useRef } from "react";
 import { queryClient } from "@/lib/queryClient";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -68,6 +69,21 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+function ClerkAuthTokenSetup() {
+  const { getToken, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      setAuthTokenGetter(() => getToken());
+    } else {
+      setAuthTokenGetter(null);
+    }
+    return () => setAuthTokenGetter(null);
+  }, [getToken, isSignedIn]);
+
+  return null;
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -80,6 +96,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ClerkAuthTokenSetup />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={Home} />
