@@ -5,6 +5,107 @@ import { getAuth } from "@clerk/express";
 import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import { CreateCoachBody, ListCoachesQueryParams, CreateReviewBody, UploadCoachPhotoBody } from "@workspace/api-zod";
 
+const EN_TO_ZH: Record<string, string[]> = {
+  swimming: ["游泳"],
+  swim: ["游泳"],
+  yoga: ["瑜伽"],
+  basketball: ["籃球"],
+  tennis: ["網球"],
+  boxing: ["拳擊"],
+  box: ["拳擊"],
+  pilates: ["普拉提"],
+  football: ["足球"],
+  soccer: ["足球"],
+  badminton: ["羽毛球"],
+  running: ["跑步"],
+  run: ["跑步"],
+  jogging: ["跑步"],
+  jog: ["跑步"],
+  marathon: ["跑步"],
+  dance: ["舞蹈"],
+  dancing: ["舞蹈"],
+  golf: ["高爾夫球"],
+  "table tennis": ["乒乓球"],
+  "ping pong": ["乒乓球"],
+  pingpong: ["乒乓球"],
+  gymnastics: ["體操"],
+  gymnastic: ["體操"],
+  taekwondo: ["跆拳道"],
+  tae: ["跆拳道"],
+  karate: ["空手道"],
+  volleyball: ["排球"],
+  fencing: ["劍擊"],
+  "personal training": ["個人訓練"],
+  "personal trainer": ["個人訓練"],
+  fitness: ["個人訓練"],
+  gym: ["個人訓練"],
+  pt: ["個人訓練"],
+  central: ["中環"],
+  "wan chai": ["灣仔"],
+  wanchai: ["灣仔"],
+  "causeway bay": ["銅鑼灣"],
+  "north point": ["北角"],
+  "quarry bay": ["鰂魚涌"],
+  shaukeiwan: ["筲箕灣"],
+  aberdeen: ["香港仔"],
+  "happy valley": ["跑馬地"],
+  "tsim sha tsui": ["尖沙咀"],
+  tst: ["尖沙咀"],
+  jordan: ["佐敦"],
+  "mong kok": ["旺角"],
+  mongkok: ["旺角"],
+  "sham shui po": ["深水埗"],
+  "kowloon city": ["九龍城"],
+  "kowloon tong": ["九龍塘"],
+  "kwun tong": ["觀塘"],
+  "sha tin": ["沙田"],
+  shatin: ["沙田"],
+  "tai wai": ["大圍"],
+  taiwai: ["大圍"],
+  "ma on shan": ["馬鞍山"],
+  maonshan: ["馬鞍山"],
+  "tai po": ["大埔"],
+  taipo: ["大埔"],
+  "sheung shui": ["上水"],
+  fanling: ["粉嶺"],
+  "yuen long": ["元朗"],
+  yuenlong: ["元朗"],
+  "tuen mun": ["屯門"],
+  tuenmun: ["屯門"],
+  "tsuen wan": ["荃灣"],
+  tsuenwan: ["荃灣"],
+  "kwai chung": ["葵涌"],
+  "tsing yi": ["青衣"],
+  "tseung kwan o": ["將軍澳"],
+  tko: ["將軍澳"],
+  "sai kung": ["西貢"],
+  saikung: ["西貢"],
+  "tin shui wai": ["天水圍"],
+  "deep water bay": ["深水灣"],
+  "lai chi kok": ["荔枝角"],
+  "lok fu": ["樂富"],
+  "rainbow": ["彩虹"],
+  "san po kong": ["新蒲崗"],
+  "kowloon bay": ["九龍灣"],
+  "wong tai sin": ["黃大仙"],
+  "to kwa wan": ["土瓜灶"],
+  "hung hom": ["紅磡"],
+  "ho man tin": ["何文田"],
+  "west kowloon": ["西九龍"],
+  "sham shui": ["深水埗"],
+};
+
+function expandSearch(term: string): string[] {
+  const lower = term.toLowerCase().trim();
+  const results = new Set<string>([term]);
+  for (const [en, zhList] of Object.entries(EN_TO_ZH)) {
+    if (lower.includes(en) || en.includes(lower)) {
+      zhList.forEach((zh) => results.add(zh));
+    }
+  }
+  return Array.from(results);
+}
+
 const router = Router();
 
 router.get("/", async (req, res) => {
@@ -21,13 +122,14 @@ router.get("/", async (req, res) => {
       conditions.push(ilike(coachesTable.location, `%${location}%`));
     }
     if (search) {
-      conditions.push(
-        or(
-          ilike(coachesTable.name, `%${search}%`),
-          ilike(coachesTable.sportsCategory, `%${search}%`),
-          ilike(coachesTable.location, `%${search}%`)
-        ) as ReturnType<typeof eq>
-      );
+      const terms = expandSearch(search);
+      const searchClauses = terms.flatMap((term) => [
+        ilike(coachesTable.name, `%${term}%`),
+        ilike(coachesTable.sportsCategory, `%${term}%`),
+        ilike(coachesTable.location, `%${term}%`),
+        ilike(coachesTable.bio, `%${term}%`),
+      ]);
+      conditions.push(or(...searchClauses) as ReturnType<typeof eq>);
     }
 
     const coaches = await db

@@ -90,7 +90,7 @@ export default function Home() {
               <div className="relative flex-1 flex items-center">
                 <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <Input 
-                  placeholder="搜尋教練姓名或運動項目…" 
+                  placeholder="搜尋教練姓名或運動項目（中英文均可）…" 
                   className="w-full pl-11 border-0 shadow-none focus-visible:ring-0 text-base h-12"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
