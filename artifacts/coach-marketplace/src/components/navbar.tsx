@@ -14,7 +14,7 @@ export function Navbar() {
             <Activity className="h-5 w-5" />
           </div>
           <span className="text-xl font-bold tracking-tight text-primary">
-            運動
+            運對
           </span>
         </Link>
         <nav className="flex items-center gap-4">
