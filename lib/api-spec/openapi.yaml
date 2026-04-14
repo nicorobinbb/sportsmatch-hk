@@ -3,13 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Sports Coach Marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: coaches
+    description: Coach operations
+  - name: reviews
+    description: Review operations
+  - name: photos
+    description: Photo operations
+  - name: admin
+    description: Admin operations
+  - name: categories
+    description: Category operations
+  - name: user
+    description: User preference operations
 paths:
   /healthz:
     get:
@@ -24,6 +36,416 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /coaches:
+    get:
+      operationId: listCoaches
+      tags: [coaches]
+      summary: List coaches
+      description: List approved coaches with optional filters. Featured coaches appear first.
+      parameters:
+        - name: sport
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of coaches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachListResponse"
+    post:
+      operationId: createCoach
+      tags: [coaches]
+      summary: Create coach profile
+      description: Submit a new coach profile for admin approval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCoachBody"
+      responses:
+        "201":
+          description: Coach created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coach"
+
+  /coaches/{id}:
+    get:
+      operationId: getCoach
+      tags: [coaches]
+      summary: Get coach by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Coach detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachDetail"
+        "404":
+          description: Not found
+
+  /coaches/{id}/boost:
+    post:
+      operationId: boostCoach
+      tags: [coaches]
+      summary: Boost/feature a coach (Stripe placeholder)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Boost checkout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoostResponse"
+
+  /reviews:
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Submit a review for a coach
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewBody"
+      responses:
+        "201":
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /coaches/{id}/reviews:
+    get:
+      operationId: getCoachReviews
+      tags: [reviews]
+      summary: Get approved reviews for a coach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+  /coaches/{id}/photos:
+    get:
+      operationId: getCoachPhotos
+      tags: [photos]
+      summary: Get approved photos for a coach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Photo"
+    post:
+      operationId: uploadCoachPhoto
+      tags: [photos]
+      summary: Upload a photo for a coach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhotoBody"
+      responses:
+        "201":
+          description: Photo uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photo"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List sport categories with coach counts
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /featured:
+    get:
+      operationId: listFeaturedCoaches
+      tags: [coaches]
+      summary: List featured coaches
+      responses:
+        "200":
+          description: Featured coaches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coach"
+
+  /coaches/stats/summary:
+    get:
+      operationId: getCoachStats
+      tags: [coaches]
+      summary: Get marketplace stats summary
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceStats"
+
+  /user/preferences:
+    get:
+      operationId: getUserPreferences
+      tags: [user]
+      summary: Get personalized category preferences for the current user
+      responses:
+        "200":
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+    post:
+      operationId: trackCategoryClick
+      tags: [user]
+      summary: Track a category click for personalization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackClickBody"
+      responses:
+        "200":
+          description: Preference recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+
+  /admin/coaches/pending:
+    get:
+      operationId: adminListPendingCoaches
+      tags: [admin]
+      summary: List pending coach profiles
+      responses:
+        "200":
+          description: Pending coaches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coach"
+
+  /admin/coaches/{id}/approve:
+    post:
+      operationId: adminApproveCoach
+      tags: [admin]
+      summary: Approve a coach profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Coach approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coach"
+
+  /admin/coaches/{id}/reject:
+    post:
+      operationId: adminRejectCoach
+      tags: [admin]
+      summary: Reject a coach profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Coach rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coach"
+
+  /admin/reviews/pending:
+    get:
+      operationId: adminListPendingReviews
+      tags: [admin]
+      summary: List pending reviews
+      responses:
+        "200":
+          description: Pending reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+  /admin/reviews/{id}/approve:
+    post:
+      operationId: adminApproveReview
+      tags: [admin]
+      summary: Approve a review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /admin/reviews/{id}/reject:
+    post:
+      operationId: adminRejectReview
+      tags: [admin]
+      summary: Reject a review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /admin/photos/pending:
+    get:
+      operationId: adminListPendingPhotos
+      tags: [admin]
+      summary: List pending photos
+      responses:
+        "200":
+          description: Pending photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Photo"
+
+  /admin/photos/{id}/approve:
+    post:
+      operationId: adminApprovePhoto
+      tags: [admin]
+      summary: Approve a photo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Photo approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photo"
+
+  /admin/photos/{id}/reject:
+    post:
+      operationId: adminRejectPhoto
+      tags: [admin]
+      summary: Reject a photo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Photo rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photo"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +456,303 @@ components:
       required:
         - status
 
+    Coach:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sportsCategory:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        trialPrice:
+          type: number
+        regularPrice:
+          type: number
+        packageDetails:
+          type: ["string", "null"]
+        ageGroups:
+          type: array
+          items:
+            type: string
+        experienceLevel:
+          type: string
+        isFeatured:
+          type: boolean
+        isApproved:
+          type: boolean
+        profileImageUrl:
+          type: ["string", "null"]
+        averageRating:
+          type: ["number", "null"]
+        reviewCount:
+          type: integer
+        userId:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - sportsCategory
+        - location
+        - bio
+        - trialPrice
+        - regularPrice
+        - ageGroups
+        - experienceLevel
+        - isFeatured
+        - isApproved
+        - reviewCount
+        - userId
+        - createdAt
+
+    CoachDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sportsCategory:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        trialPrice:
+          type: number
+        regularPrice:
+          type: number
+        packageDetails:
+          type: ["string", "null"]
+        ageGroups:
+          type: array
+          items:
+            type: string
+        experienceLevel:
+          type: string
+        isFeatured:
+          type: boolean
+        isApproved:
+          type: boolean
+        profileImageUrl:
+          type: ["string", "null"]
+        averageRating:
+          type: ["number", "null"]
+        reviewCount:
+          type: integer
+        userId:
+          type: string
+        createdAt:
+          type: string
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        photos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Photo"
+      required:
+        - id
+        - name
+        - sportsCategory
+        - location
+        - bio
+        - trialPrice
+        - regularPrice
+        - ageGroups
+        - experienceLevel
+        - isFeatured
+        - isApproved
+        - reviewCount
+        - userId
+        - createdAt
+        - reviews
+        - photos
+
+    CoachListResponse:
+      type: object
+      properties:
+        coaches:
+          type: array
+          items:
+            $ref: "#/components/schemas/Coach"
+        total:
+          type: integer
+      required:
+        - coaches
+        - total
+
+    CreateCoachBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sportsCategory:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        trialPrice:
+          type: number
+        regularPrice:
+          type: number
+        packageDetails:
+          type: string
+        ageGroups:
+          type: array
+          items:
+            type: string
+        experienceLevel:
+          type: string
+        profileImageUrl:
+          type: string
+      required:
+        - name
+        - sportsCategory
+        - location
+        - bio
+        - trialPrice
+        - regularPrice
+        - ageGroups
+        - experienceLevel
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        coachId:
+          type: integer
+        userId:
+          type: string
+        userName:
+          type: ["string", "null"]
+        rating:
+          type: integer
+        comment:
+          type: string
+        isApproved:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - coachId
+        - userId
+        - rating
+        - comment
+        - isApproved
+        - createdAt
+
+    CreateReviewBody:
+      type: object
+      properties:
+        coachId:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+        userName:
+          type: string
+      required:
+        - coachId
+        - rating
+        - comment
+
+    Photo:
+      type: object
+      properties:
+        id:
+          type: integer
+        coachId:
+          type: integer
+        imageUrl:
+          type: string
+        isApproved:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - coachId
+        - imageUrl
+        - isApproved
+        - createdAt
+
+    CreatePhotoBody:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+      required:
+        - imageUrl
+
+    Category:
+      type: object
+      properties:
+        name:
+          type: string
+        coachCount:
+          type: integer
+      required:
+        - name
+        - coachCount
+
+    MarketplaceStats:
+      type: object
+      properties:
+        totalCoaches:
+          type: integer
+        totalReviews:
+          type: integer
+        totalCategories:
+          type: integer
+        featuredCount:
+          type: integer
+      required:
+        - totalCoaches
+        - totalReviews
+        - totalCategories
+        - featuredCount
+
+    UserPreferences:
+      type: object
+      properties:
+        preferredCategories:
+          type: array
+          items:
+            type: string
+        clickHistory:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - preferredCategories
+        - clickHistory
+
+    TrackClickBody:
+      type: object
+      properties:
+        category:
+          type: string
+      required:
+        - category
+
+    BoostResponse:
+      type: object
+      properties:
+        checkoutUrl:
+          type: ["string", "null"]
+        message:
+          type: string
+      required:
+        - message

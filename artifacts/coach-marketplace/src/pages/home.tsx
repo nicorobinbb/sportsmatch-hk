@@ -1,0 +1,235 @@
+import { Layout } from "@/components/layout";
+import { CoachCard } from "@/components/coach-card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Search, MapPin, Activity, ShieldCheck, Dumbbell, Zap, Target, Star, Users } from "lucide-react";
+import { useState } from "react";
+import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
+import { Empty } from "@/components/ui/empty";
+
+const iconMap: Record<string, React.ReactNode> = {
+  "Tennis": <Target className="w-6 h-6" />,
+  "Swimming": <Activity className="w-6 h-6" />,
+  "Basketball": <Activity className="w-6 h-6" />,
+  "Football": <Users className="w-6 h-6" />,
+  "Yoga": <Activity className="w-6 h-6" />,
+  "Personal Training": <Dumbbell className="w-6 h-6" />,
+  "Martial Arts": <Zap className="w-6 h-6" />,
+  "Golf": <Target className="w-6 h-6" />
+};
+
+export default function Home() {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedSport, setSelectedSport] = useState<string | undefined>();
+  const [selectedLocation, setSelectedLocation] = useState<string | undefined>();
+
+  const { data: stats } = useGetCoachStats();
+  const { data: categories } = useListCategories();
+  const { data: featuredCoaches, isLoading: isFeaturedLoading } = useListFeaturedCoaches();
+  const { data: userPreferences } = useGetUserPreferences();
+  
+  const { data: coachesData, isLoading: isCoachesLoading } = useListCoaches({
+    search: debouncedSearch || undefined,
+    sport: selectedSport,
+    location: selectedLocation,
+    limit: 20
+  });
+
+  const trackClick = useTrackCategoryClick();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDebouncedSearch(search);
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    if (selectedSport === categoryName) {
+      setSelectedSport(undefined);
+    } else {
+      setSelectedSport(categoryName);
+      trackClick.mutate({ data: { category: categoryName } });
+    }
+  };
+
+  return (
+    <Layout>
+      {/* Hero Section */}
+      <section className="bg-primary/5 border-b relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800" />
+        <div className="container px-4 md:px-6 py-16 md:py-24 relative">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
+              <ShieldCheck className="w-4 h-4 mr-1.5" />
+              Hong Kong's Trusted Sports Network
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold font-display tracking-tight text-foreground">
+              Find your perfect coach. <br />
+              <span className="text-primary relative inline-block mt-2">
+                No hidden fees.
+                <div className="absolute -bottom-2 left-0 w-full h-3 bg-secondary/40 -z-10 transform -rotate-1" />
+              </span>
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Transparent pricing, verified reviews, and real local coaches. Elevate your game with the right guidance.
+            </p>
+
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
+              <div className="relative flex-1 flex items-center">
+                <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
+                <Input 
+                  placeholder="Search by name or sport..." 
+                  className="w-full pl-11 border-0 shadow-none focus-visible:ring-0 text-base h-12"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="hidden sm:block w-px bg-border my-2" />
+              <div className="relative flex-1 flex items-center">
+                <MapPin className="absolute left-4 w-5 h-5 text-muted-foreground" />
+                <Input 
+                  placeholder="Location (e.g. Mong Kok)" 
+                  className="w-full pl-11 border-0 shadow-none focus-visible:ring-0 text-base h-12"
+                  value={selectedLocation || ""}
+                  onChange={(e) => setSelectedLocation(e.target.value || undefined)}
+                />
+              </div>
+              <Button type="submit" size="lg" className="rounded-xl h-12 px-8 font-bold text-base shadow-md">
+                Search
+              </Button>
+            </form>
+
+            {stats && (
+              <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 text-sm font-medium text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-foreground font-display">{stats.totalCoaches}</span>
+                  Active Coaches
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-foreground font-display">{stats.totalReviews}</span>
+                  Verified Reviews
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-foreground font-display">{stats.totalCategories}</span>
+                  Sports Categories
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="py-12 bg-white dark:bg-background border-b">
+        <div className="container px-4 md:px-6">
+          <h2 className="text-xl font-bold font-display mb-6">Browse by Sport</h2>
+          <div className="flex overflow-x-auto pb-4 gap-4 snap-x hide-scrollbar">
+            {categories?.map((cat) => {
+              const isPreferred = userPreferences?.preferredCategories.includes(cat.name);
+              const isSelected = selectedSport === cat.name;
+              
+              return (
+                <button
+                  key={cat.name}
+                  onClick={() => handleCategoryClick(cat.name)}
+                  className={`
+                    flex flex-col items-center justify-center min-w-[100px] h-28 rounded-2xl border transition-all snap-center
+                    ${isSelected ? 'bg-primary border-primary text-primary-foreground shadow-md' : 
+                      isPreferred ? 'bg-secondary/10 border-secondary/30 hover:border-secondary' : 
+                      'bg-card hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900'}
+                  `}
+                >
+                  <div className={`mb-2 p-2 rounded-full ${isSelected ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
+                    {iconMap[cat.name] || <Activity className="w-6 h-6" />}
+                  </div>
+                  <span className="font-medium text-sm">{cat.name}</span>
+                  <span className={`text-xs mt-1 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    {cat.coachCount} coaches
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-12 flex-1">
+        <div className="container px-4 md:px-6 space-y-16">
+          
+          {/* Featured Coaches */}
+          {!debouncedSearch && !selectedSport && !selectedLocation && featuredCoaches && featuredCoaches.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold font-display flex items-center gap-2">
+                  <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+                  Featured Coaches
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredCoaches.map((coach) => (
+                  <CoachCard key={coach.id} coach={coach} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Coaches List */}
+          <div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+              <h2 className="text-2xl font-bold font-display">
+                {selectedSport ? `${selectedSport} Coaches` : 'Discover Coaches'}
+                {selectedLocation && <span className="text-muted-foreground font-normal ml-2">in {selectedLocation}</span>}
+              </h2>
+              {coachesData && (
+                <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                  Showing {coachesData.coaches.length} of {coachesData.total} results
+                </span>
+              )}
+            </div>
+
+            {isCoachesLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="rounded-xl border bg-card text-card-foreground shadow-sm h-[380px] overflow-hidden flex flex-col">
+                    <Skeleton className="h-32 w-full rounded-none" />
+                    <div className="p-4 flex-1">
+                      <Skeleton className="h-6 w-2/3 mb-2" />
+                      <Skeleton className="h-4 w-1/3 mb-4" />
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : coachesData?.coaches.length === 0 ? (
+              <Empty
+                icon={<Search className="w-12 h-12 text-muted-foreground" />}
+                title="No coaches found"
+                description="Try adjusting your search filters or browse a different category."
+                action={
+                  <Button variant="outline" onClick={() => {
+                    setSearch("");
+                    setDebouncedSearch("");
+                    setSelectedSport(undefined);
+                    setSelectedLocation(undefined);
+                  }}>
+                    Clear Filters
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {coachesData?.coaches.map((coach) => (
+                  <CoachCard key={coach.id} coach={coach} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </Layout>
+  );
+}
