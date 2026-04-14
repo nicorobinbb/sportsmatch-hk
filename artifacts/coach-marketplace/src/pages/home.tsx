@@ -4,20 +4,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Activity, ShieldCheck, Dumbbell, Zap, Target, Star, Users } from "lucide-react";
+import { Search, MapPin, ShieldCheck, Star } from "lucide-react";
 import { useState } from "react";
 import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
 import { Empty } from "@/components/ui/empty";
 
-const iconMap: Record<string, React.ReactNode> = {
-  "Tennis": <Target className="w-6 h-6" />,
-  "Swimming": <Activity className="w-6 h-6" />,
-  "Basketball": <Activity className="w-6 h-6" />,
-  "Football": <Users className="w-6 h-6" />,
-  "Yoga": <Activity className="w-6 h-6" />,
-  "Personal Training": <Dumbbell className="w-6 h-6" />,
-  "Martial Arts": <Zap className="w-6 h-6" />,
-  "Golf": <Target className="w-6 h-6" />
+const sportEmojiMap: Record<string, string> = {
+  "游泳": "🏊",
+  "瑜伽": "🧘",
+  "籃球": "🏀",
+  "網球": "🎾",
+  "拳擊": "🥊",
+  "普拉提": "🤸",
+  "足球": "⚽",
+  "羽毛球": "🏸",
+  "跑步": "🏃",
+  "舞蹈": "💃",
+  "高爾夫球": "⛳",
+  "乒乓球": "🏓",
+  "體操": "🤼",
+  "跆拳道": "🥋",
+  "空手道": "🥋",
+  "排球": "🏐",
+  "劍擊": "🤺",
+  "個人訓練": "💪",
 };
 
 export default function Home() {
@@ -141,8 +151,8 @@ export default function Home() {
                       'bg-card hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900'}
                   `}
                 >
-                  <div className={`mb-2 p-2 rounded-full ${isSelected ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
-                    {iconMap[cat.name] || <Activity className="w-6 h-6" />}
+                  <div className={`mb-2 p-2 rounded-full text-2xl leading-none ${isSelected ? 'bg-white/20' : 'bg-primary/10'}`}>
+                    {sportEmojiMap[cat.name] ?? "🏅"}
                   </div>
                   <span className="font-medium text-sm">{cat.name}</span>
                   <span className={`text-xs mt-1 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
