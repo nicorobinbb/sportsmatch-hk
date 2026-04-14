@@ -2,9 +2,17 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { coachesTable, reviewsTable, photosTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const router = Router();
+
+function getAdminUserIds(): string[] {
+  const raw = process.env.ADMIN_USER_IDS ?? "";
+  return raw
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
 
 const requireAuth = (req: any, res: any, next: any) => {
   const auth = getAuth(req);
@@ -15,7 +23,27 @@ const requireAuth = (req: any, res: any, next: any) => {
   next();
 };
 
-router.get("/coaches/pending", requireAuth, async (req, res) => {
+const requireAdmin = (req: any, res: any, next: any) => {
+  const auth = getAuth(req);
+  if (!auth?.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const adminIds = getAdminUserIds();
+  if (!adminIds.includes(auth.userId)) {
+    return res.status(403).json({ error: "Forbidden: Admin access required" });
+  }
+  (req as any).userId = auth.userId;
+  next();
+};
+
+router.get("/status", requireAuth, (req, res) => {
+  const auth = getAuth(req);
+  const adminIds = getAdminUserIds();
+  const isAdmin = adminIds.includes(auth!.userId!);
+  res.json({ isAdmin, userId: auth!.userId });
+});
+
+router.get("/coaches/pending", requireAdmin, async (req, res) => {
   try {
     const coaches = await db
       .select({
@@ -56,7 +84,7 @@ router.get("/coaches/pending", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/coaches/:id/approve", requireAuth, async (req, res) => {
+router.post("/coaches/:id/approve", requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -82,7 +110,7 @@ router.post("/coaches/:id/approve", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/coaches/:id/reject", requireAuth, async (req, res) => {
+router.post("/coaches/:id/reject", requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -107,7 +135,7 @@ router.post("/coaches/:id/reject", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/reviews/pending", requireAuth, async (req, res) => {
+router.get("/reviews/pending", requireAdmin, async (req, res) => {
   try {
     const reviews = await db
       .select()
@@ -121,7 +149,7 @@ router.get("/reviews/pending", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/reviews/:id/approve", requireAuth, async (req, res) => {
+router.post("/reviews/:id/approve", requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -140,7 +168,7 @@ router.post("/reviews/:id/approve", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/reviews/:id/reject", requireAuth, async (req, res) => {
+router.post("/reviews/:id/reject", requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -158,7 +186,7 @@ router.post("/reviews/:id/reject", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/photos/pending", requireAuth, async (req, res) => {
+router.get("/photos/pending", requireAdmin, async (req, res) => {
   try {
     const photos = await db
       .select()
@@ -172,7 +200,7 @@ router.get("/photos/pending", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/photos/:id/approve", requireAuth, async (req, res) => {
+router.post("/photos/:id/approve", requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -191,7 +219,7 @@ router.post("/photos/:id/approve", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/photos/:id/reject", requireAuth, async (req, res) => {
+router.post("/photos/:id/reject", requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });

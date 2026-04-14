@@ -1,10 +1,12 @@
 import { Link } from "wouter";
 import { Show, useClerk } from "@clerk/react";
 import { Button } from "@/components/ui/button";
-import { Activity, Dumbbell, ShieldCheck, User } from "lucide-react";
+import { Activity, Dumbbell, ShieldCheck } from "lucide-react";
+import { useAdminStatus } from "@/hooks/use-admin-status";
 
 export function Navbar() {
   const { signOut } = useClerk();
+  const { data: adminStatus } = useAdminStatus();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,12 +35,14 @@ export function Navbar() {
                 成為教練
               </Button>
             </Link>
-            <Link href="/admin">
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                管理後台
-              </Button>
-            </Link>
+            {adminStatus?.isAdmin && (
+              <Link href="/admin">
+                <Button variant="ghost" size="sm" className="hidden sm:flex">
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  管理後台
+                </Button>
+              </Link>
+            )}
             <Button variant="ghost" size="sm" onClick={() => signOut()}>
               登出
             </Button>
