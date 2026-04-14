@@ -67,6 +67,7 @@ export const CreateCoachBody = zod.object({
   ageGroups: zod.array(zod.string()),
   experienceLevel: zod.string(),
   profileImageUrl: zod.string().optional(),
+  whatsappNumber: zod.string().optional(),
 });
 
 /**
@@ -90,6 +91,7 @@ export const GetCoachResponse = zod.object({
   isFeatured: zod.boolean(),
   isApproved: zod.boolean(),
   profileImageUrl: zod.string().nullish(),
+  whatsappNumber: zod.string().nullish(),
   averageRating: zod.number().nullish(),
   reviewCount: zod.number(),
   userId: zod.string(),

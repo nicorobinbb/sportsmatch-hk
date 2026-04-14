@@ -23,6 +23,8 @@ export interface Coach {
   /** @nullable */
   profileImageUrl?: string | null;
   /** @nullable */
+  whatsappNumber?: string | null;
+  /** @nullable */
   averageRating?: number | null;
   reviewCount: number;
   userId: string;

@@ -207,6 +207,7 @@ router.post("/", async (req, res) => {
         ageGroups: body.ageGroups,
         experienceLevel: body.experienceLevel,
         profileImageUrl: body.profileImageUrl ?? null,
+        whatsappNumber: body.whatsappNumber ?? null,
       })
       .returning();
 
@@ -280,6 +281,7 @@ router.get("/:id", async (req, res) => {
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
+        whatsappNumber: coachesTable.whatsappNumber,
         createdAt: coachesTable.createdAt,
         averageRating: sql<number | null>`AVG(${reviewsTable.rating})`,
         reviewCount: sql<number>`COUNT(DISTINCT ${reviewsTable.id})::int`,

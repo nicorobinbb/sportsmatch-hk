@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dumbbell, DollarSign, User, MapPin } from "lucide-react";
+import { Dumbbell, DollarSign, User, MapPin, Phone } from "lucide-react";
 import { Show } from "@clerk/react";
 
 const coachSchema = z.object({
@@ -25,6 +25,7 @@ const coachSchema = z.object({
   experienceLevel: z.string().min(1, "請選擇經驗等級"),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().url("必須是有效的網址").optional().or(z.literal('')),
+  whatsappNumber: z.string().regex(/^\d{8,15}$/, "請輸入有效的 WhatsApp 號碼（8至15位數字，不含+號或空格）").optional().or(z.literal('')),
 });
 
 type CoachFormValues = z.infer<typeof coachSchema>;
@@ -51,6 +52,7 @@ export default function CoachRegister() {
       experienceLevel: "",
       ageGroups: [],
       profileImageUrl: "",
+      whatsappNumber: "",
     },
   });
 
@@ -60,6 +62,7 @@ export default function CoachRegister() {
         ...data,
         profileImageUrl: data.profileImageUrl || undefined,
         packageDetails: data.packageDetails || undefined,
+        whatsappNumber: data.whatsappNumber || undefined,
       }
     }, {
       onSuccess: () => {
@@ -175,6 +178,24 @@ export default function CoachRegister() {
                           <FormLabel>個人照片網址（選填）</FormLabel>
                           <FormControl>
                             <Input placeholder="https://example.com/photo.jpg" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="whatsappNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>WhatsApp 聯絡號碼</FormLabel>
+                          <FormDescription>學員將透過 WhatsApp 直接聯絡你預約課堂。</FormDescription>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">+</span>
+                              <Input placeholder="85298765432（含國家碼，不含+號）" className="pl-7" {...field} />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Star, CheckCircle2, Award, Calendar, MessageSquare, Image as ImageIcon } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -308,14 +308,30 @@ export default function CoachProfile() {
                     </div>
                   </div>
 
-                  <div className="pt-4">
-                    <Button className="w-full text-lg h-12 rounded-xl font-bold" size="lg">
-                      <Calendar className="w-5 h-5 mr-2" />
-                      聯絡教練
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground mt-3">
-                      透過運動平台安全付款。
-                    </p>
+                  <div className="pt-4 space-y-3">
+                    {coach.whatsappNumber ? (
+                      <a
+                        href={`https://wa.me/${coach.whatsappNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <Button className="w-full text-lg h-12 rounded-xl font-bold bg-[#25D366] hover:bg-[#1ebe5d] text-white" size="lg">
+                          <Phone className="w-5 h-5 mr-2" />
+                          WhatsApp 聯絡教練
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button className="w-full text-lg h-12 rounded-xl font-bold" size="lg" disabled>
+                        <Phone className="w-5 h-5 mr-2" />
+                        聯絡方式待更新
+                      </Button>
+                    )}
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <p className="text-xs text-amber-800 text-center leading-relaxed">
+                        💡 所有費用直接支付予教練，本平台不收取任何課堂費用。
+                      </p>
+                    </div>
                   </div>
 
                 </CardContent>
