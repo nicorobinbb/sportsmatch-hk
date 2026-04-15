@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, Plus } from "lucide-react";
+import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 import { useToast } from "@/hooks/use-toast";
@@ -26,9 +26,14 @@ type UserProfile = {
   onboardingCompleted: boolean;
 };
 
+type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string };
+type QualEntry = { text: string; proofUrl: string };
+const newPricingRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "" });
+
 type MyCoach = {
   id: number; name: string; sportsCategory: string; location: string; bio: string;
   trialPrice: number; regularPrice: number; packageDetails?: string | null;
+  pricingPlans?: string | null; qualifications?: string | null;
   ageGroups: string[]; experienceLevel: string; isApproved: boolean; isFeatured: boolean;
   profileImageUrl?: string | null; whatsappNumber?: string | null;
   pendingEdits?: string | null; createdAt: string;
@@ -48,8 +53,8 @@ const AGE_GROUP_OPTIONS = ["幼童（8歲以下）", "兒童（8至12歲）", "�
 
 type EditForm = {
   name: string; sportsCategory: string; location: string; bio: string;
-  trialPrice: string; regularPrice: string; packageDetails: string;
-  ageGroups: string[]; experienceLevel: string; whatsappNumber: string;
+  packageDetails: string; ageGroups: string[]; experienceLevel: string; whatsappNumber: string;
+  pricingRows: PricingRow[]; qualList: QualEntry[];
 };
 
 export default function Dashboard() {
@@ -105,17 +110,45 @@ export default function Dashboard() {
 
   function openEdit(coach: MyCoach) {
     setEditingCoach(coach);
+
+    let pricingRows: PricingRow[] = [];
+    try {
+      const parsed = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : [];
+      pricingRows = Array.isArray(parsed) ? parsed.map((r: Omit<PricingRow, "id">) => ({ ...r, id: crypto.randomUUID() })) : [];
+    } catch {}
+    if (pricingRows.length === 0) {
+      const trial = Number(coach.trialPrice);
+      const regular = Number(coach.regularPrice);
+      if (trial > 0 && trial !== regular) {
+        pricingRows = [
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "" },
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" },
+        ];
+      } else if (regular > 0) {
+        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" }];
+      } else {
+        pricingRows = [newPricingRow()];
+      }
+    }
+
+    let qualList: QualEntry[] = [];
+    try {
+      const parsed = coach.qualifications ? JSON.parse(coach.qualifications) : [];
+      qualList = Array.isArray(parsed) ? parsed : [];
+    } catch {}
+    if (qualList.length === 0) qualList = [{ text: "", proofUrl: "" }];
+
     setEditForm({
       name: coach.name,
       sportsCategory: coach.sportsCategory,
       location: coach.location,
       bio: coach.bio,
-      trialPrice: String(coach.trialPrice),
-      regularPrice: String(coach.regularPrice),
       packageDetails: coach.packageDetails || "",
       ageGroups: coach.ageGroups || [],
       experienceLevel: coach.experienceLevel,
       whatsappNumber: coach.whatsappNumber || "",
+      pricingRows,
+      qualList,
     });
   }
 
@@ -133,12 +166,12 @@ export default function Dashboard() {
           sportsCategory: editForm.sportsCategory,
           location: editForm.location,
           bio: editForm.bio,
-          trialPrice: parseFloat(editForm.trialPrice),
-          regularPrice: parseFloat(editForm.regularPrice),
           packageDetails: editForm.packageDetails || undefined,
           ageGroups: editForm.ageGroups,
           experienceLevel: editForm.experienceLevel,
           whatsappNumber: editForm.whatsappNumber || undefined,
+          pricingPlans: JSON.stringify(editForm.pricingRows.map(({ id: _id, ...r }) => r)),
+          qualifications: JSON.stringify(editForm.qualList.filter(q => q.text.trim())),
         }),
       });
       if (res.ok) {
@@ -498,28 +531,6 @@ export default function Dashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">體驗堂價格（HKD）</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editForm.trialPrice}
-                    onChange={e => setEditForm(f => f ? { ...f, trialPrice: e.target.value } : f)}
-                    required
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">正課價格（HKD/小時）</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editForm.regularPrice}
-                    onChange={e => setEditForm(f => f ? { ...f, regularPrice: e.target.value } : f)}
-                    required
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <div>
                   <label className="block text-sm font-medium mb-1">經驗級別</label>
                   <select
                     value={editForm.experienceLevel}
@@ -532,15 +543,130 @@ export default function Dashboard() {
                     <option value="professional">專業</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">套餐詳情（選填）</label>
-                  <input
-                    value={editForm.packageDetails}
-                    onChange={e => setEditForm(f => f ? { ...f, packageDetails: e.target.value } : f)}
-                    placeholder="例：10堂優惠套餐"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
+              </div>
+
+              {/* Pricing Table Editor */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">收費表</label>
+                <div className="space-y-2">
+                  {editForm.pricingRows.map((row, idx) => (
+                    <div key={row.id} className="rounded-lg border border-input bg-muted/30 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-5 shrink-0">{idx + 1}.</span>
+                        <select
+                          value={row.sessionType}
+                          onChange={e => setEditForm(f => f ? { ...f, pricingRows: f.pricingRows.map(r => r.id === row.id ? { ...r, sessionType: e.target.value as PricingRow["sessionType"] } : r) } : f)}
+                          className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        >
+                          <option value="單對單">👤 單對單</option>
+                          <option value="小組課堂">👥 小組課堂</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm(f => f && f.pricingRows.length > 1 ? { ...f, pricingRows: f.pricingRows.filter(r => r.id !== row.id) } : f)}
+                          className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pl-7">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">價錢（HKD）</label>
+                          <input
+                            type="number"
+                            placeholder="例：500"
+                            value={row.price}
+                            onChange={e => setEditForm(f => f ? { ...f, pricingRows: f.pricingRows.map(r => r.id === row.id ? { ...r, price: e.target.value } : r) } : f)}
+                            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">時長（分鐘）</label>
+                          <input
+                            placeholder="例：60"
+                            value={row.duration}
+                            onChange={e => setEditForm(f => f ? { ...f, pricingRows: f.pricingRows.map(r => r.id === row.id ? { ...r, duration: e.target.value } : r) } : f)}
+                            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          />
+                        </div>
+                        {row.sessionType === "小組課堂" && (
+                          <>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">最少人數</label>
+                              <input
+                                type="number"
+                                placeholder="例：2"
+                                value={row.minStudents}
+                                onChange={e => setEditForm(f => f ? { ...f, pricingRows: f.pricingRows.map(r => r.id === row.id ? { ...r, minStudents: e.target.value } : r) } : f)}
+                                className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">最多人數</label>
+                              <input
+                                type="number"
+                                placeholder="例：6"
+                                value={row.maxStudents}
+                                onChange={e => setEditForm(f => f ? { ...f, pricingRows: f.pricingRows.map(r => r.id === row.id ? { ...r, maxStudents: e.target.value } : r) } : f)}
+                                className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setEditForm(f => f ? { ...f, pricingRows: [...f.pricingRows, newPricingRow()] } : f)}
+                  className="mt-2 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> 新增收費行
+                </button>
+              </div>
+
+              {/* Other Pricing */}
+              <div>
+                <label className="block text-sm font-medium mb-1">其他收費模式（選填）</label>
+                <input
+                  value={editForm.packageDetails}
+                  onChange={e => setEditForm(f => f ? { ...f, packageDetails: e.target.value } : f)}
+                  placeholder="例：月費套餐、課程包等"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              {/* Qualifications Editor */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">專業資歷</label>
+                <div className="space-y-2">
+                  {editForm.qualList.map((q, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-5 shrink-0">{idx + 1}.</span>
+                      <input
+                        value={q.text}
+                        onChange={e => setEditForm(f => f ? { ...f, qualList: f.qualList.map((qi, i) => i === idx ? { ...qi, text: e.target.value } : qi) } : f)}
+                        placeholder="例：香港游泳教練資格証 (HKSI)"
+                        className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(f => f && f.qualList.length > 1 ? { ...f, qualList: f.qualList.filter((_, i) => i !== idx) } : f)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditForm(f => f ? { ...f, qualList: [...f.qualList, { text: "", proofUrl: "" }] } : f)}
+                  className="mt-2 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> 新增資歷
+                </button>
               </div>
 
               <div>
