@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dumbbell, DollarSign, User, MapPin, Upload, X } from "lucide-react";
+import { Dumbbell, DollarSign, User, MapPin, Upload, X, Plus, Trash2 } from "lucide-react";
 import { Show } from "@clerk/react";
 import { useState, useRef } from "react";
 
@@ -74,6 +74,16 @@ export default function CoachRegister() {
       whatsappLocalNumber: "",
     },
   });
+
+  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; maxStudents: string; };
+  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", maxStudents: "" });
+  const [pricingRows, setPricingRows] = useState<PricingRow[]>([newRow()]);
+  const [pricingError, setPricingError] = useState("");
+
+  const updateRow = (id: string, patch: Partial<PricingRow>) =>
+    setPricingRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+  const removeRow = (id: string) =>
+    setPricingRows(prev => prev.length > 1 ? prev.filter(r => r.id !== id) : prev);
 
   const [coachTypes, setCoachTypes] = useState<string[]>([]);
   const [coachTypeError, setCoachTypeError] = useState("");
@@ -152,6 +162,14 @@ export default function CoachRegister() {
     }
     setCoachTypeError("");
 
+    const invalidRow = pricingRows.some(r => !r.price || isNaN(Number(r.price)) || Number(r.price) < 0);
+    if (invalidRow) { setPricingError("請填寫所有收費金額"); return; }
+    setPricingError("");
+
+    const prices = pricingRows.map(r => Number(r.price));
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
     const whatsappNumber = data.whatsappLocalNumber
       ? (whatsappCC + data.whatsappLocalNumber).replace(/\D/g, "")
       : undefined;
@@ -162,8 +180,8 @@ export default function CoachRegister() {
         sportsCategory: data.sportsCategory,
         location: data.location,
         bio: data.bio,
-        trialPrice: data.trialPrice,
-        regularPrice: data.regularPrice,
+        trialPrice: minPrice,
+        regularPrice: maxPrice,
         experienceLevel: coachTypes.join("、"),
         ageGroups: data.ageGroups,
         profileImageUrl: data.profileImageUrl || undefined,
@@ -171,6 +189,7 @@ export default function CoachRegister() {
         whatsappNumber,
         qualifications: data.qualifications || undefined,
         qualificationProofUrl: data.qualificationProofUrl || undefined,
+        pricingPlans: JSON.stringify(pricingRows.map(({ id: _id, ...r }) => r)),
       } as any
     }, {
       onSuccess: () => {
@@ -505,50 +524,97 @@ export default function CoachRegister() {
                   </div>
 
                   {/* Pricing */}
-                  <div className="space-y-6 bg-primary/5 -mx-6 md:-mx-10 px-6 md:px-10 py-8 border-y">
+                  <div className="space-y-5 bg-primary/5 -mx-6 md:-mx-10 px-6 md:px-10 py-8 border-y">
                     <div className="flex flex-col mb-2">
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="w-5 h-5 text-primary" />
                         <h2 className="text-xl font-bold font-display text-primary">明碼實價</h2>
                       </div>
-                      <p className="text-sm text-muted-foreground">清晰的收費標準建立信任。我們要求所有教練公開標準收費。</p>
+                      <p className="text-sm text-muted-foreground">清晰的收費標準建立信任。請列出所有堂型及對應收費，可按「新增收費」加入多個組合。</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="trialPrice"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>體驗堂收費（港幣）</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                <Input type="number" className="pl-7 bg-white" {...field} />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <div className="space-y-3">
+                      {pricingRows.map((row, idx) => (
+                        <div key={row.id} className="flex flex-col sm:flex-row gap-3 items-start bg-white rounded-xl border p-4">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground w-6 pt-2 shrink-0">
+                            {idx + 1}.
+                          </div>
 
-                      <FormField
-                        control={form.control}
-                        name="regularPrice"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>正課每小時收費（港幣）</FormLabel>
-                            <FormControl>
+                          {/* Session type */}
+                          <div className="flex-1 min-w-[130px]">
+                            <p className="text-xs text-muted-foreground mb-1">堂型</p>
+                            <Select
+                              value={row.sessionType}
+                              onValueChange={v => updateRow(row.id, { sessionType: v as "單對單" | "小組課堂", maxStudents: "" })}
+                            >
+                              <SelectTrigger className="bg-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="單對單">單對單</SelectItem>
+                                <SelectItem value="小組課堂">小組課堂</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Max students — only for 小組課堂 */}
+                          {row.sessionType === "小組課堂" && (
+                            <div className="flex-1 min-w-[110px]">
+                              <p className="text-xs text-muted-foreground mb-1">最多學生人數</p>
                               <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                <Input type="number" className="pl-7 bg-white" {...field} />
+                                <Input
+                                  type="number"
+                                  min={2}
+                                  placeholder="例如：6"
+                                  className="pr-8 bg-white"
+                                  value={row.maxStudents}
+                                  onChange={e => updateRow(row.id, { maxStudents: e.target.value })}
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">人</span>
                               </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            </div>
+                          )}
+
+                          {/* Price */}
+                          <div className="flex-1 min-w-[120px]">
+                            <p className="text-xs text-muted-foreground mb-1">每堂收費（港幣）</p>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                              <Input
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                                className="pl-7 bg-white"
+                                value={row.price}
+                                onChange={e => updateRow(row.id, { price: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={() => removeRow(row.id)}
+                            disabled={pricingRows.length === 1}
+                            className="mt-6 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
+
+                    {pricingError && <p className="text-sm text-destructive">{pricingError}</p>}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 bg-white"
+                      onClick={() => setPricingRows(prev => [...prev, newRow()])}
+                    >
+                      <Plus className="w-4 h-4" /> 新增收費
+                    </Button>
 
                     <FormField
                       control={form.control}
@@ -557,7 +623,7 @@ export default function CoachRegister() {
                         <FormItem>
                           <FormLabel>套餐優惠（選填）</FormLabel>
                           <FormControl>
-                            <Input placeholder="例如：$4000 / 10堂" className="bg-white" {...field} />
+                            <Input placeholder="例如：$4000 / 10堂，另有家庭優惠" className="bg-white" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
