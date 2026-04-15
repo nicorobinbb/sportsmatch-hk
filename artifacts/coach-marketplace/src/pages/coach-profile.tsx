@@ -817,11 +817,12 @@ export default function CoachProfile() {
                 </div>
                 <CardContent className="p-5 space-y-4">
                   {(() => {
-                    type PlanRow = { sessionType: string; price: string; minStudents?: string; maxStudents: string; duration: string };
+                    type PlanRow = { sessionType: string; price: string; minStudents?: string; maxStudents: string; duration: string; ageGroup?: string };
                     let plans: PlanRow[] | null = null;
                     try { if ((coach as any).pricingPlans) plans = JSON.parse((coach as any).pricingPlans); } catch {}
 
                     if (plans && plans.length > 0) {
+                      const hasAgeGroups = plans.some(r => r.ageGroup);
                       return (
                         <div className="overflow-hidden rounded-xl border">
                           <table className="w-full text-sm">
@@ -830,6 +831,7 @@ export default function CoachProfile() {
                                 <th className="px-3 py-2 text-left font-semibold">堂型</th>
                                 <th className="px-3 py-2 text-center font-semibold">人數</th>
                                 <th className="px-3 py-2 text-center font-semibold">時長</th>
+                                {hasAgeGroups && <th className="px-3 py-2 text-center font-semibold">年齡</th>}
                                 <th className="px-3 py-2 text-right font-semibold">每堂收費</th>
                               </tr>
                             </thead>
@@ -850,7 +852,14 @@ export default function CoachProfile() {
                                           ? `最多 ${row.maxStudents}`
                                           : "—"}
                                   </td>
-                                  <td className="px-3 py-2.5 text-center text-muted-foreground">{row.duration} 分鐘</td>
+                                  <td className="px-3 py-2.5 text-center text-muted-foreground">{row.duration}</td>
+                                  {hasAgeGroups && (
+                                    <td className="px-3 py-2.5 text-center">
+                                      {row.ageGroup
+                                        ? <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">{row.ageGroup.replace(/（[^）]*）/, "")}</span>
+                                        : <span className="text-muted-foreground text-xs">所有</span>}
+                                    </td>
+                                  )}
                                   <td className="px-3 py-2.5 text-right font-display font-bold text-primary text-base">${row.price}</td>
                                 </tr>
                               ))}

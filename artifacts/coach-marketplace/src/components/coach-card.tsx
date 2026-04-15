@@ -70,7 +70,8 @@ export function CoachCard({ coach }: { coach: Coach }) {
                     const students = isGroup && row.maxStudents
                       ? row.minStudents ? `${row.minStudents}-${row.maxStudents}人` : `≤${row.maxStudents}人`
                       : null;
-                    const dur = row.duration ? `${row.duration}分鐘` : null;
+                    const dur = row.duration ? row.duration.replace("分鐘", "分") : null;
+                    const ag = row.ageGroup ? row.ageGroup.replace(/（[^）]*）/, "") : null;
                     return (
                       <span
                         key={i}
@@ -80,6 +81,7 @@ export function CoachCard({ coach }: { coach: Coach }) {
                         <span className="font-bold text-primary">${row.price}</span>
                         {students && <span className="text-muted-foreground">· {students}</span>}
                         {dur && <span className="text-muted-foreground">· {dur}</span>}
+                        {ag && <span className="text-muted-foreground/80 border-l border-slate-200 pl-1 ml-0.5">· {ag}</span>}
                       </span>
                     );
                   })}

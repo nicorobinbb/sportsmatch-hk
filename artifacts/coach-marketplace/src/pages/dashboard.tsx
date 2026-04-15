@@ -287,15 +287,18 @@ export default function Dashboard() {
                           </p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {(() => {
-                              let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string }> = [];
+                              let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string; ageGroup?: string }> = [];
                               try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
                               if (rows.length > 0) {
-                                return rows.slice(0, 3).map((r, i) => (
-                                  <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                                    {r.sessionType === "小組課堂" ? "👥" : "👤"}
-                                    ${r.price}{r.duration ? `·${r.duration}分鐘` : ""}{r.sessionType === "小組課堂" && r.minStudents ? `·${r.minStudents}${r.maxStudents ? `-${r.maxStudents}` : ""}人` : ""}
-                                  </span>
-                                ));
+                                return rows.slice(0, 3).map((r, i) => {
+                                  const ag = r.ageGroup ? r.ageGroup.replace(/（[^）]*）/, "") : null;
+                                  return (
+                                    <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                      {r.sessionType === "小組課堂" ? "👥" : "👤"}
+                                      ${r.price}{r.duration ? `·${r.duration.replace("分鐘","分")}` : ""}{r.sessionType === "小組課堂" && r.minStudents ? `·${r.minStudents}${r.maxStudents ? `-${r.maxStudents}` : ""}人` : ""}{ag ? ` · ${ag}` : ""}
+                                    </span>
+                                  );
+                                });
                               }
                               return (
                                 <span className="text-xs text-muted-foreground">
@@ -417,14 +420,17 @@ export default function Dashboard() {
                             </span>
                           )}
                           {(() => {
-                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string }> = [];
+                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string; ageGroup?: string }> = [];
                             try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
                             if (rows.length > 0) {
-                              return rows.slice(0, 2).map((r, i) => (
-                                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                                  {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration}分鐘` : ""}
-                                </span>
-                              ));
+                              return rows.slice(0, 2).map((r, i) => {
+                                const ag = r.ageGroup ? r.ageGroup.replace(/（[^）]*）/, "") : null;
+                                return (
+                                  <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                    {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration.replace("分鐘","分")}` : ""}{ag ? ` · ${ag}` : ""}
+                                  </span>
+                                );
+                              });
                             }
                             return <span className="text-xs font-semibold text-primary">體驗堂 ${coach.trialPrice}</span>;
                           })()}
@@ -485,14 +491,17 @@ export default function Dashboard() {
                       <div className="mt-3 flex items-center justify-between">
                         <div className="flex flex-wrap gap-1">
                           {(() => {
-                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string }> = [];
+                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string; ageGroup?: string }> = [];
                             try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
                             if (rows.length > 0) {
-                              return rows.slice(0, 2).map((r, i) => (
-                                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                                  {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration}分鐘` : ""}
-                                </span>
-                              ));
+                              return rows.slice(0, 2).map((r, i) => {
+                                const ag = r.ageGroup ? r.ageGroup.replace(/（[^）]*）/, "") : null;
+                                return (
+                                  <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                    {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration.replace("分鐘","分")}` : ""}{ag ? ` · ${ag}` : ""}
+                                  </span>
+                                );
+                              });
                             }
                             return <span className="text-sm font-bold text-primary">體驗堂 ${coach.trialPrice}</span>;
                           })()}
