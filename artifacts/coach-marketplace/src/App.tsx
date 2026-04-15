@@ -3,7 +3,7 @@ import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
 
@@ -92,6 +92,37 @@ function ClerkAuthTokenSetup() {
   return null;
 }
 
+const SKIP_ONBOARDING_PATHS = ["/onboarding", "/sign-in", "/sign-up", "/coach/register", "/admin"];
+
+function OnboardingRedirect() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { getToken } = useAuth();
+  const [location, navigate] = useLocation();
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) { setChecked(true); return; }
+    const clean = location.split("?")[0];
+    if (SKIP_ONBOARDING_PATHS.some(p => clean === p || clean.startsWith(p + "/"))) { setChecked(true); return; }
+
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/user/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!data.profile || !data.profile.onboardingCompleted) {
+          navigate("/onboarding");
+        }
+      } catch {}
+      setChecked(true);
+    })();
+  }, [isLoaded, isSignedIn, location]);
+
+  return null;
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -106,6 +137,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <ClerkAuthTokenSetup />
         <TooltipProvider>
+          <OnboardingRedirect />
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/coaches/:id" component={CoachProfile} />

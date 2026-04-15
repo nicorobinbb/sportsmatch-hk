@@ -150,27 +150,6 @@ export default function CoachRegister() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleQualProofChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "檔案太大", description: "請上傳 5MB 以內的圖片。", variant: "destructive" });
-      return;
-    }
-    try {
-      const dataUrl = await compressImage(file);
-      setQualProofPreview(dataUrl);
-      form.setValue("qualificationProofUrl", dataUrl);
-    } catch {
-      toast({ title: "無法讀取圖片", description: "請選擇其他檔案再試。", variant: "destructive" });
-    }
-  };
-
-  const removeQualProof = () => {
-    setQualProofPreview("");
-    form.setValue("qualificationProofUrl", "");
-    if (qualProofRef.current) qualProofRef.current.value = "";
-  };
 
   const onSubmit = (data: CoachFormValues) => {
     if (coachTypes.length === 0) {
@@ -204,8 +183,7 @@ export default function CoachRegister() {
         profileImageUrl: data.profileImageUrl || undefined,
         packageDetails: data.packageDetails || undefined,
         whatsappNumber,
-        qualifications: qualList.filter(q => q.trim()).join("\n") || undefined,
-        qualificationProofUrl: data.qualificationProofUrl || undefined,
+        qualifications: JSON.stringify(qualList.filter(q => q.text.trim()).map(({ id: _id, ...rest }) => rest)) || undefined,
         pricingPlans: JSON.stringify(pricingRows.map(({ id: _id, ...r }) => r)),
       } as any
     }, {
@@ -445,27 +423,59 @@ export default function CoachRegister() {
                       {coachTypeError && <p className="text-sm text-destructive">{coachTypeError}</p>}
                     </div>
 
-                    {/* Qualifications multi-row */}
-                    <div className="space-y-2">
+                    {/* Qualifications multi-row with per-entry upload */}
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium leading-none mb-1">資歷</p>
-                        <p className="text-xs text-muted-foreground">每行填寫一項認證、資格或學歷</p>
+                        <p className="text-sm font-medium leading-none mb-1">資歷 <span className="text-destructive">*</span></p>
+                        <p className="text-xs text-muted-foreground">每行填寫一項認證、資格或學歷，並可上傳對應證書圖片供管理員審核</p>
                       </div>
                       {qualList.map((q, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <Input
-                            value={q}
-                            onChange={e => setQualList(prev => prev.map((v, i) => i === idx ? e.target.value : v))}
-                            placeholder={idx === 0 ? "例如：香港游泳教練會一級教練" : "例如：ACE-CPT 認證私人教練"}
+                        <div key={q.id} className="rounded-xl border bg-slate-50/60 p-3 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={q.text}
+                              onChange={e => updateQual(q.id, { text: e.target.value })}
+                              placeholder={idx === 0 ? "例如：香港游泳教練會一級教練" : "例如：ACE-CPT 認證私人教練"}
+                              className="bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setQualList(prev => prev.length > 1 ? prev.filter(e => e.id !== q.id) : prev)}
+                              disabled={qualList.length === 1}
+                              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Per-entry proof upload */}
+                          {q.proofUrl ? (
+                            <div className="relative w-full max-w-xs">
+                              <img src={q.proofUrl} alt="資歷證明" className="w-full rounded-lg border object-cover max-h-32" />
+                              <button
+                                type="button"
+                                onClick={() => updateQual(q.id, { proofUrl: "" })}
+                                className="absolute top-1.5 right-1.5 bg-white/90 hover:bg-white rounded-full p-1 shadow border"
+                              >
+                                <X className="w-3 h-3 text-destructive" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div
+                              className="flex items-center gap-2 border border-dashed border-border rounded-lg px-3 py-2 cursor-pointer hover:border-primary/50 hover:bg-white transition-all"
+                              onClick={() => qualFileRefs.current[idx]?.click()}
+                            >
+                              <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <p className="text-xs text-muted-foreground">上傳證書圖片（選填，PNG / JPG）</p>
+                            </div>
+                          )}
+                          <input
+                            ref={el => { qualFileRefs.current[idx] = el; }}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => handleQualFileChange(q.id, e)}
                           />
-                          <button
-                            type="button"
-                            onClick={() => setQualList(prev => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}
-                            disabled={qualList.length === 1}
-                            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       ))}
                       <Button
@@ -473,46 +483,11 @@ export default function CoachRegister() {
                         variant="outline"
                         size="sm"
                         className="gap-2"
-                        onClick={() => setQualList(prev => [...prev, ""])}
+                        onClick={() => setQualList(prev => [...prev, newQual()])}
                       >
                         <Plus className="w-4 h-4" /> 新增資歷
                       </Button>
                     </div>
-
-                    {/* Qualification proof upload */}
-                    <FormField
-                      control={form.control}
-                      name="qualificationProofUrl"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>資歷證明文件</FormLabel>
-                          <FormDescription>上傳相關牌照、證書或認證的圖片（選填，PNG / JPG，上限 5MB）。文件僅供管理員審核用途，不會公開展示。</FormDescription>
-                          <FormControl>
-                            <div>
-                              {qualProofPreview ? (
-                                <div className="relative w-full max-w-sm">
-                                  <img src={qualProofPreview} alt="資歷證明" className="w-full rounded-xl border object-cover max-h-48" />
-                                  <button type="button" onClick={removeQualProof} className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow border">
-                                    <X className="w-4 h-4 text-destructive" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div
-                                  className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:border-primary/50 hover:bg-slate-50 transition-all"
-                                  onClick={() => qualProofRef.current?.click()}
-                                >
-                                  <Upload className="w-6 h-6 text-muted-foreground" />
-                                  <p className="text-sm text-muted-foreground text-center">點擊上傳資歷證明圖片</p>
-                                  <p className="text-xs text-muted-foreground">PNG / JPG，上限 5MB</p>
-                                </div>
-                              )}
-                              <input ref={qualProofRef} type="file" accept="image/*" className="hidden" onChange={handleQualProofChange} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     <FormField
                       control={form.control}
