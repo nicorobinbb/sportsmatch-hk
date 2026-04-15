@@ -21,7 +21,7 @@ Hong Kong's most transparent sports coach review and search platform (運對). B
 
 ## Brand
 
-- **Primary colour**: Yellow `hsl(60 100% 50%)` with dark foreground `hsl(222 47% 11%)`
+- **Primary colour**: Blue `hsl(221 83% 53%)` — **NEVER change to yellow or any other colour**
 - **Admin users**: `user_3CL2v3QfZ8oeJFcMSutb6qClVmH`, `user_3CL6ohwA5xBIDSQak8xNNYNhaEh` (via `ADMIN_USER_IDS` env var)
 
 ## Features
