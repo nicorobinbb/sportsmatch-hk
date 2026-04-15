@@ -230,7 +230,21 @@ export default function AdminDashboard() {
       const parsed = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : [];
       pricingRows = Array.isArray(parsed) ? parsed.map((r: Omit<PricingRow, "id">) => ({ ...r, id: crypto.randomUUID() })) : [];
     } catch {}
-    if (pricingRows.length === 0) pricingRows = [newPricingRow()];
+    if (pricingRows.length === 0) {
+      // Fall back to legacy trialPrice / regularPrice fields
+      const trial = Number(coach.trialPrice);
+      const regular = Number(coach.regularPrice);
+      if (trial > 0 && trial !== regular) {
+        pricingRows = [
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "" },
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" },
+        ];
+      } else if (regular > 0) {
+        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" }];
+      } else {
+        pricingRows = [newPricingRow()];
+      }
+    }
 
     let qualList: QualEntry[] = [];
     try {
