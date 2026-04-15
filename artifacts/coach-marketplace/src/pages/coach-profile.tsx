@@ -249,7 +249,7 @@ export default function CoachProfile() {
                         <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">適合年齡組別</h4>
                         <div className="flex flex-wrap gap-2">
                           {coach.ageGroups.map(age => (
-                            <Badge key={age} variant="secondary" className="bg-slate-100">{age}</Badge>
+                            <Badge key={age} variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">{age}</Badge>
                           ))}
                         </div>
                       </div>
