@@ -181,19 +181,9 @@ export default function CoachProfile() {
                         <CheckCircle2 className="w-3 h-3" /> 已認證
                       </Badge>
                     )}
-                    {coach.averageRating && coach.averageRating >= 4.8 && (
-                      <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 gap-1">
-                        <Trophy className="w-3 h-3" /> 頂尖教練
-                      </Badge>
-                    )}
                     {coach.reviewCount >= 5 && (
                       <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50 gap-1">
                         <ThumbsUp className="w-3 h-3" /> 多人讚好
-                      </Badge>
-                    )}
-                    {coach.trialPrice && coach.trialPrice <= 200 && (
-                      <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50 gap-1">
-                        <Zap className="w-3 h-3" /> 超值體驗
                       </Badge>
                     )}
                   </div>
