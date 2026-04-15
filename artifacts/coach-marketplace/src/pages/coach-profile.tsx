@@ -373,10 +373,6 @@ export default function CoachProfile() {
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">課程套餐詳情</h4>
-                        <p className="text-sm text-foreground">{coach.packageDetails || "標準按小時計費。"}</p>
-                      </div>
                     </div>
                   </div>
                 </TabsContent>
@@ -726,6 +722,17 @@ export default function CoachProfile() {
 
                 </CardContent>
               </Card>
+
+              {coach.packageDetails && (
+                <Card className="border-primary/20 shadow-sm overflow-hidden">
+                  <div className="bg-primary/5 p-3 border-b">
+                    <span className="font-semibold text-sm text-primary">其他收費模式</span>
+                  </div>
+                  <CardContent className="p-4">
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{coach.packageDetails}</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             
           </div>

@@ -715,7 +715,7 @@ export default function CoachRegister() {
                       name="packageDetails"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>套餐優惠（選填）</FormLabel>
+                          <FormLabel>其他收費模式（選填）</FormLabel>
                           <FormControl>
                             <Input placeholder="例如：$4000 / 10堂，另有家庭優惠" className="bg-white" {...field} />
                           </FormControl>
