@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, ShieldCheck, Star, Users } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
-import { Empty } from "@/components/ui/empty";
+import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 const AGE_GROUPS = [
@@ -49,6 +49,8 @@ export default function Home() {
   const [stagedCoachTypes, setStagedCoachTypes] = useState<Set<string>>(new Set());
   const [appliedCoachTypes, setAppliedCoachTypes] = useState<Set<string>>(new Set());
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string | undefined>();
+
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const toggleCoachType = (type: string) =>
     setStagedCoachTypes(prev => {
@@ -113,6 +115,9 @@ export default function Home() {
     e.preventDefault();
     setDebouncedSearch(search);
     setAppliedCoachTypes(new Set(stagedCoachTypes));
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleCategoryClick = (categoryName: string) => {
@@ -310,7 +315,7 @@ export default function Home() {
           )}
 
           {/* All Coaches List */}
-          <div>
+          <div ref={resultsRef}>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
               <div>
                 <h2 className="text-2xl font-bold font-display">
@@ -354,11 +359,15 @@ export default function Home() {
                 ))}
               </div>
             ) : sortedCoaches.length === 0 ? (
-              <Empty
-                icon={<Search className="w-12 h-12 text-muted-foreground" />}
-                title="找不到教練"
-                description="請嘗試調整搜尋條件或瀏覽其他類別。"
-                action={
+              <Empty>
+                <EmptyMedia variant="icon">
+                  <Search className="w-6 h-6" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle>找不到教練</EmptyTitle>
+                  <EmptyDescription>請嘗試調整搜尋條件或瀏覽其他類別。</EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
                   <Button variant="outline" onClick={() => {
                     setSearch("");
                     setDebouncedSearch("");
@@ -370,8 +379,8 @@ export default function Home() {
                   }}>
                     清除篩選
                   </Button>
-                }
-              />
+                </EmptyContent>
+              </Empty>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {sortedCoaches.map((coach) => (
