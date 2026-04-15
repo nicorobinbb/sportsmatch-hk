@@ -38,7 +38,6 @@ const coachSchema = z.object({
   packageDetails: z.string().optional(),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
-  qualifications: z.string().optional(),
   qualificationProofUrl: z.string().optional().or(z.literal('')),
   whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
 });
@@ -69,7 +68,7 @@ export default function CoachRegister() {
       packageDetails: "",
       ageGroups: [],
       profileImageUrl: "",
-      qualifications: "",
+
       qualificationProofUrl: "",
       whatsappLocalNumber: "",
     },
@@ -84,6 +83,8 @@ export default function CoachRegister() {
     setPricingRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
   const removeRow = (id: string) =>
     setPricingRows(prev => prev.length > 1 ? prev.filter(r => r.id !== id) : prev);
+
+  const [qualList, setQualList] = useState<string[]>([""]);
 
   const [coachTypes, setCoachTypes] = useState<string[]>([]);
   const [coachTypeError, setCoachTypeError] = useState("");
@@ -187,7 +188,7 @@ export default function CoachRegister() {
         profileImageUrl: data.profileImageUrl || undefined,
         packageDetails: data.packageDetails || undefined,
         whatsappNumber,
-        qualifications: data.qualifications || undefined,
+        qualifications: qualList.filter(q => q.trim()).join("\n") || undefined,
         qualificationProofUrl: data.qualificationProofUrl || undefined,
         pricingPlans: JSON.stringify(pricingRows.map(({ id: _id, ...r }) => r)),
       } as any
@@ -428,21 +429,39 @@ export default function CoachRegister() {
                       {coachTypeError && <p className="text-sm text-destructive">{coachTypeError}</p>}
                     </div>
 
-                    {/* Qualifications text input */}
-                    <FormField
-                      control={form.control}
-                      name="qualifications"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>資歷</FormLabel>
-                          <FormDescription>列出你的相關認證、資格或學歷 </FormDescription>
-                          <FormControl>
-                            <Input placeholder="例如：香港田徑經會一級田徑教練，香港亞運游泳代表隊" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Qualifications multi-row */}
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-sm font-medium leading-none mb-1">資歷</p>
+                        <p className="text-xs text-muted-foreground">每行填寫一項認證、資格或學歷</p>
+                      </div>
+                      {qualList.map((q, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Input
+                            value={q}
+                            onChange={e => setQualList(prev => prev.map((v, i) => i === idx ? e.target.value : v))}
+                            placeholder={idx === 0 ? "例如：香港游泳教練會一級教練" : "例如：ACE-CPT 認證私人教練"}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setQualList(prev => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}
+                            disabled={qualList.length === 1}
+                            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setQualList(prev => [...prev, ""])}
+                      >
+                        <Plus className="w-4 h-4" /> 新增資歷
+                      </Button>
+                    </div>
 
                     {/* Qualification proof upload */}
                     <FormField
@@ -542,7 +561,7 @@ export default function CoachRegister() {
 
                           {/* Session type */}
                           <div className="flex-1 min-w-[130px]">
-                            <p className="text-xs text-muted-foreground mb-1">堂型</p>
+                            <p className="text-xs text-muted-foreground mb-1">課堂形式</p>
                             <Select
                               value={row.sessionType}
                               onValueChange={v => updateRow(row.id, { sessionType: v as "單對單" | "小組課堂", maxStudents: "" })}
@@ -551,7 +570,7 @@ export default function CoachRegister() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="單對單">單對單</SelectItem>
+                                <SelectItem value="單對單">一對一</SelectItem>
                                 <SelectItem value="小組課堂">小組課堂</SelectItem>
                               </SelectContent>
                             </Select>
