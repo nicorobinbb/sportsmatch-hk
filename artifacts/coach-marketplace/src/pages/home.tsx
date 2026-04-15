@@ -36,10 +36,11 @@ export default function Home() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedSport, setSelectedSport] = useState<string | undefined>();
   const [selectedLocation, setSelectedLocation] = useState<string | undefined>();
-  const [selectedCoachTypes, setSelectedCoachTypes] = useState<Set<string>>(new Set());
+  const [stagedCoachTypes, setStagedCoachTypes] = useState<Set<string>>(new Set());
+  const [appliedCoachTypes, setAppliedCoachTypes] = useState<Set<string>>(new Set());
 
   const toggleCoachType = (type: string) =>
-    setSelectedCoachTypes(prev => {
+    setStagedCoachTypes(prev => {
       const next = new Set(prev);
       next.has(type) ? next.delete(type) : next.add(type);
       return next;
@@ -54,12 +55,12 @@ export default function Home() {
     search: debouncedSearch || undefined,
     sport: selectedSport,
     location: selectedLocation,
-    coachType: selectedCoachTypes.size > 0 ? [...selectedCoachTypes].join(",") : undefined,
+    coachType: appliedCoachTypes.size > 0 ? [...appliedCoachTypes].join(",") : undefined,
     limit: 40
   });
 
   const preferredSports: string[] = userPreferences?.preferredCategories ?? [];
-  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || selectedCoachTypes.size > 0);
+  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0);
 
   const sortedCoaches = (() => {
     const coaches = coachesData?.coaches ?? [];
@@ -74,6 +75,7 @@ export default function Home() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setDebouncedSearch(search);
+    setAppliedCoachTypes(new Set(stagedCoachTypes));
   };
 
   const handleCategoryClick = (categoryName: string) => {
@@ -131,6 +133,33 @@ export default function Home() {
                 搜尋
               </Button>
             </form>
+
+            {/* Coach type checkboxes */}
+            <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
+              <span className="text-sm text-muted-foreground">篩選類型：</span>
+              {(["專業運動員", "持牌教練"] as const).map(type => {
+                const checked = stagedCoachTypes.has(type);
+                return (
+                  <label
+                    key={type}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer select-none transition-all text-sm font-medium ${
+                      checked
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-white border-border text-foreground hover:border-primary/50 hover:bg-primary/5"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() => toggleCoachType(type)}
+                    />
+                    {type === "專業運動員" ? "🏅" : "📋"} {type}
+                    {checked && <span className="opacity-70 text-xs">✓</span>}
+                  </label>
+                );
+              })}
+            </div>
 
             {stats && (
               <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 text-sm font-medium text-muted-foreground">
@@ -229,36 +258,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Coach type filter pills */}
-            <div className="flex items-center gap-2 mb-6 flex-wrap">
-              <span className="text-sm text-muted-foreground shrink-0">篩選類型：</span>
-              {(["專業運動員", "持牌教練"] as const).map(type => {
-                const active = selectedCoachTypes.has(type);
-                return (
-                  <button
-                    key={type}
-                    onClick={() => toggleCoachType(type)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                        : "bg-white border-border hover:border-primary/50 hover:bg-primary/5"
-                    }`}
-                  >
-                    {type === "專業運動員" ? "🏅" : "📋"} {type}
-                    {active && <span className="ml-0.5 opacity-70">✓</span>}
-                  </button>
-                );
-              })}
-              {selectedCoachTypes.size > 0 && (
-                <button
-                  onClick={() => setSelectedCoachTypes(new Set())}
-                  className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
-                >
-                  清除
-                </button>
-              )}
-            </div>
-
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
               {coachesData && (
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
@@ -292,6 +291,8 @@ export default function Home() {
                     setDebouncedSearch("");
                     setSelectedSport(undefined);
                     setSelectedLocation(undefined);
+                    setStagedCoachTypes(new Set());
+                    setAppliedCoachTypes(new Set());
                   }}>
                     清除篩選
                   </Button>
