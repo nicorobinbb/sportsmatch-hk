@@ -11,9 +11,11 @@ import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachS
 import { Empty } from "@/components/ui/empty";
 
 const AGE_GROUPS = [
-  { label: "兒童", sub: "8至12歲", emoji: "🧒", value: "兒童（8至12歲）" },
-  { label: "青少年", sub: "13至17歲", emoji: "🧑", value: "青少年（13至17歲）" },
-  { label: "成人", sub: "18歲以上", emoji: "👨", value: "成人（18歲以上）" },
+  { label: "幼童", sub: "8歲以下", emoji: "👶", prefix: "幼童" },
+  { label: "兒童", sub: "8至12歲", emoji: "🧒", prefix: "兒童" },
+  { label: "青少年", sub: "12至17歲", emoji: "🧑", prefix: "青少年" },
+  { label: "成人", sub: "18歲以上", emoji: "👨", prefix: "成人" },
+  { label: "長者", sub: "60歲以上", emoji: "👴", prefix: "長者" },
 ];
 
 const sportEmojiMap: Record<string, string> = {
@@ -70,10 +72,10 @@ export default function Home() {
   const preferredSports: string[] = userPreferences?.preferredCategories ?? [];
   const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0 || selectedAgeGroup);
 
-  const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null }, ageGroup: string) => {
+  const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null }, prefix: string) => {
     try {
       const rows: Array<{ ageGroup?: string }> = JSON.parse(coach.pricingPlans ?? "[]");
-      return rows.some(r => r.ageGroup === ageGroup);
+      return rows.some(r => r.ageGroup?.startsWith(prefix));
     } catch { return false; }
   };
 
@@ -189,12 +191,12 @@ export default function Home() {
                 <Users className="w-3.5 h-3.5" />年齡層：
               </span>
               {AGE_GROUPS.map(ag => {
-                const active = selectedAgeGroup === ag.value;
+                const active = selectedAgeGroup === ag.prefix;
                 return (
                   <button
-                    key={ag.value}
+                    key={ag.prefix}
                     type="button"
-                    onClick={() => setSelectedAgeGroup(active ? undefined : ag.value)}
+                    onClick={() => setSelectedAgeGroup(active ? undefined : ag.prefix)}
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition-all text-sm font-medium select-none ${
                       active
                         ? "bg-primary text-primary-foreground border-primary shadow-sm"
@@ -279,7 +281,7 @@ export default function Home() {
                   精選教練
                   {selectedAgeGroup && (
                     <span className="text-base font-normal text-muted-foreground ml-1">
-                      · {AGE_GROUPS.find(a => a.value === selectedAgeGroup)?.label}
+                      · {AGE_GROUPS.find(a => a.prefix === selectedAgeGroup)?.label}
                     </span>
                   )}
                 </h2>
