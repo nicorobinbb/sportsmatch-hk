@@ -58,7 +58,7 @@ export default function AdminDashboard() {
 
   type CoachRow = {
     id: number; name: string; sportsCategory: string; location: string;
-    isApproved: boolean; isFeatured: boolean; trialPrice: number; regularPrice: number;
+    isApproved: boolean; isRejected: boolean; isFeatured: boolean; trialPrice: number; regularPrice: number;
     experienceLevel: string; whatsappNumber?: string | null;
     profileImageUrl?: string | null; createdAt: string;
     youtubeUrl?: string | null; youtubePending?: string | null;
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
   };
   const [allCoaches, setAllCoaches] = useState<CoachRow[]>([]);
   const [coachSearch, setCoachSearch] = useState("");
-  const [coachFilter, setCoachFilter] = useState<"all" | "active" | "inactive">("all");
+  const [coachFilter, setCoachFilter] = useState<"all" | "active" | "inactive" | "rejected">("all");
   const [togglingCoach, setTogglingCoach] = useState<number | null>(null);
   const [togglingFeatured, setTogglingFeatured] = useState<number | null>(null);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
@@ -620,21 +620,21 @@ export default function AdminDashboard() {
                     className="w-full pl-9 pr-4 py-2 text-sm border rounded-lg bg-white dark:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
-                <div className="flex gap-2">
-                  {(["all", "active", "inactive"] as const).map(f => (
+                <div className="flex flex-wrap gap-2">
+                  {(["all", "active", "inactive", "rejected"] as const).map(f => (
                     <button
                       key={f}
                       onClick={() => { setCoachFilter(f); setCoachSearch(""); }}
                       className={`px-3 py-2 text-sm rounded-lg border font-medium transition-all ${coachFilter === f && !coachSearch ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border hover:border-primary/50"}`}
                     >
-                      {f === "all" ? "全部" : f === "active" ? "已啟用" : "已停用"}
+                      {f === "all" ? "全部" : f === "active" ? "已啟用" : f === "inactive" ? "待審核" : "已拒絕"}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="text-xs text-muted-foreground">
-                共 {allCoaches.length} 位教練 · 啟用 {allCoaches.filter(c => c.isApproved).length} · 停用 {allCoaches.filter(c => !c.isApproved).length}
+                共 {allCoaches.length} 位教練 · 已啟用 {allCoaches.filter(c => c.isApproved).length} · 待審核 {allCoaches.filter(c => !c.isApproved && !c.isRejected).length} · 已拒絕 {allCoaches.filter(c => c.isRejected).length}
               </div>
 
               {loadingCoaches ? (
@@ -663,10 +663,16 @@ export default function AdminDashboard() {
                               <span className="font-semibold">{coach.name}</span>
                               <Badge variant="secondary" className="text-xs">{coach.sportsCategory}</Badge>
                               <Badge
-                                variant={coach.isApproved ? "default" : "outline"}
-                                className={`text-xs ${coach.isApproved ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}
+                                variant="outline"
+                                className={`text-xs ${
+                                  coach.isApproved
+                                    ? "bg-green-100 text-green-700 border-green-200"
+                                    : coach.isRejected
+                                    ? "bg-red-100 text-red-700 border-red-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}
                               >
-                                {coach.isApproved ? "已啟用" : "已停用"}
+                                {coach.isApproved ? "已啟用" : coach.isRejected ? "已拒絕" : "待審核"}
                               </Badge>
                               {coach.isFeatured && (
                                 <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200">

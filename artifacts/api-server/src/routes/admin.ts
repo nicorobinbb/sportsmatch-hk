@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { coachesTable, reviewsTable, photosTable, reportsTable, userProfilesTable, wishlistsTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
-import { eq, sql, desc, count, ilike, or } from "drizzle-orm";
+import { eq, sql, desc, count, ilike, or, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -66,7 +66,7 @@ router.get("/coaches/pending", requireAdmin, async (req, res) => {
         reviewCount: sql<number>`0::int`,
       })
       .from(coachesTable)
-      .where(eq(coachesTable.isApproved, false));
+      .where(and(eq(coachesTable.isApproved, false), eq(coachesTable.isRejected, false)));
 
     res.json(
       coaches.map((c) => ({
@@ -91,7 +91,7 @@ router.post("/coaches/:id/approve", requireAdmin, async (req, res) => {
 
     const [coach] = await db
       .update(coachesTable)
-      .set({ isApproved: true })
+      .set({ isApproved: true, isRejected: false })
       .where(eq(coachesTable.id, id))
       .returning();
 
@@ -116,7 +116,8 @@ router.post("/coaches/:id/reject", requireAdmin, async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
     const [coach] = await db
-      .delete(coachesTable)
+      .update(coachesTable)
+      .set({ isApproved: false, isRejected: true })
       .where(eq(coachesTable.id, id))
       .returning();
 
@@ -249,6 +250,7 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         sportsCategory: coachesTable.sportsCategory,
         location: coachesTable.location,
         isApproved: coachesTable.isApproved,
+        isRejected: coachesTable.isRejected,
         isFeatured: coachesTable.isFeatured,
         trialPrice: coachesTable.trialPrice,
         regularPrice: coachesTable.regularPrice,
@@ -274,7 +276,9 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
     } else if (status === "active") {
       query = query.where(eq(coachesTable.isApproved, true));
     } else if (status === "inactive") {
-      query = query.where(eq(coachesTable.isApproved, false));
+      query = query.where(and(eq(coachesTable.isApproved, false), eq(coachesTable.isRejected, false)));
+    } else if (status === "rejected") {
+      query = query.where(eq(coachesTable.isRejected, true));
     }
 
     const coaches = await query.orderBy(desc(coachesTable.createdAt));
