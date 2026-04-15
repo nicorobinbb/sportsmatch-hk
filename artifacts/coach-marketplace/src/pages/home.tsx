@@ -179,9 +179,11 @@ export default function Home() {
                   精選教練
                 </h2>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex gap-5 overflow-x-auto pb-3 -mx-4 px-4 snap-x snap-mandatory scroll-smooth">
                 {featuredCoaches.map((coach) => (
-                  <CoachCard key={coach.id} coach={coach} />
+                  <div key={coach.id} className="flex-none w-72 snap-start">
+                    <CoachCard coach={coach} />
+                  </div>
                 ))}
               </div>
             </div>
