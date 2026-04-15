@@ -257,6 +257,7 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         profileImageUrl: coachesTable.profileImageUrl,
         youtubeUrl: coachesTable.youtubeUrl,
         youtubePending: coachesTable.youtubePending,
+        pendingEdits: coachesTable.pendingEdits,
         createdAt: coachesTable.createdAt,
       })
       .from(coachesTable)
@@ -338,6 +339,53 @@ router.patch("/coaches/:id/featured", requireAdmin, async (req, res) => {
     res.json({ coach: { id: updated.id, isFeatured: updated.isFeatured } });
   } catch (err) {
     req.log.error({ err }, "adminUpdateCoachFeatured error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/coaches/:id/edits/approve", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [coach] = await db.select().from(coachesTable).where(eq(coachesTable.id, id));
+    if (!coach) return res.status(404).json({ error: "Coach not found" });
+    if (!coach.pendingEdits) return res.status(400).json({ error: "No pending edits" });
+
+    let edits: Record<string, unknown>;
+    try { edits = JSON.parse(coach.pendingEdits); } catch { return res.status(400).json({ error: "Invalid pending edits" }); }
+
+    const updateData: Record<string, unknown> = { pendingEdits: null };
+    if (edits.name !== undefined) updateData.name = edits.name;
+    if (edits.sportsCategory !== undefined) updateData.sportsCategory = edits.sportsCategory;
+    if (edits.location !== undefined) updateData.location = edits.location;
+    if (edits.bio !== undefined) updateData.bio = edits.bio;
+    if (edits.trialPrice !== undefined) updateData.trialPrice = String(edits.trialPrice);
+    if (edits.regularPrice !== undefined) updateData.regularPrice = String(edits.regularPrice);
+    if (edits.packageDetails !== undefined) updateData.packageDetails = edits.packageDetails;
+    if (edits.ageGroups !== undefined) updateData.ageGroups = edits.ageGroups;
+    if (edits.experienceLevel !== undefined) updateData.experienceLevel = edits.experienceLevel;
+    if (edits.whatsappNumber !== undefined) updateData.whatsappNumber = edits.whatsappNumber;
+    if (edits.profileImageUrl !== undefined) updateData.profileImageUrl = edits.profileImageUrl;
+
+    const [updated] = await db.update(coachesTable).set(updateData as any).where(eq(coachesTable.id, id)).returning();
+    res.json({ coach: { ...updated, trialPrice: parseFloat(updated.trialPrice as unknown as string), regularPrice: parseFloat(updated.regularPrice as unknown as string) } });
+  } catch (err) {
+    req.log.error({ err }, "adminApproveEdits error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/coaches/:id/edits/reject", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [updated] = await db.update(coachesTable).set({ pendingEdits: null }).where(eq(coachesTable.id, id)).returning();
+    if (!updated) return res.status(404).json({ error: "Coach not found" });
+    res.json({ pendingEdits: null });
+  } catch (err) {
+    req.log.error({ err }, "adminRejectEdits error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

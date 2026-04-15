@@ -270,6 +270,34 @@ router.get("/stats/summary", async (req, res) => {
   }
 });
 
+router.get("/me", async (req, res) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const [coach] = await db
+      .select()
+      .from(coachesTable)
+      .where(eq(coachesTable.userId, auth.userId))
+      .limit(1);
+
+    if (!coach) return res.json({ coach: null });
+
+    res.json({
+      coach: {
+        ...coach,
+        trialPrice: parseFloat(coach.trialPrice as unknown as string),
+        regularPrice: parseFloat(coach.regularPrice as unknown as string),
+        createdAt: coach.createdAt.toISOString(),
+        updatedAt: coach.updatedAt.toISOString(),
+      }
+    });
+  } catch (err) {
+    req.log.error({ err }, "getMyCoach error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -405,6 +433,38 @@ router.post("/:id/photos", async (req, res) => {
     res.status(201).json({ ...photo, createdAt: photo.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "uploadCoachPhoto error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/:id/edit-request", async (req, res) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [coach] = await db.select({ userId: coachesTable.userId }).from(coachesTable).where(eq(coachesTable.id, id));
+    if (!coach) return res.status(404).json({ error: "Coach not found" });
+    if (coach.userId !== auth.userId) return res.status(403).json({ error: "Forbidden" });
+
+    const allowed = ["name", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl"];
+    const edits: Record<string, unknown> = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) edits[key] = req.body[key];
+    }
+    if (Object.keys(edits).length === 0) return res.status(400).json({ error: "No changes provided" });
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set({ pendingEdits: JSON.stringify(edits) })
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    res.json({ pendingEdits: updated.pendingEdits });
+  } catch (err) {
+    req.log.error({ err }, "submitEditRequest error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

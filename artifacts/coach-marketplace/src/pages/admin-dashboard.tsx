@@ -62,6 +62,7 @@ export default function AdminDashboard() {
     experienceLevel: string; whatsappNumber?: string | null;
     profileImageUrl?: string | null; createdAt: string;
     youtubeUrl?: string | null; youtubePending?: string | null;
+    pendingEdits?: string | null;
   };
   const [allCoaches, setAllCoaches] = useState<CoachRow[]>([]);
   const [coachSearch, setCoachSearch] = useState("");
@@ -78,6 +79,54 @@ export default function AdminDashboard() {
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [approvingYoutube, setApprovingYoutube] = useState<number | null>(null);
+  const [approvingEdits, setApprovingEdits] = useState<number | null>(null);
+
+  async function handleEditsApprove(coachId: number) {
+    setApprovingEdits(coachId);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/admin/coaches/${coachId}/edits/approve`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAllCoaches(prev => prev.map(c => c.id === coachId ? {
+          ...c,
+          name: data.coach.name ?? c.name,
+          sportsCategory: data.coach.sportsCategory ?? c.sportsCategory,
+          location: data.coach.location ?? c.location,
+          trialPrice: data.coach.trialPrice ?? c.trialPrice,
+          regularPrice: data.coach.regularPrice ?? c.regularPrice,
+          experienceLevel: data.coach.experienceLevel ?? c.experienceLevel,
+          whatsappNumber: data.coach.whatsappNumber ?? c.whatsappNumber,
+          pendingEdits: null,
+        } : c));
+        toast({ title: "✅ 修改申請已批准，檔案已更新" });
+      } else {
+        toast({ title: "批准失敗", variant: "destructive" });
+      }
+    } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
+    setApprovingEdits(null);
+  }
+
+  async function handleEditsReject(coachId: number) {
+    setApprovingEdits(coachId);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/admin/coaches/${coachId}/edits/reject`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setAllCoaches(prev => prev.map(c => c.id === coachId ? { ...c, pendingEdits: null } : c));
+        toast({ title: "修改申請已拒絕並移除" });
+      } else {
+        toast({ title: "拒絕失敗", variant: "destructive" });
+      }
+    } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
+    setApprovingEdits(null);
+  }
 
   async function handleYoutubeApprove(coachId: number) {
     setApprovingYoutube(coachId);
@@ -616,6 +665,11 @@ export default function AdminDashboard() {
                                   <Youtube className="w-3 h-3 mr-1" /> 影片待審
                                 </Badge>
                               )}
+                              {coach.pendingEdits && (
+                                <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                  <Pencil className="w-3 h-3 mr-1" /> 修改待審
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                               <span>📍 {coach.location}</span>
@@ -844,6 +898,54 @@ export default function AdminDashboard() {
                               </a>
                             </div>
                           )}
+
+                          {/* Pending edits review */}
+                          {coach.pendingEdits && (() => {
+                            let edits: Record<string, unknown> = {};
+                            try { edits = JSON.parse(coach.pendingEdits); } catch { return null; }
+                            const fieldLabels: Record<string, string> = {
+                              name: "姓名", sportsCategory: "運動類別", location: "地點",
+                              bio: "個人簡介", trialPrice: "體驗堂價格", regularPrice: "正課價格",
+                              packageDetails: "套餐詳情", ageGroups: "適合年齡組別",
+                              experienceLevel: "經驗級別", whatsappNumber: "WhatsApp",
+                              profileImageUrl: "頭像",
+                            };
+                            return (
+                              <div className="mt-4 pt-4 border-t">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                                  <Pencil className="w-3.5 h-3.5 text-orange-500" /> 待審核修改申請
+                                </p>
+                                <div className="space-y-2 mb-3">
+                                  {Object.entries(edits).map(([key, val]) => (
+                                    <div key={key} className="flex gap-2 text-xs">
+                                      <span className="font-medium text-slate-600 w-24 shrink-0">{fieldLabels[key] || key}</span>
+                                      <span className="text-slate-800 break-all">
+                                        {Array.isArray(val) ? (val as string[]).join("、") : String(val)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEditsApprove(coach.id)}
+                                    disabled={approvingEdits === coach.id}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {approvingEdits === coach.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                    批准修改
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditsReject(coach.id)}
+                                    disabled={approvingEdits === coach.id}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {approvingEdits === coach.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                                    拒絕修改
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
