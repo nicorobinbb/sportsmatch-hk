@@ -4,10 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, ShieldCheck, Star } from "lucide-react";
+import { Search, MapPin, ShieldCheck, Star, Users } from "lucide-react";
 import { useState } from "react";
+
 import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
 import { Empty } from "@/components/ui/empty";
+
+const AGE_GROUPS = [
+  { label: "兒童", sub: "8至12歲", emoji: "🧒", value: "兒童（8至12歲）" },
+  { label: "青少年", sub: "13至17歲", emoji: "🧑", value: "青少年（13至17歲）" },
+  { label: "成人", sub: "18歲以上", emoji: "👨", value: "成人（18歲以上）" },
+];
 
 const sportEmojiMap: Record<string, string> = {
   "游泳": "🏊",
@@ -38,6 +45,7 @@ export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState<string | undefined>();
   const [stagedCoachTypes, setStagedCoachTypes] = useState<Set<string>>(new Set());
   const [appliedCoachTypes, setAppliedCoachTypes] = useState<Set<string>>(new Set());
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState<string | undefined>();
 
   const toggleCoachType = (type: string) =>
     setStagedCoachTypes(prev => {
@@ -60,15 +68,29 @@ export default function Home() {
   });
 
   const preferredSports: string[] = userPreferences?.preferredCategories ?? [];
-  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0);
+  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0 || selectedAgeGroup);
+
+  const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null }, ageGroup: string) => {
+    try {
+      const rows: Array<{ ageGroup?: string }> = JSON.parse(coach.pricingPlans ?? "[]");
+      return rows.some(r => r.ageGroup === ageGroup);
+    } catch { return false; }
+  };
 
   const sortedCoaches = (() => {
     const coaches = coachesData?.coaches ?? [];
-    if (isFiltered || preferredSports.length === 0) return coaches;
-    const preferred = coaches.filter(c => preferredSports.includes(c.sportsCategory));
-    const rest = coaches.filter(c => !preferredSports.includes(c.sportsCategory));
+    const ageFiltered = selectedAgeGroup
+      ? coaches.filter(c => coachMatchesAgeGroup(c, selectedAgeGroup))
+      : coaches;
+    if (isFiltered || preferredSports.length === 0) return ageFiltered;
+    const preferred = ageFiltered.filter(c => preferredSports.includes(c.sportsCategory));
+    const rest = ageFiltered.filter(c => !preferredSports.includes(c.sportsCategory));
     return [...preferred, ...rest];
   })();
+
+  const filteredFeatured = selectedAgeGroup
+    ? (featuredCoaches ?? []).filter(c => coachMatchesAgeGroup(c, selectedAgeGroup))
+    : featuredCoaches ?? [];
 
   const trackClick = useTrackCategoryClick();
 
@@ -161,6 +183,35 @@ export default function Home() {
               })}
             </div>
 
+            {/* Age group filter */}
+            <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />年齡層：
+              </span>
+              {AGE_GROUPS.map(ag => {
+                const active = selectedAgeGroup === ag.value;
+                return (
+                  <button
+                    key={ag.value}
+                    type="button"
+                    onClick={() => setSelectedAgeGroup(active ? undefined : ag.value)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition-all text-sm font-medium select-none ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-white border-border text-foreground hover:border-primary/50 hover:bg-primary/5"
+                    }`}
+                  >
+                    <span>{ag.emoji}</span>
+                    <span>{ag.label}</span>
+                    <span className={`text-xs ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                      ({ag.sub})
+                    </span>
+                    {active && <span className="opacity-70 text-xs">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+
             {stats && (
               <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -220,16 +271,21 @@ export default function Home() {
         <div className="container px-4 md:px-6 space-y-16">
           
           {/* Featured Coaches */}
-          {!debouncedSearch && !selectedSport && !selectedLocation && featuredCoaches && featuredCoaches.length > 0 && (
+          {!debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold font-display flex items-center gap-2">
                   <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
                   精選教練
+                  {selectedAgeGroup && (
+                    <span className="text-base font-normal text-muted-foreground ml-1">
+                      · {AGE_GROUPS.find(a => a.value === selectedAgeGroup)?.label}
+                    </span>
+                  )}
                 </h2>
               </div>
               <div className="flex gap-5 overflow-x-auto pb-3 -mx-4 px-4 snap-x snap-mandatory scroll-smooth">
-                {featuredCoaches.map((coach) => (
+                {filteredFeatured.map((coach) => (
                   <div key={coach.id} className="flex-none w-72 snap-start">
                     <CoachCard coach={coach} />
                   </div>
@@ -293,6 +349,7 @@ export default function Home() {
                     setSelectedLocation(undefined);
                     setStagedCoachTypes(new Set());
                     setAppliedCoachTypes(new Set());
+                    setSelectedAgeGroup(undefined);
                   }}>
                     清除篩選
                   </Button>
