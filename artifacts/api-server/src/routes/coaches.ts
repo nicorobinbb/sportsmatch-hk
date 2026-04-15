@@ -275,25 +275,23 @@ router.get("/me", async (req, res) => {
     const auth = getAuth(req);
     if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const [coach] = await db
+    const coaches = await db
       .select()
       .from(coachesTable)
       .where(eq(coachesTable.userId, auth.userId))
-      .limit(1);
-
-    if (!coach) return res.json({ coach: null });
+      .orderBy(desc(coachesTable.createdAt));
 
     res.json({
-      coach: {
-        ...coach,
-        trialPrice: parseFloat(coach.trialPrice as unknown as string),
-        regularPrice: parseFloat(coach.regularPrice as unknown as string),
-        createdAt: coach.createdAt.toISOString(),
-        updatedAt: coach.updatedAt.toISOString(),
-      }
+      coaches: coaches.map(c => ({
+        ...c,
+        trialPrice: parseFloat(c.trialPrice as unknown as string),
+        regularPrice: parseFloat(c.regularPrice as unknown as string),
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      }))
     });
   } catch (err) {
-    req.log.error({ err }, "getMyCoach error");
+    req.log.error({ err }, "getMyCoaches error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

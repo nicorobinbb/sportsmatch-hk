@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
+import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, Plus } from "lucide-react";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 import { useToast } from "@/hooks/use-toast";
@@ -60,13 +60,14 @@ export default function Dashboard() {
   const [recommendedCoaches, setRecommendedCoaches] = useState<SavedCoach[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [myCoach, setMyCoach] = useState<MyCoach | null | "none">(null);
-  const [loadingMyCoach, setLoadingMyCoach] = useState(true);
+  const [myCoaches, setMyCoaches] = useState<MyCoach[]>([]);
+  const [loadingMyCoaches, setLoadingMyCoaches] = useState(true);
 
-  const [editOpen, setEditOpen] = useState(false);
+  const [editingCoach, setEditingCoach] = useState<MyCoach | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [submittingEdit, setSubmittingEdit] = useState(false);
-  const [pendingEditsState, setPendingEditsState] = useState<string | null | undefined>(undefined);
+  // Track per-coach pending edits overrides after submission
+  const [pendingEditsOverride, setPendingEditsOverride] = useState<Record<number, string | null>>({});
 
   useEffect(() => {
     async function load() {
@@ -83,7 +84,7 @@ export default function Dashboard() {
         const coachData = await coachRes.json();
         setSavedCoaches(wishData.coaches || []);
         setProfile(profileData.profile);
-        setMyCoach(coachData.coach ?? "none");
+        setMyCoaches(coachData.coaches || []);
 
         if (profileData.profile?.preferredSports?.length > 0) {
           const sport = profileData.profile.preferredSports[0];
@@ -97,35 +98,34 @@ export default function Dashboard() {
         }
       } catch {}
       setLoading(false);
-      setLoadingMyCoach(false);
+      setLoadingMyCoaches(false);
     }
     load();
   }, []);
 
-  function openEdit() {
-    if (!myCoach || myCoach === "none") return;
+  function openEdit(coach: MyCoach) {
+    setEditingCoach(coach);
     setEditForm({
-      name: myCoach.name,
-      sportsCategory: myCoach.sportsCategory,
-      location: myCoach.location,
-      bio: myCoach.bio,
-      trialPrice: String(myCoach.trialPrice),
-      regularPrice: String(myCoach.regularPrice),
-      packageDetails: myCoach.packageDetails || "",
-      ageGroups: myCoach.ageGroups || [],
-      experienceLevel: myCoach.experienceLevel,
-      whatsappNumber: myCoach.whatsappNumber || "",
+      name: coach.name,
+      sportsCategory: coach.sportsCategory,
+      location: coach.location,
+      bio: coach.bio,
+      trialPrice: String(coach.trialPrice),
+      regularPrice: String(coach.regularPrice),
+      packageDetails: coach.packageDetails || "",
+      ageGroups: coach.ageGroups || [],
+      experienceLevel: coach.experienceLevel,
+      whatsappNumber: coach.whatsappNumber || "",
     });
-    setEditOpen(true);
   }
 
   async function handleSubmitEdit(e: React.FormEvent) {
     e.preventDefault();
-    if (!editForm || !myCoach || myCoach === "none") return;
+    if (!editForm || !editingCoach) return;
     setSubmittingEdit(true);
     try {
       const token = await getAuthToken();
-      const res = await fetch(`${getBaseUrl()}/api/coaches/${myCoach.id}/edit-request`, {
+      const res = await fetch(`${getBaseUrl()}/api/coaches/${editingCoach.id}/edit-request`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -143,8 +143,9 @@ export default function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setPendingEditsState(data.pendingEdits);
-        setEditOpen(false);
+        setPendingEditsOverride(prev => ({ ...prev, [editingCoach.id]: data.pendingEdits }));
+        setEditingCoach(null);
+        setEditForm(null);
         toast({ title: "修改申請已提交", description: "管理員審核後將更新你的個人檔案，通常於 1-2 個工作天內完成。" });
       } else {
         const err = await res.json().catch(() => ({}));
@@ -173,7 +174,10 @@ export default function Dashboard() {
     setSavedCoaches(prev => prev.filter(c => c.id !== coachId));
   }
 
-  const effectivePending = pendingEditsState !== undefined ? pendingEditsState : (myCoach && myCoach !== "none" ? myCoach.pendingEdits ?? null : null);
+  function getEffectivePending(coach: MyCoach): string | null {
+    if (pendingEditsOverride[coach.id] !== undefined) return pendingEditsOverride[coach.id];
+    return coach.pendingEdits ?? null;
+  }
 
   return (
     <Layout>
@@ -189,85 +193,111 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* My Coach Profile section */}
-        {loadingMyCoach ? (
+        {/* My Coach Profiles section */}
+        {loadingMyCoaches ? (
           <Skeleton className="h-36 rounded-2xl mb-8" />
-        ) : myCoach && myCoach !== "none" ? (
-          <Card className="mb-8 border-primary/20 shadow-sm overflow-hidden">
-            <div className="bg-primary/5 px-5 py-3 border-b flex items-center justify-between">
-              <span className="font-semibold text-sm text-primary flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> 我的教練檔案
-              </span>
+        ) : myCoaches.length > 0 ? (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                {myCoach.isApproved ? (
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> 已批准公開
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                    <Clock className="w-3 h-3 mr-1" /> 待審核中
-                  </Badge>
-                )}
-                {effectivePending && (
-                  <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                    <AlertCircle className="w-3 h-3 mr-1" /> 修改待審
-                  </Badge>
-                )}
+                <Trophy className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-bold">我的教練檔案</h2>
+                <Badge variant="secondary">{myCoaches.length}</Badge>
               </div>
+              <Link href="/coach/register">
+                <Button size="sm" variant="outline" className="gap-1.5">
+                  <Plus className="w-4 h-4" /> 新增運動項目
+                </Button>
+              </Link>
             </div>
-            <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16 flex-shrink-0 border-2 border-primary/20">
-                  <AvatarImage src={myCoach.profileImageUrl || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">{myCoach.name[0]}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h2 className="text-lg font-bold">{myCoach.name}</h2>
-                    <Badge variant="secondary" className="text-xs">{myCoach.sportsCategory}</Badge>
-                    {myCoach.isFeatured && (
-                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200">
-                        <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-400" /> 精選教練
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
-                    <MapPin className="w-3.5 h-3.5" /> {myCoach.location}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    體驗堂 <span className="font-semibold text-foreground">${myCoach.trialPrice}</span>
-                    <span className="mx-1.5">·</span>
-                    正課 <span className="font-semibold text-foreground">${myCoach.regularPrice}</span>/小時
-                  </p>
 
-                  {effectivePending && (
-                    <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
-                      <Clock className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-orange-800">你有一份修改申請正在等候管理員審核</p>
-                        <p className="text-xs text-orange-600 mt-0.5">審核完成後你的檔案將會更新，通常於 1-2 個工作天內完成。</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {myCoaches.map(coach => {
+                const pending = getEffectivePending(coach);
+                return (
+                  <Card key={coach.id} className="overflow-hidden border-primary/20 shadow-sm">
+                    <div className="bg-primary/5 px-4 py-2 border-b flex items-center justify-between gap-2">
+                      <Badge variant="secondary" className="text-xs font-medium">{coach.sportsCategory}</Badge>
+                      <div className="flex items-center gap-1.5">
+                        {coach.isApproved ? (
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> 已批准
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            <Clock className="w-3 h-3 mr-1" /> 待審核
+                          </Badge>
+                        )}
+                        {pending && (
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                            <AlertCircle className="w-3 h-3 mr-1" /> 修改待審
+                          </Badge>
+                        )}
+                        {coach.isFeatured && (
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4 flex-wrap">
-                <Link href={`/coaches/${myCoach.id}`}>
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <ExternalLink className="w-3.5 h-3.5" /> 查看個人檔案
-                  </Button>
-                </Link>
-                <Button
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={openEdit}
-                  disabled={!!effectivePending}
-                  title={effectivePending ? "你有一份修改申請正在審核中，請等候完成後再提交新的修改。" : undefined}
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  {effectivePending ? "修改審核中…" : "編輯個人檔案"}
-                </Button>
-              </div>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-primary/10">
+                          <AvatarImage src={coach.profileImageUrl || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">{coach.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">{coach.name}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3" /> {coach.location}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            體驗堂 <span className="font-semibold text-foreground">${coach.trialPrice}</span>
+                            <span className="mx-1">·</span>
+                            正課 <span className="font-semibold text-foreground">${coach.regularPrice}</span>/小時
+                          </p>
+                        </div>
+                      </div>
+
+                      {pending && (
+                        <div className="mt-3 p-2.5 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
+                          <Clock className="w-3.5 h-3.5 text-orange-500 mt-0.5 shrink-0" />
+                          <p className="text-xs text-orange-700">修改申請正等候審核，通常於 1-2 個工作天內完成。</p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 mt-3">
+                        <Link href={`/coaches/${coach.id}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full gap-1 text-xs">
+                            <ExternalLink className="w-3 h-3" /> 查看檔案
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          className="flex-1 gap-1 text-xs"
+                          onClick={() => openEdit(coach)}
+                          disabled={!!pending}
+                          title={pending ? "修改申請審核中，請等候完成後再提交" : undefined}
+                        >
+                          <Pencil className="w-3 h-3" />
+                          {pending ? "審核中…" : "編輯"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        ) : !loadingMyCoaches ? (
+          <Card className="mb-8 border-dashed border-primary/30 bg-primary/5">
+            <CardContent className="p-6 text-center">
+              <Trophy className="h-8 w-8 text-primary/40 mx-auto mb-3" />
+              <p className="font-semibold mb-1">成為運對認證教練</p>
+              <p className="text-sm text-muted-foreground mb-4">提交你的教練資料，接觸更多有需要的學員。</p>
+              <Link href="/coach/register">
+                <Button size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> 登記成為教練</Button>
+              </Link>
             </CardContent>
           </Card>
         ) : null}
@@ -415,14 +445,16 @@ export default function Dashboard() {
       </div>
 
       {/* Edit Profile Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={!!editingCoach} onOpenChange={open => { if (!open) { setEditingCoach(null); setEditForm(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Pencil className="w-5 h-5 text-primary" /> 編輯個人檔案
+              <Pencil className="w-5 h-5 text-primary" />
+              編輯教練檔案
+              {editingCoach && <Badge variant="secondary" className="ml-1">{editingCoach.sportsCategory}</Badge>}
             </DialogTitle>
           </DialogHeader>
-          <div className="p-1 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 mb-1">
+          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 mb-1">
             <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-xs text-amber-800">修改提交後需要管理員審核，通常於 1-2 個工作天內完成。審核期間你的現有檔案將繼續公開顯示。</p>
           </div>
@@ -544,7 +576,7 @@ export default function Dashboard() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>取消</Button>
+                <Button type="button" variant="outline" onClick={() => { setEditingCoach(null); setEditForm(null); }}>取消</Button>
                 <Button type="submit" disabled={submittingEdit}>
                   {submittingEdit ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />提交中…</> : "提交修改申請"}
                 </Button>
