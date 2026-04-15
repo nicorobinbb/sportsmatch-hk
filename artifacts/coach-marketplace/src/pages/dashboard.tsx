@@ -44,7 +44,7 @@ const availabilityLabels: Record<string, string> = {
   weekend_morning: "🌅 週末早上", weekend_afternoon: "🏖 週末下午", weekend_evening: "🌆 週末晚上",
 };
 
-const AGE_GROUP_OPTIONS = ["兒童 (6-12)", "青少年 (13-17)", "成人 (18-40)", "中年 (41-60)", "銀髮族 (60+)"];
+const AGE_GROUP_OPTIONS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
 
 type EditForm = {
   name: string; sportsCategory: string; location: string; bio: string;

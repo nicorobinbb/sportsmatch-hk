@@ -45,7 +45,7 @@ const coachSchema = z.object({
 
 type CoachFormValues = z.infer<typeof coachSchema>;
 
-const AGE_GROUPS = ["兒童（12歲以下）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
+const AGE_GROUPS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
 const COACH_TYPES = ["專業運動員", "持牌教練"];
 
 export default function CoachRegister() {
@@ -386,7 +386,7 @@ export default function CoachRegister() {
                     {/* Coach type checkboxes */}
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium leading-none mb-1">教練身份 <span className="text-destructive">*</span></p>
+                        <p className="text-sm font-medium leading-none mb-1">專業資歷 <span className="text-destructive">*</span></p>
                         <p className="text-xs text-muted-foreground">可同時選擇多項（例如：既是專業運動員，也持有教練牌照）</p>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -416,9 +416,9 @@ export default function CoachRegister() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>資歷</FormLabel>
-                          <FormDescription>列出你的相關認證、牌照或學歷（例如：ACE-CPT, NSCA-CSCS, 香港游泳教練會一級）</FormDescription>
+                          <FormDescription>列出你的相關認證、資格或學歷 </FormDescription>
                           <FormControl>
-                            <Input placeholder="例如：ACE-CPT 認證私人教練、香港體育學院一級游泳教練" {...field} />
+                            <Input placeholder="例如：香港田徑經會一級田徑教練，香港亞運游泳代表隊" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
