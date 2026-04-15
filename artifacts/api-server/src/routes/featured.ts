@@ -23,6 +23,7 @@ router.get("/", async (req, res) => {
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
+        pricingPlans: coachesTable.pricingPlans,
         createdAt: coachesTable.createdAt,
         averageRating: sql<number | null>`AVG(${reviewsTable.rating})`,
         reviewCount: sql<number>`COUNT(DISTINCT ${reviewsTable.id})::int`,
