@@ -39,6 +39,15 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [updatingReport, setUpdatingReport] = useState<number | null>(null);
 
+  type PendingPost = {
+    id: number; coachId: number; caption?: string | null; mediaUrls?: string | null;
+    youtubeUrl?: string | null; isApproved: boolean; isRejected: boolean;
+    rejectionReason?: string | null; createdAt: string; coachName?: string | null; coachSport?: string | null;
+  };
+  const [pendingPosts, setPendingPosts] = useState<PendingPost[]>([]);
+  const [updatingPost, setUpdatingPost] = useState<number | null>(null);
+  const [rejectPostReason, setRejectPostReason] = useState<Record<number, string>>({});
+
   type UserAnalytics = {
     totalUsers: number; onboardedUsers: number; totalWishlists: number;
     topWishlistedCoaches: { coachId: number; coachName?: string; sport?: string; saves: number }[];
@@ -126,6 +135,43 @@ export default function AdminDashboard() {
       }
     } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
     setApprovingEdits(null);
+  }
+
+  async function handleApprovePost(postId: number) {
+    setUpdatingPost(postId);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/admin/posts/${postId}/approve`, {
+        method: "PUT", headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setPendingPosts(prev => prev.filter(p => p.id !== postId));
+        toast({ title: "✅ 動向已批准並公開" });
+      } else {
+        toast({ title: "批准失敗", variant: "destructive" });
+      }
+    } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
+    setUpdatingPost(null);
+  }
+
+  async function handleRejectPost(postId: number) {
+    setUpdatingPost(postId);
+    try {
+      const token = await getAuthToken();
+      const reason = rejectPostReason[postId] || "";
+      const res = await fetch(`${getBaseUrl()}/api/admin/posts/${postId}/reject`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reason }),
+      });
+      if (res.ok) {
+        setPendingPosts(prev => prev.filter(p => p.id !== postId));
+        toast({ title: "動向已拒絕" });
+      } else {
+        toast({ title: "拒絕失敗", variant: "destructive" });
+      }
+    } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
+    setUpdatingPost(null);
   }
 
   async function handleYoutubeApprove(coachId: number) {
@@ -235,6 +281,8 @@ export default function AdminDashboard() {
         .then(r => r.json()).then(d => setAnalytics(d)).catch(() => {});
       fetch(`${getBaseUrl()}/api/admin/reports`, { headers })
         .then(r => r.json()).then(d => setReports(d.reports || [])).catch(() => {});
+      fetch(`${getBaseUrl()}/api/admin/posts/pending`, { headers })
+        .then(r => r.json()).then(d => setPendingPosts(Array.isArray(d) ? d : [])).catch(() => {});
       fetch(`${getBaseUrl()}/api/admin/user-analytics`, { headers })
         .then(r => r.json()).then(d => setUserAnalytics(d)).catch(() => {});
       fetch(`${getBaseUrl()}/api/admin/user-profiles`, { headers })
@@ -495,6 +543,12 @@ export default function AdminDashboard() {
                     <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPhotos.length}</Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="posts" className="flex gap-2 rounded-md">
+                  待審核動向
+                  {pendingPosts.length > 0 && (
+                    <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPosts.length}</Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="coaches" className="space-y-4 mt-0">
@@ -601,6 +655,73 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="posts" className="space-y-4 mt-0">
+                {pendingPosts.length === 0 ? (
+                  <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
+                    暫無待審核的動向。
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {pendingPosts.map(post => {
+                      const images: string[] = (() => { try { return post.mediaUrls ? JSON.parse(post.mediaUrls) : []; } catch { return []; } })();
+                      return (
+                        <div key={post.id} className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden">
+                          <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between gap-3">
+                            <div>
+                              <span className="font-semibold text-sm">{post.coachName || `教練 #${post.coachId}`}</span>
+                              {post.coachSport && <span className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{post.coachSport}</span>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{new Date(post.createdAt).toLocaleDateString("zh-HK")}</span>
+                          </div>
+                          {images.length > 0 && (
+                            <div className={`grid gap-1 ${images.length === 1 ? "grid-cols-1" : images.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                              {images.map((src, i) => (
+                                <div key={i} className={`overflow-hidden bg-slate-100 ${images.length === 1 ? "aspect-[16/9]" : "aspect-square"}`}>
+                                  <img src={src} alt={`動向圖片 ${i + 1}`} className="w-full h-full object-cover" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="p-5 space-y-4">
+                            {post.caption && (
+                              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{post.caption}</p>
+                            )}
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                placeholder="拒絕原因（選填）"
+                                value={rejectPostReason[post.id] ?? ""}
+                                onChange={e => setRejectPostReason(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                className="w-full text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              />
+                              <div className="flex gap-3">
+                                <Button
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                  size="sm"
+                                  onClick={() => handleApprovePost(post.id)}
+                                  disabled={updatingPost === post.id}
+                                >
+                                  {updatingPost === post.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> 批准公開</>}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                                  size="sm"
+                                  onClick={() => handleRejectPost(post.id)}
+                                  disabled={updatingPost === post.id}
+                                >
+                                  <X className="w-4 h-4 mr-1" /> 拒絕
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>

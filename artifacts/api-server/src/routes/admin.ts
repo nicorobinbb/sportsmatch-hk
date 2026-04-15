@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { coachesTable, reviewsTable, photosTable, reportsTable, userProfilesTable, wishlistsTable } from "@workspace/db";
+import { coachesTable, reviewsTable, photosTable, reportsTable, userProfilesTable, wishlistsTable, coachPostsTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { eq, sql, desc, count, ilike, or, and } from "drizzle-orm";
 
@@ -622,6 +622,69 @@ router.patch("/reports/:id", requireAdmin, async (req, res) => {
     res.json({ report: { ...updated, createdAt: updated.createdAt.toISOString() } });
   } catch (err) {
     req.log.error({ err }, "adminUpdateReport error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// --- Coach Posts ---
+
+router.get("/posts/pending", requireAdmin, async (req, res) => {
+  try {
+    const posts = await db
+      .select({
+        id: coachPostsTable.id,
+        coachId: coachPostsTable.coachId,
+        caption: coachPostsTable.caption,
+        mediaUrls: coachPostsTable.mediaUrls,
+        youtubeUrl: coachPostsTable.youtubeUrl,
+        isApproved: coachPostsTable.isApproved,
+        isRejected: coachPostsTable.isRejected,
+        rejectionReason: coachPostsTable.rejectionReason,
+        createdAt: coachPostsTable.createdAt,
+        coachName: coachesTable.name,
+        coachSport: coachesTable.sportsCategory,
+      })
+      .from(coachPostsTable)
+      .leftJoin(coachesTable, eq(coachPostsTable.coachId, coachesTable.id))
+      .where(and(eq(coachPostsTable.isApproved, false), eq(coachPostsTable.isRejected, false)))
+      .orderBy(desc(coachPostsTable.createdAt));
+
+    res.json(posts.map(p => ({ ...p, createdAt: p.createdAt.toISOString() })));
+  } catch (err) {
+    req.log.error({ err }, "adminGetPendingPosts error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/posts/:id/approve", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const [updated] = await db.update(coachPostsTable)
+      .set({ isApproved: true, isRejected: false, rejectionReason: null })
+      .where(eq(coachPostsTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json({ ...updated, createdAt: updated.createdAt.toISOString() });
+  } catch (err) {
+    req.log.error({ err }, "adminApprovePost error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/posts/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const { reason } = req.body;
+    const [updated] = await db.update(coachPostsTable)
+      .set({ isRejected: true, isApproved: false, rejectionReason: reason || null })
+      .where(eq(coachPostsTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json({ ...updated, createdAt: updated.createdAt.toISOString() });
+  } catch (err) {
+    req.log.error({ err }, "adminRejectPost error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

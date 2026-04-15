@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +53,19 @@ export default function CoachProfile() {
   const [youtubeInput, setYoutubeInput] = useState("");
   const [submittingYoutube, setSubmittingYoutube] = useState(false);
   const [youtubePendingState, setYoutubePendingState] = useState<string | null | undefined>(undefined);
+
+  type CoachPost = {
+    id: number; coachId: number; caption?: string | null; mediaUrls?: string | null;
+    youtubeUrl?: string | null; isApproved: boolean; isRejected: boolean;
+    rejectionReason?: string | null; createdAt: string;
+  };
+  const [posts, setPosts] = useState<CoachPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsFetched, setPostsFetched] = useState(false);
+  const [postCreateOpen, setPostCreateOpen] = useState(false);
+  const [newPostCaption, setNewPostCaption] = useState("");
+  const [newPostImages, setNewPostImages] = useState<string[]>([]);
+  const [submittingPost, setSubmittingPost] = useState(false);
 
   const isOwner = !!user && !!coach && (user.id === (coach as unknown as { userId?: string }).userId);
 
@@ -164,6 +177,87 @@ export default function CoachProfile() {
       }).then(r => r.json()).then(d => setIsSaved(!!d.saved));
     });
   }, [id, user]);
+
+  async function fetchPosts() {
+    if (!id || postsLoading) return;
+    setPostsLoading(true);
+    try {
+      const token = await getAuthToken();
+      const url = isOwner && token
+        ? `${getBaseUrl()}/api/posts/coach/${id}/my`
+        : `${getBaseUrl()}/api/posts/coach/${id}`;
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(url, { headers });
+      if (res.ok) setPosts(await res.json());
+    } catch { /* silent */ }
+    setPostsLoading(false);
+    setPostsFetched(true);
+  }
+
+  async function handlePostImageAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || newPostImages.length >= 3) return;
+    e.target.value = "";
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1200;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.8));
+        };
+        img.onerror = reject;
+        img.src = ev.target!.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    setNewPostImages(prev => [...prev, dataUrl]);
+  }
+
+  async function handleCreatePost() {
+    if (!newPostCaption.trim() && newPostImages.length === 0) return;
+    setSubmittingPost(true);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/posts/coach/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ caption: newPostCaption.trim() || null, mediaUrls: newPostImages }),
+      });
+      if (res.ok) {
+        const newPost = await res.json();
+        setPosts(prev => [newPost, ...prev]);
+        setNewPostCaption("");
+        setNewPostImages([]);
+        setPostCreateOpen(false);
+        toast({ title: "動向已發布", description: "管理員審核後將公開顯示，通常於 1-2 個工作天內完成。" });
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast({ title: "發布失敗", description: err.error || "請稍後再試。", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "發布時出錯", variant: "destructive" });
+    }
+    setSubmittingPost(false);
+  }
+
+  async function handleDeletePost(postId: number) {
+    const token = await getAuthToken();
+    const res = await fetch(`${getBaseUrl()}/api/posts/${postId}`, {
+      method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      toast({ title: "動向已刪除" });
+    }
+  }
 
   async function toggleWishlist() {
     if (!user) return;
@@ -348,6 +442,9 @@ export default function CoachProfile() {
                 <div className="relative overflow-hidden border-b mb-6">
                   <TabsList className="flex w-max min-w-full justify-start overflow-x-auto scrollbar-none rounded-none h-auto p-0 bg-transparent">
                     <TabsTrigger value="about" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium">關於教練</TabsTrigger>
+                    <TabsTrigger value="posts" onClick={() => { if (!postsFetched) fetchPosts(); }} className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium flex items-center gap-1.5">
+                      <Newspaper className="w-4 h-4" /> 最新動向
+                    </TabsTrigger>
                     <TabsTrigger value="photos" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium">相片</TabsTrigger>
                     <TabsTrigger value="video" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium flex items-center gap-1.5">
                       <Youtube className="w-4 h-4" /> 影片
@@ -374,6 +471,97 @@ export default function CoachProfile() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="posts" className="animate-in fade-in-50">
+                  <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold font-display flex items-center gap-2">
+                        <Newspaper className="w-5 h-5 text-primary" /> 最新動向
+                      </h3>
+                      {isOwner && (
+                        <Button size="sm" onClick={() => setPostCreateOpen(true)} className="gap-1.5">
+                          <PlusCircle className="w-4 h-4" /> 發布動向
+                        </Button>
+                      )}
+                    </div>
+
+                    {postsLoading ? (
+                      <div className="space-y-4">
+                        {[1, 2].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
+                      </div>
+                    ) : posts.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed">
+                        {isOwner ? (
+                          <div className="space-y-2">
+                            <Newspaper className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                            <p>尚未發布任何動向</p>
+                            <p className="text-xs">點擊「發布動向」按鈕，分享你的訓練日常吧！</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Newspaper className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                            <p>此教練尚未發布任何動向</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {posts.map(post => {
+                          const images: string[] = (() => { try { return post.mediaUrls ? JSON.parse(post.mediaUrls) : []; } catch { return []; } })();
+                          const isPending = !post.isApproved && !post.isRejected;
+                          const isRejected = post.isRejected;
+                          return (
+                            <div key={post.id} className={`rounded-xl border overflow-hidden ${isPending ? "opacity-80" : isRejected ? "opacity-60" : ""}`}>
+                              {images.length > 0 && (
+                                <div className={`grid gap-1 ${images.length === 1 ? "grid-cols-1" : images.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                                  {images.map((src, i) => (
+                                    <div key={i} className={`overflow-hidden bg-slate-100 ${images.length === 1 ? "aspect-[4/3]" : "aspect-square"}`}>
+                                      <img src={src} alt={`動向圖片 ${i + 1}`} className="w-full h-full object-cover" />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="p-4 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(post.createdAt).toLocaleDateString("zh-HK", { year: "numeric", month: "long", day: "numeric" })}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {isOwner && isPending && (
+                                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                        <Clock className="w-3 h-3" /> 審核中
+                                      </Badge>
+                                    )}
+                                    {isOwner && isRejected && (
+                                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">已拒絕</Badge>
+                                    )}
+                                    {isOwner && (
+                                      <button onClick={() => handleDeletePost(post.id)} className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors" title="刪除">
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                {post.caption && (
+                                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{post.caption}</p>
+                                )}
+                                {isOwner && isRejected && post.rejectionReason && (
+                                  <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">拒絕原因：{post.rejectionReason}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {isOwner && (
+                      <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                        💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
+                      </p>
+                    )}
                   </div>
                 </TabsContent>
                 
@@ -787,6 +975,61 @@ export default function CoachProfile() {
               disabled={!reportReason || submittingReport}
             >
               {submittingReport ? "提交中…" : "提交舉報"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Post Dialog */}
+      <Dialog open={postCreateOpen} onOpenChange={open => { setPostCreateOpen(open); if (!open) { setNewPostCaption(""); setNewPostImages([]); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Newspaper className="w-5 h-5 text-primary" /> 發布最新動向
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Textarea
+              value={newPostCaption}
+              onChange={e => setNewPostCaption(e.target.value)}
+              placeholder="分享你的訓練日常、心得或公告…"
+              rows={4}
+              className="resize-none"
+            />
+            {/* Image previews */}
+            {newPostImages.length > 0 && (
+              <div className={`grid gap-2 ${newPostImages.length === 1 ? "grid-cols-1" : newPostImages.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                {newPostImages.map((src, i) => (
+                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden border bg-slate-100 group">
+                    <img src={src} alt={`預覽 ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setNewPostImages(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {newPostImages.length < 3 && (
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-primary hover:underline w-fit">
+                <ImagePlus className="w-4 h-4" />
+                新增相片（最多 3 張）
+                <input type="file" accept="image/*" className="hidden" onChange={handlePostImageAdd} />
+              </label>
+            )}
+            <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+              💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPostCreateOpen(false)}>取消</Button>
+            <Button
+              onClick={handleCreatePost}
+              disabled={(!newPostCaption.trim() && newPostImages.length === 0) || submittingPost}
+            >
+              {submittingPost ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 發布中…</> : "發布動向"}
             </Button>
           </DialogFooter>
         </DialogContent>

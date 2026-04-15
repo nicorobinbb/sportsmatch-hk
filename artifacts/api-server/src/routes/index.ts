@@ -10,6 +10,7 @@ import adminRouter from "./admin";
 import wishlistsRouter from "./wishlists";
 import reportsRouter from "./reports";
 import userProfileRouter from "./userProfile";
+import coachPostsRouter from "./coachPosts";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/user/profile", userProfileRouter);
 router.use("/wishlist", wishlistsRouter);
 router.use("/reports", reportsRouter);
 router.use("/admin", adminRouter);
+router.use("/posts", coachPostsRouter);
 
 export default router;
