@@ -292,6 +292,8 @@ router.get("/:id", async (req, res) => {
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
         whatsappNumber: coachesTable.whatsappNumber,
+        youtubeUrl: coachesTable.youtubeUrl,
+        youtubePending: coachesTable.youtubePending,
         createdAt: coachesTable.createdAt,
         averageRating: sql<number | null>`AVG(${reviewsTable.rating})`,
         reviewCount: sql<number>`COUNT(DISTINCT ${reviewsTable.id})::int`,
@@ -403,6 +405,40 @@ router.post("/:id/photos", async (req, res) => {
     res.status(201).json({ ...photo, createdAt: photo.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "uploadCoachPhoto error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/:id/youtube", async (req, res) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const { youtubeUrl } = req.body;
+
+    const [coach] = await db.select({ userId: coachesTable.userId }).from(coachesTable).where(eq(coachesTable.id, id));
+    if (!coach) return res.status(404).json({ error: "Coach not found" });
+    if (coach.userId !== auth.userId) return res.status(403).json({ error: "Forbidden" });
+
+    if (youtubeUrl && typeof youtubeUrl === "string") {
+      const ytRegex = /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/;
+      if (!ytRegex.test(youtubeUrl.trim())) {
+        return res.status(400).json({ error: "請輸入有效的 YouTube 連結" });
+      }
+    }
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set({ youtubePending: youtubeUrl ? youtubeUrl.trim() : null })
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    res.json({ youtubePending: updated.youtubePending });
+  } catch (err) {
+    req.log.error({ err }, "submitYoutubeUrl error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

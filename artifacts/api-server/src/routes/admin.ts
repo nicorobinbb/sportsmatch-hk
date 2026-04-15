@@ -255,6 +255,8 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         experienceLevel: coachesTable.experienceLevel,
         whatsappNumber: coachesTable.whatsappNumber,
         profileImageUrl: coachesTable.profileImageUrl,
+        youtubeUrl: coachesTable.youtubeUrl,
+        youtubePending: coachesTable.youtubePending,
         createdAt: coachesTable.createdAt,
       })
       .from(coachesTable)
@@ -336,6 +338,47 @@ router.patch("/coaches/:id/featured", requireAdmin, async (req, res) => {
     res.json({ coach: { id: updated.id, isFeatured: updated.isFeatured } });
   } catch (err) {
     req.log.error({ err }, "adminUpdateCoachFeatured error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/coaches/:id/youtube/approve", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [coach] = await db.select({ youtubePending: coachesTable.youtubePending }).from(coachesTable).where(eq(coachesTable.id, id));
+    if (!coach) return res.status(404).json({ error: "Coach not found" });
+    if (!coach.youtubePending) return res.status(400).json({ error: "No pending YouTube URL" });
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set({ youtubeUrl: coach.youtubePending, youtubePending: null })
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    res.json({ youtubeUrl: updated.youtubeUrl, youtubePending: updated.youtubePending });
+  } catch (err) {
+    req.log.error({ err }, "adminApproveYoutube error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/coaches/:id/youtube/reject", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set({ youtubePending: null })
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Coach not found" });
+    res.json({ youtubePending: null });
+  } catch (err) {
+    req.log.error({ err }, "adminRejectYoutube error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

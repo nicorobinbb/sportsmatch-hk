@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2 } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,7 +50,65 @@ export default function CoachProfile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState<{ id: number; imageUrl: string }[]>([]);
 
+  const [youtubeInput, setYoutubeInput] = useState("");
+  const [submittingYoutube, setSubmittingYoutube] = useState(false);
+  const [youtubePendingState, setYoutubePendingState] = useState<string | null | undefined>(undefined);
+
   const isOwner = !!user && !!coach && (user.id === (coach as unknown as { userId?: string }).userId);
+
+  const coachWithYoutube = coach as unknown as { youtubeUrl?: string | null; youtubePending?: string | null } | undefined;
+  const displayedYoutubeUrl = coachWithYoutube?.youtubeUrl ?? null;
+  const displayedYoutubePending = youtubePendingState !== undefined ? youtubePendingState : (coachWithYoutube?.youtubePending ?? null);
+
+  function getYoutubeEmbedId(url: string): string | null {
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes("youtu.be")) return u.pathname.slice(1).split("?")[0];
+      return u.searchParams.get("v");
+    } catch { return null; }
+  }
+
+  async function handleYoutubeSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmittingYoutube(true);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/coaches/${id}/youtube`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ youtubeUrl: youtubeInput.trim() || null }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setYoutubePendingState(data.youtubePending);
+        setYoutubeInput("");
+        toast({ title: youtubeInput.trim() ? "影片連結已提交" : "影片連結已移除", description: youtubeInput.trim() ? "管理員審核後將公開顯示，通常於 1-2 個工作天內完成。" : undefined });
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast({ title: "提交失敗", description: err.error || "請稍後再試。", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "提交時出錯", variant: "destructive" });
+    }
+    setSubmittingYoutube(false);
+  }
+
+  async function handleRemoveYoutubePending() {
+    setSubmittingYoutube(true);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/coaches/${id}/youtube`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ youtubeUrl: null }),
+      });
+      if (res.ok) {
+        setYoutubePendingState(null);
+        toast({ title: "待審核連結已取消" });
+      }
+    } catch { toast({ title: "操作失敗", variant: "destructive" }); }
+    setSubmittingYoutube(false);
+  }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -274,6 +332,10 @@ export default function CoachProfile() {
                 <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent mb-6">
                   <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">關於教練</TabsTrigger>
                   <TabsTrigger value="photos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">相片</TabsTrigger>
+                  <TabsTrigger value="video" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium flex items-center gap-1.5">
+                    <Youtube className="w-4 h-4" /> 影片
+                    {displayedYoutubeUrl && <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />}
+                  </TabsTrigger>
                   <TabsTrigger value="reviews" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">學員評價</TabsTrigger>
                 </TabsList>
                 
@@ -381,6 +443,94 @@ export default function CoachProfile() {
                   </div>
                 </TabsContent>
                 
+                <TabsContent value="video" className="animate-in fade-in-50">
+                  <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border space-y-6">
+                    <h3 className="text-xl font-bold font-display flex items-center gap-2">
+                      <Youtube className="w-5 h-5 text-red-500" /> 教練影片
+                    </h3>
+
+                    {/* Public: show approved YouTube embed */}
+                    {displayedYoutubeUrl && (() => {
+                      const embedId = getYoutubeEmbedId(displayedYoutubeUrl);
+                      return embedId ? (
+                        <div className="rounded-xl overflow-hidden border aspect-video">
+                          <iframe
+                            className="w-full h-full"
+                            src={`https://www.youtube.com/embed/${embedId}`}
+                            title="教練影片"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : null;
+                    })()}
+
+                    {/* Owner: pending notice */}
+                    {isOwner && displayedYoutubePending && (
+                      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                        <Clock className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-amber-800 text-sm">待審核影片連結</p>
+                          <p className="text-amber-700 text-xs mt-0.5 truncate">{displayedYoutubePending}</p>
+                          <p className="text-amber-600 text-xs mt-1">管理員審核後將公開顯示，通常於 1-2 個工作天內完成。</p>
+                        </div>
+                        <button
+                          onClick={handleRemoveYoutubePending}
+                          disabled={submittingYoutube}
+                          className="shrink-0 p-1 rounded hover:bg-amber-100 text-amber-600 transition-colors"
+                          title="取消待審核連結"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Owner: submission form */}
+                    {isOwner && (
+                      <form onSubmit={handleYoutubeSubmit} className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border">
+                        <h4 className="font-semibold text-sm">
+                          {displayedYoutubePending ? "更換影片連結" : displayedYoutubeUrl ? "更換已批准影片" : "提交 YouTube 影片連結"}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          貼上你的 YouTube 影片連結（例如：https://www.youtube.com/watch?v=…）
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={youtubeInput}
+                            onChange={e => setYoutubeInput(e.target.value)}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            className="flex-1 rounded-lg border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          />
+                          <Button type="submit" disabled={submittingYoutube || !youtubeInput.trim()} size="sm">
+                            {submittingYoutube ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            <span className="ml-1.5">提交</span>
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                          💡 影片連結經管理員審核後才會公開顯示，每位教練只可提交一條影片連結。
+                        </p>
+                      </form>
+                    )}
+
+                    {/* No video state for public */}
+                    {!displayedYoutubeUrl && !isOwner && (
+                      <div className="text-center py-12 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed">
+                        <Youtube className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+                        <p>此教練暫未上傳影片。</p>
+                      </div>
+                    )}
+
+                    {/* No video state for owner who hasn't submitted yet */}
+                    {!displayedYoutubeUrl && !displayedYoutubePending && isOwner && (
+                      <div className="text-center py-6 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed">
+                        <Youtube className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+                        <p className="text-sm">在上方提交你的 YouTube 影片連結，讓學員更了解你的教學風格！</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="reviews" className="animate-in fade-in-50 space-y-6">
                   <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border">
                     <div className="flex items-center justify-between mb-6">

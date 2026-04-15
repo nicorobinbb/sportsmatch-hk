@@ -18,6 +18,8 @@ export const coachesTable = pgTable("coaches", {
   isApproved: boolean("is_approved").notNull().default(false),
   profileImageUrl: text("profile_image_url"),
   whatsappNumber: text("whatsapp_number"),
+  youtubeUrl: text("youtube_url"),
+  youtubePending: text("youtube_pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

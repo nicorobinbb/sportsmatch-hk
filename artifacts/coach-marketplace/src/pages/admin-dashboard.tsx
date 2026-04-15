@@ -3,7 +3,7 @@ import { useUser } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminListPendingCoaches, useAdminApproveCoach, useAdminRejectCoach, useAdminListPendingReviews, useAdminApproveReview, useAdminRejectReview, useAdminListPendingPhotos, useAdminApprovePhoto, useAdminRejectPhoto } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight, Star, Pencil, ChevronDown, ChevronUp, Save } from "lucide-react";
+import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight, Star, Pencil, ChevronDown, ChevronUp, Save, Youtube, Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListPendingCoachesQueryKey, getAdminListPendingReviewsQueryKey, getAdminListPendingPhotosQueryKey, getListCoachesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +61,7 @@ export default function AdminDashboard() {
     isApproved: boolean; isFeatured: boolean; trialPrice: number; regularPrice: number;
     experienceLevel: string; whatsappNumber?: string | null;
     profileImageUrl?: string | null; createdAt: string;
+    youtubeUrl?: string | null; youtubePending?: string | null;
   };
   const [allCoaches, setAllCoaches] = useState<CoachRow[]>([]);
   const [coachSearch, setCoachSearch] = useState("");
@@ -76,6 +77,44 @@ export default function AdminDashboard() {
   const [expandedEditId, setExpandedEditId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [approvingYoutube, setApprovingYoutube] = useState<number | null>(null);
+
+  async function handleYoutubeApprove(coachId: number) {
+    setApprovingYoutube(coachId);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/admin/coaches/${coachId}/youtube/approve`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAllCoaches(prev => prev.map(c => c.id === coachId ? { ...c, youtubeUrl: data.youtubeUrl, youtubePending: null } : c));
+        toast({ title: "✅ 影片連結已批准並公開" });
+      } else {
+        toast({ title: "批准失敗", variant: "destructive" });
+      }
+    } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
+    setApprovingYoutube(null);
+  }
+
+  async function handleYoutubeReject(coachId: number) {
+    setApprovingYoutube(coachId);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/admin/coaches/${coachId}/youtube/reject`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setAllCoaches(prev => prev.map(c => c.id === coachId ? { ...c, youtubePending: null } : c));
+        toast({ title: "影片連結已拒絕並移除" });
+      } else {
+        toast({ title: "拒絕失敗", variant: "destructive" });
+      }
+    } catch { toast({ title: "網絡錯誤", variant: "destructive" }); }
+    setApprovingYoutube(null);
+  }
 
   function openEdit(coach: CoachRow) {
     if (expandedEditId === coach.id) {
@@ -572,6 +611,11 @@ export default function AdminDashboard() {
                                   <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-400" /> 精選
                                 </Badge>
                               )}
+                              {coach.youtubePending && (
+                                <Badge variant="outline" className="text-xs bg-red-50 text-red-600 border-red-200">
+                                  <Youtube className="w-3 h-3 mr-1" /> 影片待審
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                               <span>📍 {coach.location}</span>
@@ -739,6 +783,67 @@ export default function AdminDashboard() {
                               儲存更改
                             </button>
                           </div>
+
+                          {/* YouTube approval section */}
+                          {coach.youtubePending && (
+                            <div className="mt-4 pt-4 border-t">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                                <Youtube className="w-3.5 h-3.5 text-red-500" /> 待審核影片連結
+                              </p>
+                              <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                                <Clock className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <a
+                                    href={coach.youtubePending}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:underline truncate block"
+                                  >
+                                    {coach.youtubePending}
+                                  </a>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                  <button
+                                    onClick={() => handleYoutubeApprove(coach.id)}
+                                    disabled={approvingYoutube === coach.id}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {approvingYoutube === coach.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                    批准
+                                  </button>
+                                  <button
+                                    onClick={() => handleYoutubeReject(coach.id)}
+                                    disabled={approvingYoutube === coach.id}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {approvingYoutube === coach.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                                    拒絕
+                                  </button>
+                                </div>
+                              </div>
+                              {coach.youtubeUrl && (
+                                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                  <Check className="w-3 h-3 text-green-500" /> 批准後將取代現有已公開影片連結。
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {coach.youtubeUrl && !coach.youtubePending && (
+                            <div className="mt-4 pt-4 border-t">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <Youtube className="w-3.5 h-3.5 text-green-500" /> 已公開影片
+                              </p>
+                              <a
+                                href={coach.youtubeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline truncate block"
+                              >
+                                {coach.youtubeUrl}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
