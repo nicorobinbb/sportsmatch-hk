@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { coachesTable, reviewsTable, photosTable, reportsTable } from "@workspace/db";
+import { coachesTable, reviewsTable, photosTable, reportsTable, userProfilesTable, wishlistsTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { eq, sql, desc, count, ilike, or } from "drizzle-orm";
 
@@ -346,6 +346,59 @@ router.get("/analytics", requireAdmin, async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "adminAnalytics error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/user-analytics", requireAdmin, async (req, res) => {
+  try {
+    const totalUsers = await db.select({ count: count() }).from(userProfilesTable);
+    const onboardedUsers = await db.select({ count: count() }).from(userProfilesTable)
+      .where(eq(userProfilesTable.onboardingCompleted, true));
+    const totalWishlists = await db.select({ count: count() }).from(wishlistsTable);
+
+    const topWishlistedCoaches = await db
+      .select({
+        coachId: wishlistsTable.coachId,
+        coachName: coachesTable.name,
+        sport: coachesTable.sportsCategory,
+        saves: count(),
+      })
+      .from(wishlistsTable)
+      .leftJoin(coachesTable, eq(wishlistsTable.coachId, coachesTable.id))
+      .groupBy(wishlistsTable.coachId, coachesTable.name, coachesTable.sportsCategory)
+      .orderBy(desc(count()))
+      .limit(10);
+
+    const allProfiles = await db
+      .select({ preferredSports: userProfilesTable.preferredSports, goals: userProfilesTable.goals, preferredDistricts: userProfilesTable.preferredDistricts })
+      .from(userProfilesTable)
+      .where(eq(userProfilesTable.onboardingCompleted, true));
+
+    const sportCounts: Record<string, number> = {};
+    const goalCounts: Record<string, number> = {};
+    const districtCounts: Record<string, number> = {};
+
+    for (const p of allProfiles) {
+      for (const s of p.preferredSports || []) sportCounts[s] = (sportCounts[s] || 0) + 1;
+      for (const g of p.goals || []) goalCounts[g] = (goalCounts[g] || 0) + 1;
+      for (const d of p.preferredDistricts || []) districtCounts[d] = (districtCounts[d] || 0) + 1;
+    }
+
+    const toRanked = (obj: Record<string, number>) =>
+      Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([label, count]) => ({ label, count }));
+
+    res.json({
+      totalUsers: Number(totalUsers[0]?.count ?? 0),
+      onboardedUsers: Number(onboardedUsers[0]?.count ?? 0),
+      totalWishlists: Number(totalWishlists[0]?.count ?? 0),
+      topWishlistedCoaches: topWishlistedCoaches.map(r => ({ ...r, saves: Number(r.saves) })),
+      topSports: toRanked(sportCounts),
+      topGoals: toRanked(goalCounts),
+      topDistricts: toRanked(districtCounts),
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminUserAnalytics error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -39,6 +39,15 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [updatingReport, setUpdatingReport] = useState<number | null>(null);
 
+  type UserAnalytics = {
+    totalUsers: number; onboardedUsers: number; totalWishlists: number;
+    topWishlistedCoaches: { coachId: number; coachName?: string; sport?: string; saves: number }[];
+    topSports: { label: string; count: number }[];
+    topGoals: { label: string; count: number }[];
+    topDistricts: { label: string; count: number }[];
+  };
+  const [userAnalytics, setUserAnalytics] = useState<UserAnalytics | null>(null);
+
   type CoachRow = {
     id: number; name: string; sportsCategory: string; location: string;
     isApproved: boolean; trialPrice: number; regularPrice: number;
@@ -58,6 +67,8 @@ export default function AdminDashboard() {
         .then(r => r.json()).then(d => setAnalytics(d)).catch(() => {});
       fetch(`${getBaseUrl()}/api/admin/reports`, { headers })
         .then(r => r.json()).then(d => setReports(d.reports || [])).catch(() => {});
+      fetch(`${getBaseUrl()}/api/admin/user-analytics`, { headers })
+        .then(r => r.json()).then(d => setUserAnalytics(d)).catch(() => {});
     });
   }, [adminStatus?.isAdmin]);
 
@@ -283,6 +294,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex gap-2">
               <BarChart3 className="w-3.5 h-3.5" /> 平台數據
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex gap-2">
+              <Users className="w-3.5 h-3.5" /> 用戶數據
             </TabsTrigger>
           </TabsList>
 
@@ -521,6 +535,120 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="users">
+            {!userAnalytics ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : (() => {
+              const goalLabels: Record<string, string> = {
+                weight_loss: "💪 減重塑形", muscle_gain: "🏋️ 增肌強壯", competition: "🏆 備戰比賽",
+                fitness: "❤️ 提升健康", skill: "🎯 學習技術", fun: "🎉 興趣娛樂", rehab: "🌿 康復調理",
+              };
+              const onboardingRate = userAnalytics.totalUsers > 0
+                ? Math.round((userAnalytics.onboardedUsers / userAnalytics.totalUsers) * 100)
+                : 0;
+              return (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "已登記用戶", value: userAnalytics.totalUsers, color: "bg-blue-50 border-blue-200 text-blue-800" },
+                      { label: "完成設定用戶", value: userAnalytics.onboardedUsers, color: "bg-green-50 border-green-200 text-green-800" },
+                      { label: "設定完成率", value: `${onboardingRate}%`, color: "bg-purple-50 border-purple-200 text-purple-800" },
+                      { label: "收藏教練次數", value: userAnalytics.totalWishlists, color: "bg-amber-50 border-amber-200 text-amber-800" },
+                    ].map(stat => (
+                      <div key={stat.label} className={`rounded-xl border p-5 ${stat.color}`}>
+                        <p className="text-3xl font-bold mb-1">{stat.value}</p>
+                        <p className="text-sm font-medium opacity-80">{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
+                      <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> 用戶偏好運動（Top 8）</h3>
+                      {userAnalytics.topSports.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">暫無數據</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {userAnalytics.topSports.slice(0, 8).map(item => (
+                            <div key={item.label} className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground w-20 shrink-0 truncate">{item.label}</span>
+                              <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-primary rounded-full" style={{ width: `${Math.max(8, (item.count / userAnalytics.topSports[0].count) * 100)}%` }} />
+                              </div>
+                              <span className="text-sm font-semibold w-8 text-right">{item.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
+                      <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-green-600" /> 用戶訓練目標</h3>
+                      {userAnalytics.topGoals.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">暫無數據</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {userAnalytics.topGoals.map(item => (
+                            <div key={item.label} className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground w-24 shrink-0 truncate">{goalLabels[item.label] || item.label}</span>
+                              <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-green-400 rounded-full" style={{ width: `${Math.max(8, (item.count / userAnalytics.topGoals[0].count) * 100)}%` }} />
+                              </div>
+                              <span className="text-sm font-semibold w-8 text-right">{item.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
+                      <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-amber-500" /> 用戶偏好地區（Top 8）</h3>
+                      {userAnalytics.topDistricts.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">暫無數據</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {userAnalytics.topDistricts.slice(0, 8).map(item => (
+                            <div key={item.label} className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground w-24 shrink-0 truncate">{item.label}</span>
+                              <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-400 rounded-full" style={{ width: `${Math.max(8, (item.count / userAnalytics.topDistricts[0].count) * 100)}%` }} />
+                              </div>
+                              <span className="text-sm font-semibold w-8 text-right">{item.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
+                      <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-red-500" /> 最多人收藏教練</h3>
+                      {userAnalytics.topWishlistedCoaches.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">暫無數據</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {userAnalytics.topWishlistedCoaches.map(item => (
+                            <div key={item.coachId} className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{item.coachName || `Coach #${item.coachId}`}</p>
+                                <p className="text-xs text-muted-foreground">{item.sport}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="h-5 bg-red-100 rounded-full overflow-hidden" style={{ width: `${Math.max(20, (item.saves / userAnalytics.topWishlistedCoaches[0].saves) * 80)}px` }}>
+                                  <div className="h-full bg-red-400 rounded-full w-full" />
+                                </div>
+                                <span className="text-sm font-semibold">{item.saves}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="analytics">
