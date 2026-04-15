@@ -5,6 +5,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, MapPin, CheckCircle2, Crown } from "lucide-react";
 import type { Coach } from "@workspace/api-client-react/src/generated/api.schemas";
 
+type PricingRow = { sessionType: "單對單" | "小組課堂"; price: string; minStudents?: string; maxStudents?: string; duration?: string };
+
+function parsePricingPlans(raw?: string | null): PricingRow[] {
+  try {
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch {}
+  return [];
+}
+
 export function CoachCard({ coach }: { coach: Coach }) {
   return (
     <Link href={`/coaches/${coach.id}`}>
@@ -46,19 +56,61 @@ export function CoachCard({ coach }: { coach: Coach }) {
           <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{coach.bio}</p>
         </CardContent>
 
-        <CardFooter className="bg-slate-50 dark:bg-card-foreground/5 border-t p-4 flex flex-col items-start gap-1">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">明碼實價</div>
-          <div className="flex justify-between w-full items-baseline">
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">體驗堂</span>
-              <span className="font-display font-bold text-primary text-lg">${coach.trialPrice}</span>
-            </div>
-            <div className="w-px h-8 bg-border mx-4" />
-            <div className="flex flex-col text-right">
-              <span className="text-xs text-muted-foreground">正課 / 小時</span>
-              <span className="font-display font-bold text-foreground text-lg">${coach.regularPrice}</span>
-            </div>
-          </div>
+        <CardFooter className="bg-slate-50 dark:bg-card-foreground/5 border-t p-4 flex flex-col items-start gap-2">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">明碼實價</div>
+          {(() => {
+            const rows = parsePricingPlans(coach.pricingPlans);
+            if (rows.length > 0) {
+              const visible = rows.slice(0, 3);
+              const extra = rows.length - visible.length;
+              return (
+                <div className="flex flex-wrap gap-1.5 w-full">
+                  {visible.map((row, i) => {
+                    const isGroup = row.sessionType === "小組課堂";
+                    const students = isGroup && row.maxStudents
+                      ? row.minStudents ? `${row.minStudents}-${row.maxStudents}人` : `≤${row.maxStudents}人`
+                      : null;
+                    const dur = row.duration ? `${row.duration}分` : null;
+                    return (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-foreground shadow-sm"
+                      >
+                        <span>{isGroup ? "👥" : "👤"}</span>
+                        <span className="font-bold text-primary">${row.price}</span>
+                        {students && <span className="text-muted-foreground">· {students}</span>}
+                        {dur && <span className="text-muted-foreground">· {dur}</span>}
+                      </span>
+                    );
+                  })}
+                  {extra > 0 && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-white border border-slate-200 text-xs text-muted-foreground">
+                      +{extra} 更多
+                    </span>
+                  )}
+                </div>
+              );
+            }
+            // Legacy fallback
+            const hasDiscount = Number(coach.trialPrice) < Number(coach.regularPrice);
+            return (
+              <div className="flex items-baseline gap-3 w-full">
+                {hasDiscount && (
+                  <>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">體驗堂</span>
+                      <span className="font-display font-bold text-primary text-lg">${coach.trialPrice}</span>
+                    </div>
+                    <div className="w-px h-8 bg-border" />
+                  </>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground">正課 / 小時</span>
+                  <span className="font-display font-bold text-foreground text-lg">${coach.regularPrice}</span>
+                </div>
+              </div>
+            );
+          })()}
         </CardFooter>
       </Card>
     </Link>
