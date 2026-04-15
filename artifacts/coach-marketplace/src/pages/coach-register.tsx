@@ -265,7 +265,7 @@ export default function CoachRegister() {
                                   <SelectValue placeholder="選擇運動項目" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent position="popper" className="max-h-[40vh] overflow-y-auto">
                                 {["游泳", "瑜伽", "籃球", "網球", "拳擊", "普拉提", "足球", "羽毛球", "跑步", "舞蹈", "高爾夫球", "乒乓球", "體操", "跆拳道", "空手道", "排球", "劍擊", "匹克球", "田徑"].map(sport => (
                                   <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                                 ))}
