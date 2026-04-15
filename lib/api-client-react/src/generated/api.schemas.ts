@@ -26,6 +26,8 @@ export interface Coach {
   /** @nullable */
   profileImageUrl?: string | null;
   /** @nullable */
+  coverPhotoUrl?: string | null;
+  /** @nullable */
   averageRating?: number | null;
   reviewCount: number;
   userId: string;
@@ -68,6 +70,8 @@ export interface CoachDetail {
   isApproved: boolean;
   /** @nullable */
   profileImageUrl?: string | null;
+  /** @nullable */
+  coverPhotoUrl?: string | null;
   /** @nullable */
   averageRating?: number | null;
   reviewCount: number;

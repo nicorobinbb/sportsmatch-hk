@@ -10,7 +10,18 @@ export function CoachCard({ coach }: { coach: Coach }) {
     <Link href={`/coaches/${coach.id}`}>
       <Card className="group overflow-hidden h-full flex flex-col cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 bg-white">
         <CardHeader className="p-0 relative">
-          <div className="h-32 bg-gradient-to-r from-primary/10 to-secondary/10 w-full" />
+          <div className="h-32 w-full relative overflow-hidden bg-gradient-to-r from-primary/20 to-primary/5">
+            {coach.coverPhotoUrl ? (
+              <img src={coach.coverPhotoUrl} alt="封面" className="w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center gap-2 opacity-30">
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">運</div>
+                  <span className="text-lg font-bold text-primary">運對</span>
+                </div>
+              </div>
+            )}
+          </div>
           <div className="absolute top-4 left-4 flex flex-col gap-2">
             {coach.isFeatured && (
               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 text-white font-semibold flex items-center gap-1">

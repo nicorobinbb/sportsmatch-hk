@@ -166,6 +166,7 @@ router.get("/", async (req, res) => {
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
+        coverPhotoUrl: coachesTable.coverPhotoUrl,
         createdAt: coachesTable.createdAt,
         averageRating: sql<number | null>`AVG(${reviewsTable.rating})`,
         reviewCount: sql<number>`COUNT(DISTINCT ${reviewsTable.id})::int`,
@@ -225,6 +226,7 @@ router.post("/", async (req, res) => {
         ageGroups: body.ageGroups,
         experienceLevel: body.experienceLevel,
         profileImageUrl: body.profileImageUrl ?? null,
+        coverPhotoUrl: body.coverPhotoUrl ?? null,
         whatsappNumber: body.whatsappNumber ?? null,
         qualifications: (body as any).qualifications ?? null,
         qualificationProofUrl: (body as any).qualificationProofUrl ?? null,
@@ -328,6 +330,7 @@ router.get("/:id", async (req, res) => {
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
+        coverPhotoUrl: coachesTable.coverPhotoUrl,
         whatsappNumber: coachesTable.whatsappNumber,
         youtubeUrl: coachesTable.youtubeUrl,
         youtubePending: coachesTable.youtubePending,
@@ -458,7 +461,7 @@ router.patch("/:id/edit-request", async (req, res) => {
     if (!coach) return res.status(404).json({ error: "Coach not found" });
     if (coach.userId !== auth.userId) return res.status(403).json({ error: "Forbidden" });
 
-    const allowed = ["name", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl", "qualifications", "qualificationProofUrl", "pricingPlans"];
+    const allowed = ["name", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl", "coverPhotoUrl", "qualifications", "qualificationProofUrl", "pricingPlans"];
     const edits: Record<string, unknown> = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) edits[key] = req.body[key];

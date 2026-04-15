@@ -264,8 +264,24 @@ export default function CoachProfile() {
     <Layout>
       <div className="bg-slate-50 dark:bg-background pb-12 flex-1">
         {/* Header Cover */}
-        <div className="h-48 md:h-64 bg-gradient-to-r from-primary to-secondary w-full relative">
-          <div className="absolute inset-0 bg-black/10" />
+        <div className="h-48 md:h-64 w-full relative overflow-hidden bg-gradient-to-r from-primary to-primary/60">
+          {(coach as any).coverPhotoUrl ? (
+            <img
+              src={(coach as any).coverPhotoUrl}
+              alt="封面"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-black/10" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center gap-3 opacity-25">
+                  <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center font-bold text-2xl text-primary">運</div>
+                  <span className="text-4xl font-bold text-white">運對</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="container px-4 md:px-6 -mt-20 relative z-10">

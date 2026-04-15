@@ -18,6 +18,7 @@ export const coachesTable = pgTable("coaches", {
   isApproved: boolean("is_approved").notNull().default(false),
   isRejected: boolean("is_rejected").notNull().default(false),
   profileImageUrl: text("profile_image_url"),
+  coverPhotoUrl: text("cover_photo_url"),
   whatsappNumber: text("whatsapp_number"),
   youtubeUrl: text("youtube_url"),
   youtubePending: text("youtube_pending"),
