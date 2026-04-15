@@ -89,7 +89,6 @@ export default function Dashboard() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">你好，{user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "用戶"} 👋</h1>
-              <p className="text-sm text-muted-foreground">歡迎返嚟運對</p>
             </div>
           </div>
         </div>
