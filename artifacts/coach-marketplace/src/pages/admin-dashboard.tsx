@@ -48,6 +48,14 @@ export default function AdminDashboard() {
   };
   const [userAnalytics, setUserAnalytics] = useState<UserAnalytics | null>(null);
 
+  type UserProfileRow = {
+    id: number; userId: string; displayName?: string | null;
+    goals: string[]; availability: string[]; preferredDistricts: string[]; preferredSports: string[];
+    onboardingCompleted: boolean; createdAt: string;
+  };
+  const [userProfiles, setUserProfiles] = useState<UserProfileRow[]>([]);
+  const [profileSearch, setProfileSearch] = useState("");
+
   type CoachRow = {
     id: number; name: string; sportsCategory: string; location: string;
     isApproved: boolean; trialPrice: number; regularPrice: number;
@@ -69,6 +77,8 @@ export default function AdminDashboard() {
         .then(r => r.json()).then(d => setReports(d.reports || [])).catch(() => {});
       fetch(`${getBaseUrl()}/api/admin/user-analytics`, { headers })
         .then(r => r.json()).then(d => setUserAnalytics(d)).catch(() => {});
+      fetch(`${getBaseUrl()}/api/admin/user-profiles`, { headers })
+        .then(r => r.json()).then(d => setUserProfiles(d.profiles || [])).catch(() => {});
     });
   }, [adminStatus?.isAdmin]);
 
@@ -545,16 +555,29 @@ export default function AdminDashboard() {
                 weight_loss: "💪 減重塑形", muscle_gain: "🏋️ 增肌強壯", competition: "🏆 備戰比賽",
                 fitness: "❤️ 提升健康", skill: "🎯 學習技術", fun: "🎉 興趣娛樂", rehab: "🌿 康復調理",
               };
+              const availLabels: Record<string, string> = {
+                weekday_morning: "平日早上", weekday_afternoon: "平日下午", weekday_evening: "平日晚上",
+                weekend_morning: "週末早上", weekend_afternoon: "週末下午", weekend_evening: "週末晚上",
+              };
               const onboardingRate = userAnalytics.totalUsers > 0
                 ? Math.round((userAnalytics.onboardedUsers / userAnalytics.totalUsers) * 100)
                 : 0;
+              const filteredProfiles = profileSearch
+                ? userProfiles.filter(p =>
+                    p.userId.toLowerCase().includes(profileSearch.toLowerCase()) ||
+                    p.preferredSports.some(s => s.includes(profileSearch)) ||
+                    p.preferredDistricts.some(d => d.includes(profileSearch))
+                  )
+                : userProfiles;
               return (
-                <div className="space-y-6">
+                <div className="space-y-8">
+
+                  {/* ── Summary stats ── */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
                       { label: "已登記用戶", value: userAnalytics.totalUsers, color: "bg-blue-50 border-blue-200 text-blue-800" },
-                      { label: "完成設定用戶", value: userAnalytics.onboardedUsers, color: "bg-green-50 border-green-200 text-green-800" },
-                      { label: "設定完成率", value: `${onboardingRate}%`, color: "bg-purple-50 border-purple-200 text-purple-800" },
+                      { label: "完成問卷用戶", value: userAnalytics.onboardedUsers, color: "bg-green-50 border-green-200 text-green-800" },
+                      { label: "問卷完成率", value: `${onboardingRate}%`, color: "bg-purple-50 border-purple-200 text-purple-800" },
                       { label: "收藏教練次數", value: userAnalytics.totalWishlists, color: "bg-amber-50 border-amber-200 text-amber-800" },
                     ].map(stat => (
                       <div key={stat.label} className={`rounded-xl border p-5 ${stat.color}`}>
@@ -564,6 +587,7 @@ export default function AdminDashboard() {
                     ))}
                   </div>
 
+                  {/* ── Aggregate charts ── */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
                       <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> 用戶偏好運動（Top 8）</h3>
@@ -646,6 +670,95 @@ export default function AdminDashboard() {
                       )}
                     </div>
                   </div>
+
+                  {/* ── Individual survey responses ── */}
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <h3 className="font-bold text-lg flex items-center gap-2">
+                        <Users className="w-5 h-5 text-primary" /> 個人問卷回應
+                        <Badge variant="secondary">{userProfiles.length}</Badge>
+                      </h3>
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="搜尋用戶ID / 運動 / 地區…"
+                          value={profileSearch}
+                          onChange={e => setProfileSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2 text-sm border rounded-lg bg-white dark:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+                    </div>
+
+                    {filteredProfiles.length === 0 ? (
+                      <div className="text-center py-10 bg-white dark:bg-card rounded-xl border text-muted-foreground text-sm">
+                        {userProfiles.length === 0 ? "暫未有用戶完成問卷。" : "沒有符合的結果。"}
+                      </div>
+                    ) : (
+                      <div className="grid gap-3">
+                        {filteredProfiles.map(profile => (
+                          <div key={profile.id} className="bg-white dark:bg-card rounded-xl border shadow-sm p-5">
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                              <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono text-muted-foreground">
+                                {profile.userId.slice(0, 20)}…
+                              </code>
+                              <Badge variant={profile.onboardingCompleted ? "default" : "outline"}
+                                className={`text-xs ${profile.onboardingCompleted ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500"}`}>
+                                {profile.onboardingCompleted ? "已完成問卷" : "未完成"}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                {new Date(profile.createdAt).toLocaleDateString("zh-HK")}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                              {profile.preferredSports?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">偏好運動</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {profile.preferredSports.map(s => (
+                                      <span key={s} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs">{s}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {profile.goals?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">訓練目標</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {profile.goals.map(g => (
+                                      <span key={g} className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">{goalLabels[g] || g}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {profile.availability?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">可用時間</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {profile.availability.map(a => (
+                                      <span key={a} className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs">{availLabels[a] || a}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {profile.preferredDistricts?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">偏好地區</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {profile.preferredDistricts.map(d => (
+                                      <span key={d} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs">{d}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               );
             })()}

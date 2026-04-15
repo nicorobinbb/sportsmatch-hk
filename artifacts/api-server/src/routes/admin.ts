@@ -350,6 +350,26 @@ router.get("/analytics", requireAdmin, async (req, res) => {
   }
 });
 
+router.get("/user-profiles", requireAdmin, async (req, res) => {
+  try {
+    const profiles = await db
+      .select()
+      .from(userProfilesTable)
+      .orderBy(desc(userProfilesTable.createdAt));
+
+    res.json({
+      profiles: profiles.map(p => ({
+        ...p,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+      }))
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminUserProfiles error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/user-analytics", requireAdmin, async (req, res) => {
   try {
     const totalUsers = await db.select({ count: count() }).from(userProfilesTable);
