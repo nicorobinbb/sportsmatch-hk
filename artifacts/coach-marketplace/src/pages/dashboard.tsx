@@ -17,8 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 type SavedCoach = {
   id: number; name: string; sportsCategory: string; location: string;
   bio: string; trialPrice: number; regularPrice: number; profileImageUrl?: string | null;
-  experienceLevel: string; averageRating?: number | null; reviewCount: number;
-  whatsappNumber?: string | null; savedAt?: string;
+  pricingPlans?: string | null; experienceLevel: string; averageRating?: number | null;
+  reviewCount: number; whatsappNumber?: string | null; savedAt?: string;
 };
 
 type UserProfile = {
@@ -284,11 +284,27 @@ export default function Dashboard() {
                           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3" /> {coach.location}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            體驗堂 <span className="font-semibold text-foreground">${coach.trialPrice}</span>
-                            <span className="mx-1">·</span>
-                            正課 <span className="font-semibold text-foreground">${coach.regularPrice}</span>/小時
-                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(() => {
+                              let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string }> = [];
+                              try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
+                              if (rows.length > 0) {
+                                return rows.slice(0, 3).map((r, i) => (
+                                  <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                    {r.sessionType === "小組課堂" ? "👥" : "👤"}
+                                    ${r.price}{r.duration ? `·${r.duration}分鐘` : ""}{r.sessionType === "小組課堂" && r.minStudents ? `·${r.minStudents}${r.maxStudents ? `-${r.maxStudents}` : ""}人` : ""}
+                                  </span>
+                                ));
+                              }
+                              return (
+                                <span className="text-xs text-muted-foreground">
+                                  體驗堂 <span className="font-semibold text-foreground">${coach.trialPrice}</span>
+                                  <span className="mx-1">·</span>
+                                  正課 <span className="font-semibold text-foreground">${coach.regularPrice}</span>/小時
+                                </span>
+                              );
+                            })()}
+                          </div>
                         </div>
                       </div>
 
@@ -399,7 +415,18 @@ export default function Dashboard() {
                               <Star className="h-3 w-3 fill-current" /> {coach.averageRating.toFixed(1)}
                             </span>
                           )}
-                          <span className="text-xs font-semibold text-primary">體驗堂 ${coach.trialPrice}</span>
+                          {(() => {
+                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string }> = [];
+                            try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
+                            if (rows.length > 0) {
+                              return rows.slice(0, 2).map((r, i) => (
+                                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                  {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration}分鐘` : ""}
+                                </span>
+                              ));
+                            }
+                            return <span className="text-xs font-semibold text-primary">體驗堂 ${coach.trialPrice}</span>;
+                          })()}
                         </div>
                         <div className="flex gap-2 mt-3">
                           <Link href={`/coaches/${coach.id}`} className="flex-1">
@@ -455,7 +482,20 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-sm font-bold text-primary">體驗堂 ${coach.trialPrice}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {(() => {
+                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string }> = [];
+                            try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
+                            if (rows.length > 0) {
+                              return rows.slice(0, 2).map((r, i) => (
+                                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                  {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration}分鐘` : ""}
+                                </span>
+                              ));
+                            }
+                            return <span className="text-sm font-bold text-primary">體驗堂 ${coach.trialPrice}</span>;
+                          })()}
+                        </div>
                         {coach.averageRating && (
                           <span className="flex items-center gap-1 text-xs text-amber-600">
                             <Star className="h-3 w-3 fill-current" /> {coach.averageRating.toFixed(1)}
