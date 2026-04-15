@@ -448,25 +448,14 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="coaches" className="w-full">
+        <Tabs defaultValue="pending" className="w-full">
           <TabsList className="mb-6 flex-wrap h-auto gap-1">
-            <TabsTrigger value="coaches" className="flex gap-2">
-              待審核教練
-              {pendingCoaches && pendingCoaches.length > 0 && (
-                <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingCoaches.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex gap-2">
-              待審核評價
-              {pendingReviews && pendingReviews.length > 0 && (
-                <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingReviews.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="photos" className="flex gap-2">
-              待審核相片
-              {pendingPhotos && pendingPhotos.length > 0 && (
-                <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPhotos.length}</Badge>
-              )}
+            <TabsTrigger value="pending" className="flex gap-2">
+              待審核
+              {(() => {
+                const total = (pendingCoaches?.length ?? 0) + (pendingReviews?.length ?? 0) + (pendingPhotos?.length ?? 0);
+                return total > 0 ? <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{total}</Badge> : null;
+              })()}
             </TabsTrigger>
             <TabsTrigger value="manage" className="flex gap-2">
               <Users className="w-3.5 h-3.5" /> 教練管理
@@ -485,113 +474,137 @@ export default function AdminDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="coaches" className="space-y-4">
-            {pendingCoaches?.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
-                暫無待審核的教練。
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {pendingCoaches?.map(coach => (
-                  <div key={coach.id} className="bg-white dark:bg-card p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between gap-6">
-                    <div className="flex gap-4 flex-1 min-w-0">
-                      {/* Profile photo preview */}
-                      <div className="shrink-0">
-                        {coach.profileImageUrl ? (
-                          <img
-                            src={coach.profileImageUrl}
-                            alt={coach.name}
-                            className="w-20 h-20 rounded-xl object-cover border shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-20 h-20 rounded-xl bg-slate-100 border flex items-center justify-center text-slate-400 text-2xl font-bold">
-                            {coach.name.charAt(0)}
+          <TabsContent value="pending">
+            <Tabs defaultValue="coaches" className="w-full">
+              <TabsList className="mb-4 h-auto gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                <TabsTrigger value="coaches" className="flex gap-2 rounded-md">
+                  待審核教練
+                  {pendingCoaches && pendingCoaches.length > 0 && (
+                    <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingCoaches.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="flex gap-2 rounded-md">
+                  待審核評價
+                  {pendingReviews && pendingReviews.length > 0 && (
+                    <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingReviews.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="photos" className="flex gap-2 rounded-md">
+                  待審核相片
+                  {pendingPhotos && pendingPhotos.length > 0 && (
+                    <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPhotos.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="coaches" className="space-y-4 mt-0">
+                {pendingCoaches?.length === 0 ? (
+                  <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
+                    暫無待審核的教練。
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {pendingCoaches?.map(coach => (
+                      <div key={coach.id} className="bg-white dark:bg-card p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between gap-6">
+                        <div className="flex gap-4 flex-1 min-w-0">
+                          <div className="shrink-0">
+                            {coach.profileImageUrl ? (
+                              <img
+                                src={coach.profileImageUrl}
+                                alt={coach.name}
+                                className="w-20 h-20 rounded-xl object-cover border shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-20 h-20 rounded-xl bg-slate-100 border flex items-center justify-center text-slate-400 text-2xl font-bold">
+                                {coach.name.charAt(0)}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-bold text-lg">{coach.name}</h3>
-                          <Badge variant="secondary">{coach.sportsCategory}</Badge>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-bold text-lg">{coach.name}</h3>
+                              <Badge variant="secondary">{coach.sportsCategory}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{coach.bio}</p>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-muted-foreground">
+                              <span>📍 {coach.location}</span>
+                              <span>體驗堂：${coach.trialPrice}</span>
+                              <span>正課：${coach.regularPrice}</span>
+                              <span>{coach.experienceLevel}</span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{coach.bio}</p>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-muted-foreground">
-                          <span>📍 {coach.location}</span>
-                          <span>體驗堂：${coach.trialPrice}</span>
-                          <span>正課：${coach.regularPrice}</span>
-                          <span>{coach.experienceLevel}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveCoach(coach.id)} disabled={approveCoach.isPending}>
+                            <Check className="w-4 h-4 mr-1" /> 批准
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectCoach(coach.id)} disabled={rejectCoach.isPending}>
+                            <X className="w-4 h-4 mr-1" /> 拒絕
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveCoach(coach.id)} disabled={approveCoach.isPending}>
-                        <Check className="w-4 h-4 mr-1" /> 批准
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectCoach(coach.id)} disabled={rejectCoach.isPending}>
-                        <X className="w-4 h-4 mr-1" /> 拒絕
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                )}
+              </TabsContent>
 
-          <TabsContent value="reviews" className="space-y-4">
-            {pendingReviews?.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
-                暫無待審核的評價。
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {pendingReviews?.map(review => (
-                  <div key={review.id} className="bg-white dark:bg-card p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between gap-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold">{review.userName || "匿名用戶"}</span>
-                        <Badge variant="secondary">評分：{review.rating}/5</Badge>
-                        <span className="text-xs text-muted-foreground">教練 ID：{review.coachId}</span>
+              <TabsContent value="reviews" className="space-y-4 mt-0">
+                {pendingReviews?.length === 0 ? (
+                  <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
+                    暫無待審核的評價。
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {pendingReviews?.map(review => (
+                      <div key={review.id} className="bg-white dark:bg-card p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between gap-6">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold">{review.userName || "匿名用戶"}</span>
+                            <Badge variant="secondary">評分：{review.rating}/5</Badge>
+                            <span className="text-xs text-muted-foreground">教練 ID：{review.coachId}</span>
+                          </div>
+                          <p className="text-sm">{review.comment}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveReview(review.id)} disabled={approveReview.isPending}>
+                            <Check className="w-4 h-4 mr-1" /> 批准
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectReview(review.id)} disabled={rejectReview.isPending}>
+                            <X className="w-4 h-4 mr-1" /> 拒絕
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm">{review.comment}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveReview(review.id)} disabled={approveReview.isPending}>
-                        <Check className="w-4 h-4 mr-1" /> 批准
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectReview(review.id)} disabled={rejectReview.isPending}>
-                        <X className="w-4 h-4 mr-1" /> 拒絕
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                )}
+              </TabsContent>
 
-          <TabsContent value="photos" className="space-y-4">
-            {pendingPhotos?.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
-                暫無待審核的相片。
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {pendingPhotos?.map(photo => (
-                  <div key={photo.id} className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col">
-                    <div className="aspect-square bg-slate-100">
-                      <img src={photo.imageUrl} alt="Pending approval" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-4 flex justify-between gap-2 bg-slate-50 border-t">
-                      <Button variant="outline" size="sm" className="flex-1 text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApprovePhoto(photo.id)} disabled={approvePhoto.isPending}>
-                        <Check className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectPhoto(photo.id)} disabled={rejectPhoto.isPending}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
+              <TabsContent value="photos" className="space-y-4 mt-0">
+                {pendingPhotos?.length === 0 ? (
+                  <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
+                    暫無待審核的相片。
                   </div>
-                ))}
-              </div>
-            )}
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {pendingPhotos?.map(photo => (
+                      <div key={photo.id} className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col">
+                        <div className="aspect-square bg-slate-100">
+                          <img src={photo.imageUrl} alt="Pending approval" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="p-4 flex justify-between gap-2 bg-slate-50 border-t">
+                          <Button variant="outline" size="sm" className="flex-1 text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApprovePhoto(photo.id)} disabled={approvePhoto.isPending}>
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleRejectPhoto(photo.id)} disabled={rejectPhoto.isPending}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="manage">
