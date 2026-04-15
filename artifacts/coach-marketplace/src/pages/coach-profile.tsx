@@ -629,7 +629,7 @@ export default function CoachProfile() {
                 </div>
                 <CardContent className="p-5 space-y-4">
                   {(() => {
-                    type PlanRow = { sessionType: string; price: string; maxStudents: string; duration: string };
+                    type PlanRow = { sessionType: string; price: string; minStudents?: string; maxStudents: string; duration: string };
                     let plans: PlanRow[] | null = null;
                     try { if ((coach as any).pricingPlans) plans = JSON.parse((coach as any).pricingPlans); } catch {}
 
@@ -654,7 +654,13 @@ export default function CoachProfile() {
                                     </span>
                                   </td>
                                   <td className="px-3 py-2.5 text-center text-muted-foreground">
-                                    {row.sessionType === "單對單" ? "1" : `最多 ${row.maxStudents}`}
+                                    {row.sessionType === "單對單"
+                                      ? "1"
+                                      : row.minStudents && row.maxStudents
+                                        ? `${row.minStudents}–${row.maxStudents}`
+                                        : row.maxStudents
+                                          ? `最多 ${row.maxStudents}`
+                                          : "—"}
                                   </td>
                                   <td className="px-3 py-2.5 text-center text-muted-foreground">{row.duration} 分鐘</td>
                                   <td className="px-3 py-2.5 text-right font-display font-bold text-primary text-base">${row.price}</td>

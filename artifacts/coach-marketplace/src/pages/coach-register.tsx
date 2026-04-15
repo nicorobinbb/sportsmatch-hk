@@ -75,8 +75,8 @@ export default function CoachRegister() {
     },
   });
 
-  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; maxStudents: string; duration: string; };
-  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", maxStudents: "", duration: "" });
+  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string; };
+  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "" });
   const [pricingRows, setPricingRows] = useState<PricingRow[]>([newRow()]);
   const [pricingError, setPricingError] = useState("");
 
@@ -621,7 +621,7 @@ export default function CoachRegister() {
                             <p className="text-xs text-muted-foreground mb-1">課堂形式</p>
                             <Select
                               value={row.sessionType}
-                              onValueChange={v => updateRow(row.id, { sessionType: v as "單對單" | "小組課堂", maxStudents: "" })}
+                              onValueChange={v => updateRow(row.id, { sessionType: v as "單對單" | "小組課堂", minStudents: "", maxStudents: "" })}
                             >
                               <SelectTrigger className="bg-white">
                                 <SelectValue />
@@ -633,22 +633,38 @@ export default function CoachRegister() {
                             </Select>
                           </div>
 
-                          {/* Max students — only for 小組課堂 */}
+                          {/* Min / Max students — only for 小組課堂 */}
                           {row.sessionType === "小組課堂" && (
-                            <div className="flex-1 min-w-[110px]">
-                              <p className="text-xs text-muted-foreground mb-1">最多學生人數</p>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min={2}
-                                  placeholder="例如：6"
-                                  className="pr-8 bg-white"
-                                  value={row.maxStudents}
-                                  onChange={e => updateRow(row.id, { maxStudents: e.target.value })}
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">人</span>
+                            <>
+                              <div className="flex-1 min-w-[100px]">
+                                <p className="text-xs text-muted-foreground mb-1">最少學生人數</p>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    min={2}
+                                    placeholder="例如：2"
+                                    className="pr-8 bg-white"
+                                    value={row.minStudents}
+                                    onChange={e => updateRow(row.id, { minStudents: e.target.value })}
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">人</span>
+                                </div>
                               </div>
-                            </div>
+                              <div className="flex-1 min-w-[100px]">
+                                <p className="text-xs text-muted-foreground mb-1">最多學生人數</p>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    min={2}
+                                    placeholder="例如：6"
+                                    className="pr-8 bg-white"
+                                    value={row.maxStudents}
+                                    onChange={e => updateRow(row.id, { maxStudents: e.target.value })}
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">人</span>
+                                </div>
+                              </div>
+                            </>
                           )}
 
                           {/* Duration */}
