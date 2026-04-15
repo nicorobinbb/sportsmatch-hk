@@ -475,6 +475,9 @@ components:
           type: number
         packageDetails:
           type: ["string", "null"]
+        pricingPlans:
+          type: ["string", "null"]
+          nullable: true
         ageGroups:
           type: array
           items:
@@ -486,6 +489,8 @@ components:
         isApproved:
           type: boolean
         profileImageUrl:
+          type: ["string", "null"]
+        coverPhotoUrl:
           type: ["string", "null"]
         averageRating:
           type: ["number", "null"]
@@ -530,6 +535,9 @@ components:
           type: number
         packageDetails:
           type: ["string", "null"]
+        pricingPlans:
+          type: ["string", "null"]
+          nullable: true
         ageGroups:
           type: array
           items:
@@ -541,6 +549,10 @@ components:
         isApproved:
           type: boolean
         profileImageUrl:
+          type: ["string", "null"]
+        coverPhotoUrl:
+          type: ["string", "null"]
+        qualifications:
           type: ["string", "null"]
         averageRating:
           type: ["number", "null"]

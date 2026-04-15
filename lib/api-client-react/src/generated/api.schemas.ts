@@ -66,6 +66,8 @@ export interface CoachDetail {
   regularPrice: number;
   /** @nullable */
   packageDetails?: string | null;
+  /** @nullable */
+  pricingPlans?: string | null;
   ageGroups: string[];
   experienceLevel: string;
   isFeatured: boolean;
@@ -76,8 +78,6 @@ export interface CoachDetail {
   coverPhotoUrl?: string | null;
   /** @nullable */
   qualifications?: string | null;
-  /** @nullable */
-  pricingPlans?: string | null;
   /** @nullable */
   averageRating?: number | null;
   reviewCount: number;
@@ -149,7 +149,6 @@ export type ListCoachesParams = {
   sport?: string;
   location?: string;
   search?: string;
-  coachType?: string;
   limit?: number;
   offset?: number;
 };

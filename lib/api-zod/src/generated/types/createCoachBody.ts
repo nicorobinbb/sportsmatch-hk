@@ -17,5 +17,4 @@ export interface CreateCoachBody {
   ageGroups: string[];
   experienceLevel: string;
   profileImageUrl?: string;
-  whatsappNumber?: string;
 }

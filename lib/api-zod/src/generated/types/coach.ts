@@ -16,6 +16,8 @@ export interface Coach {
   regularPrice: number;
   /** @nullable */
   packageDetails?: string | null;
+  /** @nullable */
+  pricingPlans?: string | null;
   ageGroups: string[];
   experienceLevel: string;
   isFeatured: boolean;
@@ -23,7 +25,7 @@ export interface Coach {
   /** @nullable */
   profileImageUrl?: string | null;
   /** @nullable */
-  whatsappNumber?: string | null;
+  coverPhotoUrl?: string | null;
   /** @nullable */
   averageRating?: number | null;
   reviewCount: number;

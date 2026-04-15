@@ -18,12 +18,18 @@ export interface CoachDetail {
   regularPrice: number;
   /** @nullable */
   packageDetails?: string | null;
+  /** @nullable */
+  pricingPlans?: string | null;
   ageGroups: string[];
   experienceLevel: string;
   isFeatured: boolean;
   isApproved: boolean;
   /** @nullable */
   profileImageUrl?: string | null;
+  /** @nullable */
+  coverPhotoUrl?: string | null;
+  /** @nullable */
+  qualifications?: string | null;
   /** @nullable */
   averageRating?: number | null;
   reviewCount: number;
