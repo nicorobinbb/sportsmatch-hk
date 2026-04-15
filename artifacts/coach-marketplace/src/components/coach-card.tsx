@@ -70,7 +70,7 @@ export function CoachCard({ coach }: { coach: Coach }) {
                     const students = isGroup && row.maxStudents
                       ? row.minStudents ? `${row.minStudents}-${row.maxStudents}人` : `≤${row.maxStudents}人`
                       : null;
-                    const dur = row.duration ? `${row.duration}分` : null;
+                    const dur = row.duration ? `${row.duration}分鐘` : null;
                     return (
                       <span
                         key={i}
