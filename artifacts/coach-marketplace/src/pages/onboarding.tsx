@@ -6,7 +6,7 @@ import { useUser } from "@clerk/react";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 
-const SPORTS = ["游泳", "瑜伽", "籃球", "網球", "拳擊", "普拉提", "足球", "羽毛球", "跑步", "舞蹈", "高爾夫球", "乒乓球", "體操", "跆拳道", "空手道", "排球", "劍擊", "個人訓練", "田徑"];
+const SPORTS = ["游泳", "瑜伽", "籃球", "網球", "拳擊", "普拉提", "足球", "羽毛球", "跑步", "舞蹈", "高爾夫球", "乒乓球", "體操", "跆拳道", "空手道", "排球", "劍擊", "匹克球", "田徑"];
 
 const GOALS = [
   { id: "weight_loss", label: "💪 減重塑形", desc: "健康瘦身、改善體態" },
