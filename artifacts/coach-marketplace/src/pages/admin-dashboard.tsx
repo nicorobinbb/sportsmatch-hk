@@ -3,7 +3,7 @@ import { useUser } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminListPendingCoaches, useAdminApproveCoach, useAdminRejectCoach, useAdminListPendingReviews, useAdminApproveReview, useAdminRejectReview, useAdminListPendingPhotos, useAdminApprovePhoto, useAdminRejectPhoto } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag } from "lucide-react";
+import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListPendingCoachesQueryKey, getAdminListPendingReviewsQueryKey, getAdminListPendingPhotosQueryKey, getListCoachesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,17 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [updatingReport, setUpdatingReport] = useState<number | null>(null);
 
+  type CoachRow = {
+    id: number; name: string; sportsCategory: string; location: string;
+    isApproved: boolean; trialPrice: number; regularPrice: number;
+    experienceLevel: string; whatsappNumber?: string | null; createdAt: string;
+  };
+  const [allCoaches, setAllCoaches] = useState<CoachRow[]>([]);
+  const [coachSearch, setCoachSearch] = useState("");
+  const [coachFilter, setCoachFilter] = useState<"all" | "active" | "inactive">("all");
+  const [togglingCoach, setTogglingCoach] = useState<number | null>(null);
+  const [loadingCoaches, setLoadingCoaches] = useState(false);
+
   useEffect(() => {
     if (!adminStatus?.isAdmin) return;
     getAuthToken().then(token => {
@@ -49,6 +60,37 @@ export default function AdminDashboard() {
         .then(r => r.json()).then(d => setReports(d.reports || [])).catch(() => {});
     });
   }, [adminStatus?.isAdmin]);
+
+  useEffect(() => {
+    if (!adminStatus?.isAdmin) return;
+    setLoadingCoaches(true);
+    const params = new URLSearchParams();
+    if (coachSearch) params.set("search", coachSearch);
+    else params.set("status", coachFilter);
+    getAuthToken().then(token => {
+      fetch(`${getBaseUrl()}/api/admin/coaches/all?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(r => r.json()).then(d => {
+        setAllCoaches(d.coaches || []);
+        setLoadingCoaches(false);
+      }).catch(() => setLoadingCoaches(false));
+    });
+  }, [adminStatus?.isAdmin, coachSearch, coachFilter]);
+
+  async function toggleCoachStatus(id: number, current: boolean) {
+    setTogglingCoach(id);
+    const token = await getAuthToken();
+    const res = await fetch(`${getBaseUrl()}/api/admin/coaches/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ isApproved: !current }),
+    });
+    if (res.ok) {
+      setAllCoaches(prev => prev.map(c => c.id === id ? { ...c, isApproved: !current } : c));
+      toast({ title: !current ? "教練已啟用" : "教練已停用" });
+    }
+    setTogglingCoach(null);
+  }
 
   async function updateReport(id: number, status: string) {
     setUpdatingReport(id);
@@ -230,6 +272,9 @@ export default function AdminDashboard() {
                 <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPhotos.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="manage" className="flex gap-2">
+              <Users className="w-3.5 h-3.5" /> 教練管理
+            </TabsTrigger>
             <TabsTrigger value="reports" className="flex gap-2">
               <Flag className="w-3.5 h-3.5" /> 舉報管理
               {reports.filter(r => r.status === "pending").length > 0 && (
@@ -331,6 +376,100 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="manage">
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="搜尋教練姓名、運動或地區…"
+                    value={coachSearch}
+                    onChange={e => setCoachSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm border rounded-lg bg-white dark:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  {(["all", "active", "inactive"] as const).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => { setCoachFilter(f); setCoachSearch(""); }}
+                      className={`px-3 py-2 text-sm rounded-lg border font-medium transition-all ${coachFilter === f && !coachSearch ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border hover:border-primary/50"}`}
+                    >
+                      {f === "all" ? "全部" : f === "active" ? "已啟用" : "已停用"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-xs text-muted-foreground">
+                共 {allCoaches.length} 位教練 · 啟用 {allCoaches.filter(c => c.isApproved).length} · 停用 {allCoaches.filter(c => !c.isApproved).length}
+              </div>
+
+              {loadingCoaches ? (
+                <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+              ) : allCoaches.length === 0 ? (
+                <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">沒有符合的教練。</div>
+              ) : (
+                <div className="grid gap-3">
+                  {allCoaches.map(coach => (
+                    <div key={coach.id} className="bg-white dark:bg-card rounded-xl border shadow-sm px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-semibold">{coach.name}</span>
+                          <Badge variant="secondary" className="text-xs">{coach.sportsCategory}</Badge>
+                          <Badge
+                            variant={coach.isApproved ? "default" : "outline"}
+                            className={`text-xs ${coach.isApproved ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}
+                          >
+                            {coach.isApproved ? "已啟用" : "已停用"}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                          <span>📍 {coach.location}</span>
+                          <span>體驗堂 ${coach.trialPrice} · 正課 ${coach.regularPrice}</span>
+                          <span>{coach.experienceLevel}</span>
+                          {coach.whatsappNumber && (
+                            <a href={`https://wa.me/${coach.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
+                              WA: {coach.whatsappNumber}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => toggleCoachStatus(coach.id, coach.isApproved)}
+                          disabled={togglingCoach === coach.id}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                            coach.isApproved
+                              ? "border-red-200 text-red-600 hover:bg-red-50"
+                              : "border-green-200 text-green-600 hover:bg-green-50"
+                          }`}
+                        >
+                          {togglingCoach === coach.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : coach.isApproved ? (
+                            <><ToggleRight className="w-4 h-4" /> 停用</>
+                          ) : (
+                            <><ToggleLeft className="w-4 h-4" /> 啟用</>
+                          )}
+                        </button>
+                        <a
+                          href={`/coaches/${coach.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 rounded-lg text-sm border border-border hover:bg-muted transition-colors text-muted-foreground"
+                        >
+                          查看
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-4">

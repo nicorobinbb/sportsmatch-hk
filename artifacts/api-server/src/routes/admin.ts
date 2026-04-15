@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { coachesTable, reviewsTable, photosTable, reportsTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
-import { eq, sql, desc, count } from "drizzle-orm";
+import { eq, sql, desc, count, ilike, or } from "drizzle-orm";
 
 const router = Router();
 
@@ -233,6 +233,86 @@ router.post("/photos/:id/reject", requireAdmin, async (req, res) => {
     res.json({ ...photo, createdAt: photo.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "adminRejectPhoto error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/coaches/all", requireAdmin, async (req, res) => {
+  try {
+    const search = (req.query.search as string) || "";
+    const status = (req.query.status as string) || "all";
+
+    let query = db
+      .select({
+        id: coachesTable.id,
+        name: coachesTable.name,
+        sportsCategory: coachesTable.sportsCategory,
+        location: coachesTable.location,
+        isApproved: coachesTable.isApproved,
+        trialPrice: coachesTable.trialPrice,
+        regularPrice: coachesTable.regularPrice,
+        experienceLevel: coachesTable.experienceLevel,
+        whatsappNumber: coachesTable.whatsappNumber,
+        createdAt: coachesTable.createdAt,
+      })
+      .from(coachesTable)
+      .$dynamic();
+
+    if (search) {
+      query = query.where(
+        or(
+          ilike(coachesTable.name, `%${search}%`),
+          ilike(coachesTable.sportsCategory, `%${search}%`),
+          ilike(coachesTable.location, `%${search}%`)
+        )
+      );
+    } else if (status === "active") {
+      query = query.where(eq(coachesTable.isApproved, true));
+    } else if (status === "inactive") {
+      query = query.where(eq(coachesTable.isApproved, false));
+    }
+
+    const coaches = await query.orderBy(desc(coachesTable.createdAt));
+
+    res.json({
+      coaches: coaches.map(c => ({
+        ...c,
+        trialPrice: parseFloat(c.trialPrice as unknown as string),
+        regularPrice: parseFloat(c.regularPrice as unknown as string),
+        createdAt: c.createdAt.toISOString(),
+      }))
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminListAllCoaches error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/coaches/:id/status", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const { isApproved } = req.body;
+    if (typeof isApproved !== "boolean") return res.status(400).json({ error: "isApproved must be boolean" });
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set({ isApproved })
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Coach not found" });
+
+    res.json({
+      coach: {
+        ...updated,
+        trialPrice: parseFloat(updated.trialPrice as unknown as string),
+        regularPrice: parseFloat(updated.regularPrice as unknown as string),
+        createdAt: updated.createdAt.toISOString(),
+      }
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminUpdateCoachStatus error");
     res.status(500).json({ error: "Internal server error" });
   }
 });
