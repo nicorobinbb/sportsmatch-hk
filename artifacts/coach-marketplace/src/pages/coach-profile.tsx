@@ -622,7 +622,7 @@ export default function CoachProfile() {
             </div>
 
             {/* Right Column: Pricing Card */}
-            <div className="w-full md:w-80 lg:w-96 shrink-0 md:sticky md:top-24">
+            <div className="w-full md:w-80 lg:w-96 shrink-0 md:sticky md:top-24 flex flex-col gap-4">
               <Card className="border-primary/20 shadow-lg overflow-hidden">
                 <div className="bg-primary/5 p-4 border-b text-center">
                   <span className="font-display font-bold text-primary tracking-wide">明碼實價</span>
