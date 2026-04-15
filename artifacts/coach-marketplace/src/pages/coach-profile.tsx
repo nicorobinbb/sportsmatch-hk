@@ -329,15 +329,17 @@ export default function CoachProfile() {
               </div>
 
               <Tabs defaultValue="about" className="w-full">
-                <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent mb-6">
-                  <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">關於教練</TabsTrigger>
-                  <TabsTrigger value="photos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">相片</TabsTrigger>
-                  <TabsTrigger value="video" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium flex items-center gap-1.5">
-                    <Youtube className="w-4 h-4" /> 影片
-                    {displayedYoutubeUrl && <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />}
-                  </TabsTrigger>
-                  <TabsTrigger value="reviews" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-6 text-base font-medium">學員評價</TabsTrigger>
-                </TabsList>
+                <div className="relative overflow-hidden border-b mb-6">
+                  <TabsList className="flex w-max min-w-full justify-start overflow-x-auto scrollbar-none rounded-none h-auto p-0 bg-transparent">
+                    <TabsTrigger value="about" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium">關於教練</TabsTrigger>
+                    <TabsTrigger value="photos" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium">相片</TabsTrigger>
+                    <TabsTrigger value="video" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium flex items-center gap-1.5">
+                      <Youtube className="w-4 h-4" /> 影片
+                      {displayedYoutubeUrl && <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />}
+                    </TabsTrigger>
+                    <TabsTrigger value="reviews" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium">學員評價</TabsTrigger>
+                  </TabsList>
+                </div>
                 
                 <TabsContent value="about" className="space-y-6 animate-in fade-in-50">
                   <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border">
