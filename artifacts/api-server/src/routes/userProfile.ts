@@ -21,26 +21,36 @@ router.put("/", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const { displayName, goals, availability, preferredDistricts, preferredSports, onboardingCompleted } = req.body;
+  const { firstName, lastName, displayName, goals, availability, preferredDistricts, preferredSports, onboardingCompleted } = req.body;
 
   const existing = await db.select().from(userProfilesTable)
     .where(eq(userProfilesTable.userId, userId));
 
+  const resolvedDisplayName = displayName !== undefined
+    ? displayName
+    : (firstName || lastName)
+      ? `${firstName ?? ""} ${lastName ?? ""}`.trim()
+      : (existing[0]?.displayName ?? null);
+
   if (existing.length === 0) {
     const [profile] = await db.insert(userProfilesTable).values({
       userId,
-      displayName: displayName || null,
-      goals: goals || [],
-      availability: availability || [],
-      preferredDistricts: preferredDistricts || [],
-      preferredSports: preferredSports || [],
+      firstName: firstName ?? null,
+      lastName: lastName ?? null,
+      displayName: resolvedDisplayName,
+      goals: goals ?? [],
+      availability: availability ?? [],
+      preferredDistricts: preferredDistricts ?? [],
+      preferredSports: preferredSports ?? [],
       onboardingCompleted: onboardingCompleted ?? false,
     }).returning();
     return res.json({ profile });
   } else {
     const [profile] = await db.update(userProfilesTable)
       .set({
-        displayName: displayName !== undefined ? displayName : existing[0].displayName,
+        firstName: firstName !== undefined ? firstName : existing[0].firstName,
+        lastName: lastName !== undefined ? lastName : existing[0].lastName,
+        displayName: resolvedDisplayName,
         goals: goals !== undefined ? goals : existing[0].goals,
         availability: availability !== undefined ? availability : existing[0].availability,
         preferredDistricts: preferredDistricts !== undefined ? preferredDistricts : existing[0].preferredDistricts,
