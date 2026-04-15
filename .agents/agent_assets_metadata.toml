@@ -1,0 +1,62 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "0IZ54aUFpxsmAIs8jGmLw"
+uri = "file://artifacts/coach-marketplace/public/covers/swimming.png"
+type = "image"
+title = "swimming pool cover"
+
+[[generated]]
+id = "Nmm1gkYck-rZreDFi6s2a"
+uri = "file://artifacts/coach-marketplace/public/covers/basketball.png"
+type = "image"
+title = "basketball court cover"
+
+[[generated]]
+id = "geZPuo8Ttsa5HORKcw8Sr"
+uri = "file://artifacts/coach-marketplace/public/covers/boxing.png"
+type = "image"
+title = "boxing gym cover"
+
+[[generated]]
+id = "u-lEUfMHDIrTLIcPgHU54"
+uri = "file://artifacts/coach-marketplace/public/covers/football.png"
+type = "image"
+title = "football pitch cover"
+
+[[generated]]
+id = "YIh_XkZE3_0pHhqQbvViA"
+uri = "file://artifacts/coach-marketplace/public/covers/running.png"
+type = "image"
+title = "running track cover"
+
+[[generated]]
+id = "FYdOjP0Od3rFMJulenieu"
+uri = "file://artifacts/coach-marketplace/public/covers/golf.png"
+type = "image"
+title = "golf course cover"
+
+[[generated]]
+id = "79jF3JvSsjxhvgSvLEF1U"
+uri = "file://artifacts/coach-marketplace/public/covers/tabletennis.png"
+type = "image"
+title = "table tennis cover"
+
+[[generated]]
+id = "XRA9WzI5CL5lyeUyUZCR5"
+uri = "file://artifacts/coach-marketplace/public/covers/taekwondo.png"
+type = "image"
+title = "taekwondo dojo cover"
+
+[[generated]]
+id = "Se-481VTdsPIDi0shZ8o-"
+uri = "file://artifacts/coach-marketplace/public/covers/gym.png"
+type = "image"
+title = "gym personal training cover"
+
+[[generated]]
+id = "FLHFVFHli8PwR3nBVcrEO"
+uri = "file://artifacts/coach-marketplace/public/covers/fencing.png"
+type = "image"
+title = "fencing arena cover"
