@@ -65,7 +65,8 @@ export default function AdminDashboard() {
   const [userProfiles, setUserProfiles] = useState<UserProfileRow[]>([]);
   const [profileSearch, setProfileSearch] = useState("");
 
-  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string };
+  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string; ageGroup?: string };
+  const AGE_GROUP_PRICING_OPTIONS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
   type QualEntry = { text: string; proofUrl: string };
 
   type CoachRow = {
@@ -91,7 +92,7 @@ export default function AdminDashboard() {
     pricingRows: PricingRow[];
     qualList: QualEntry[];
   };
-  const newPricingRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "" });
+  const newPricingRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "", ageGroup: "" });
   const [expandedEditId, setExpandedEditId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -236,11 +237,11 @@ export default function AdminDashboard() {
       const regular = Number(coach.regularPrice);
       if (trial > 0 && trial !== regular) {
         pricingRows = [
-          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "" },
-          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" },
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "", ageGroup: "" },
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "", ageGroup: "" },
         ];
       } else if (regular > 0) {
-        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" }];
+        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "", ageGroup: "" }];
       } else {
         pricingRows = [newPricingRow()];
       }
@@ -1041,6 +1042,16 @@ export default function AdminDashboard() {
                                       </div>
                                     </>
                                   )}
+                                  <div className="col-span-10 sm:col-span-3">
+                                    <select
+                                      value={row.ageGroup ?? ""}
+                                      onChange={e => setEditDraft(d => d ? { ...d, pricingRows: d.pricingRows.map(r => r.id === row.id ? { ...r, ageGroup: e.target.value } : r) } : d)}
+                                      className="w-full px-2 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    >
+                                      <option value="">所有年齡（選填）</option>
+                                      {AGE_GROUP_PRICING_OPTIONS.map(ag => <option key={ag} value={ag}>{ag}</option>)}
+                                    </select>
+                                  </div>
                                   <div className="col-span-2 sm:col-span-1 flex justify-end">
                                     <button
                                       onClick={() => setEditDraft(d => d && d.pricingRows.length > 1 ? { ...d, pricingRows: d.pricingRows.filter(r => r.id !== row.id) } : d)}

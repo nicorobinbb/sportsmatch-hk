@@ -26,9 +26,10 @@ type UserProfile = {
   onboardingCompleted: boolean;
 };
 
-type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string };
+type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string; ageGroup?: string };
 type QualEntry = { text: string; proofUrl: string };
-const newPricingRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "" });
+const newPricingRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "", ageGroup: "" });
+const AGE_GROUP_PRICING_OPTIONS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
 
 type MyCoach = {
   id: number; name: string; sportsCategory: string; location: string; bio: string;
@@ -121,11 +122,11 @@ export default function Dashboard() {
       const regular = Number(coach.regularPrice);
       if (trial > 0 && trial !== regular) {
         pricingRows = [
-          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "" },
-          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" },
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "", ageGroup: "" },
+          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "", ageGroup: "" },
         ];
       } else if (regular > 0) {
-        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "" }];
+        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "", ageGroup: "" }];
       } else {
         pricingRows = [newPricingRow()];
       }
@@ -653,6 +654,17 @@ export default function Dashboard() {
                             </div>
                           </>
                         )}
+                        <div className="col-span-2">
+                          <label className="text-xs text-muted-foreground mb-1 block">適合年齡組別（選填）</label>
+                          <select
+                            value={row.ageGroup ?? ""}
+                            onChange={e => setEditForm(f => f ? { ...f, pricingRows: f.pricingRows.map(r => r.id === row.id ? { ...r, ageGroup: e.target.value } : r) } : f)}
+                            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          >
+                            <option value="">所有年齡</option>
+                            {AGE_GROUP_PRICING_OPTIONS.map(ag => <option key={ag} value={ag}>{ag}</option>)}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   ))}
