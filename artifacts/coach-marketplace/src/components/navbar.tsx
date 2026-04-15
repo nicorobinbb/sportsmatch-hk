@@ -32,7 +32,7 @@ export function Navbar() {
             <Link href="/coach/register">
               <Button variant="outline" size="sm" className="hidden sm:flex border-primary text-primary hover:bg-primary/10">
                 <Dumbbell className="mr-2 h-4 w-4" />
-                成為教練
+                我是教練
               </Button>
             </Link>
             {adminStatus?.isAdmin && (
