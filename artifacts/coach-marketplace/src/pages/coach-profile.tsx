@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, Trophy, ThumbsUp, Zap } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +46,56 @@ export default function CoachProfile() {
   const [reportReason, setReportReason] = useState("");
   const [reportDesc, setReportDesc] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<{ id: number; imageUrl: string }[]>([]);
+
+  const isOwner = !!user && !!coach && (user.id === (coach as unknown as { userId?: string }).userId);
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setUploadingPhoto(true);
+    try {
+      const imageUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 1200;
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.8));
+          };
+          img.onerror = reject;
+          img.src = ev.target!.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/photos/coach/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ imageUrl }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingPhotos(prev => [...prev, { id: data.id, imageUrl }]);
+        toast({ title: "相片已上傳", description: "相片將於管理員審核後公開顯示。" });
+      } else {
+        toast({ title: "上傳失敗", description: "請稍後再試。", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "處理圖片時出錯", variant: "destructive" });
+    }
+    setUploadingPhoto(false);
+  }
 
   useEffect(() => {
     if (!id || !user) return;
@@ -252,11 +302,53 @@ export default function CoachProfile() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="animate-in fade-in-50">
-                  <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border">
-                    <h3 className="text-xl font-bold font-display mb-6 flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5 text-primary" /> 訓練相片
-                    </h3>
-                    
+                  <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold font-display flex items-center gap-2">
+                        <ImageIcon className="w-5 h-5 text-primary" /> 訓練相片
+                      </h3>
+                      {isOwner && (
+                        <label className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-all ${
+                          uploadingPhoto
+                            ? "border-primary/30 text-primary/50 bg-primary/5 cursor-not-allowed"
+                            : "border-primary text-primary hover:bg-primary/5"
+                        }`}>
+                          {uploadingPhoto
+                            ? <><Loader2 className="w-4 h-4 animate-spin" /> 上傳中…</>
+                            : <><Upload className="w-4 h-4" /> 上傳相片</>
+                          }
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={uploadingPhoto}
+                            onChange={handlePhotoUpload}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Pending photos — visible only to owner */}
+                    {isOwner && pendingPhotos.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" /> 等候審核中
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                          {pendingPhotos.map(photo => (
+                            <div key={photo.id} className="aspect-square rounded-xl overflow-hidden border relative">
+                              <img src={photo.imageUrl} alt="Pending" className="w-full h-full object-cover opacity-60" />
+                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30">
+                                <Clock className="w-5 h-5 text-white" />
+                                <span className="text-white text-xs font-medium">待審核</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Approved photos */}
                     {isPhotosLoading ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {[1, 2, 3].map(i => <Skeleton key={i} className="aspect-square rounded-xl" />)}
@@ -269,10 +361,22 @@ export default function CoachProfile() {
                           </div>
                         ))}
                       </div>
-                    ) : (
+                    ) : pendingPhotos.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed">
-                        暫未上傳相片。
+                        {isOwner ? (
+                          <div className="space-y-2">
+                            <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                            <p>暫未上傳相片</p>
+                            <p className="text-xs">點擊右上角「上傳相片」按鈕添加你的訓練照片</p>
+                          </div>
+                        ) : "暫未上傳相片。"}
                       </div>
+                    ) : null}
+
+                    {isOwner && (
+                      <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                        💡 相片經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
+                      </p>
                     )}
                   </div>
                 </TabsContent>
