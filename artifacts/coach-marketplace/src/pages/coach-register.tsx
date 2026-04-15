@@ -233,7 +233,7 @@ export default function CoachRegister() {
   return (
     <Layout>
       <div className="bg-slate-50 dark:bg-background py-12 flex-1">
-        <div className="container max-w-3xl px-4 md:px-6">
+        <div className="container max-w-4xl px-4 md:px-6">
           <Show when="signed-out">
             <div className="text-center py-20 bg-white dark:bg-card rounded-2xl border shadow-sm">
               <h2 className="text-2xl font-bold font-display mb-4">請先登入</h2>
