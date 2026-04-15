@@ -73,6 +73,10 @@ export interface CoachDetail {
   /** @nullable */
   coverPhotoUrl?: string | null;
   /** @nullable */
+  qualifications?: string | null;
+  /** @nullable */
+  pricingPlans?: string | null;
+  /** @nullable */
   averageRating?: number | null;
   reviewCount: number;
   userId: string;

@@ -631,29 +631,64 @@ export default function CoachProfile() {
                 <div className="bg-primary/5 p-4 border-b text-center">
                   <span className="font-display font-bold text-primary tracking-wide">明碼實價</span>
                 </div>
-                <CardContent className="p-6 space-y-6">
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
-                      <span>體驗堂</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">首次優惠</Badge>
-                    </div>
-                    <div className="text-4xl font-display font-bold text-foreground">
-                      ${coach.trialPrice}
-                    </div>
-                  </div>
+                <CardContent className="p-5 space-y-4">
+                  {(() => {
+                    type PlanRow = { sessionType: string; price: string; maxStudents: string; duration: string };
+                    let plans: PlanRow[] | null = null;
+                    try { if ((coach as any).pricingPlans) plans = JSON.parse((coach as any).pricingPlans); } catch {}
 
-                  <div className="w-full h-px bg-border" />
+                    if (plans && plans.length > 0) {
+                      return (
+                        <div className="overflow-hidden rounded-xl border">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-muted/60 text-muted-foreground text-xs uppercase tracking-wide">
+                                <th className="px-3 py-2 text-left font-semibold">堂型</th>
+                                <th className="px-3 py-2 text-center font-semibold">人數</th>
+                                <th className="px-3 py-2 text-center font-semibold">時長</th>
+                                <th className="px-3 py-2 text-right font-semibold">每堂收費</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {plans.map((row, i) => (
+                                <tr key={i} className={`border-t ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
+                                  <td className="px-3 py-2.5 font-medium">
+                                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold ${row.sessionType === "單對單" ? "bg-primary/10 text-primary" : "bg-amber-50 text-amber-700"}`}>
+                                      {row.sessionType === "單對單" ? "👤" : "👥"} {row.sessionType}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center text-muted-foreground">
+                                    {row.sessionType === "單對單" ? "1" : `最多 ${row.maxStudents}`}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center text-muted-foreground">{row.duration} 分鐘</td>
+                                  <td className="px-3 py-2.5 text-right font-display font-bold text-primary text-base">${row.price}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
-                      <span>正課</span>
-                      <span>每小時</span>
-                    </div>
-                    <div className="text-3xl font-display font-bold text-foreground">
-                      ${coach.regularPrice}
-                    </div>
-                  </div>
+                    return (
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
+                            <span>體驗堂</span>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">首次優惠</Badge>
+                          </div>
+                          <div className="text-4xl font-display font-bold text-foreground">${coach.trialPrice}</div>
+                        </div>
+                        <div className="w-full h-px bg-border" />
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
+                            <span>正課</span><span>每小時</span>
+                          </div>
+                          <div className="text-3xl font-display font-bold text-foreground">${coach.regularPrice}</div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   <div className="pt-4 space-y-3">
                     {coach.whatsappNumber ? (
