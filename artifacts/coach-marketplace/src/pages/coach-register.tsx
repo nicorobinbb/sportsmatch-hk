@@ -38,7 +38,6 @@ const coachSchema = z.object({
   packageDetails: z.string().optional(),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
-  qualificationProofUrl: z.string().optional().or(z.literal('')),
   whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
 });
 
@@ -68,8 +67,6 @@ export default function CoachRegister() {
       packageDetails: "",
       ageGroups: [],
       profileImageUrl: "",
-
-      qualificationProofUrl: "",
       whatsappLocalNumber: "",
     },
   });
@@ -84,12 +81,31 @@ export default function CoachRegister() {
   const removeRow = (id: string) =>
     setPricingRows(prev => prev.length > 1 ? prev.filter(r => r.id !== id) : prev);
 
-  const [qualList, setQualList] = useState<string[]>([""]);
+  type QualEntry = { id: string; text: string; proofUrl: string };
+  const newQual = (): QualEntry => ({ id: crypto.randomUUID(), text: "", proofUrl: "" });
+  const [qualList, setQualList] = useState<QualEntry[]>([newQual()]);
+  const qualFileRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const updateQual = (id: string, patch: Partial<QualEntry>) =>
+    setQualList(prev => prev.map(q => q.id === id ? { ...q, ...patch } : q));
+
+  const handleQualFileChange = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "檔案太大", description: "請上傳 5MB 以內的圖片。", variant: "destructive" });
+      return;
+    }
+    try {
+      const dataUrl = await compressImage(file);
+      updateQual(id, { proofUrl: dataUrl });
+    } catch {
+      toast({ title: "無法讀取圖片", variant: "destructive" });
+    }
+  };
 
   const [coachTypes, setCoachTypes] = useState<string[]>([]);
   const [coachTypeError, setCoachTypeError] = useState("");
-  const [qualProofPreview, setQualProofPreview] = useState<string>("");
-  const qualProofRef = useRef<HTMLInputElement>(null);
 
   const compressImage = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
