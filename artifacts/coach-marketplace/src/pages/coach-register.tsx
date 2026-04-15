@@ -177,10 +177,6 @@ export default function CoachRegister() {
   };
 
   const onSubmit = (data: CoachFormValues) => {
-    if (coachTypes.length === 0) {
-      setCoachTypeError("請至少選擇一項身份");
-      return;
-    }
     setCoachTypeError("");
 
     const invalidRow = pricingRows.some(r => !r.price || isNaN(Number(r.price)) || Number(r.price) < 0);
@@ -466,7 +462,7 @@ export default function CoachRegister() {
                     {/* Coach type checkboxes */}
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium leading-none mb-1">專業資歷 <span className="text-destructive">*</span></p>
+                        <p className="text-sm font-medium leading-none mb-1">專業資歷 <span className="text-muted-foreground text-xs">（選填）</span></p>
                         <p className="text-xs text-muted-foreground">可同時選擇多項（例如：既是專業運動員，也持有教練牌照）</p>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -492,7 +488,7 @@ export default function CoachRegister() {
                     {/* Qualifications multi-row with per-entry upload */}
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium leading-none mb-1">資歷 <span className="text-destructive">*</span></p>
+                        <p className="text-sm font-medium leading-none mb-1">資歷 <span className="text-muted-foreground text-xs">（選填）</span></p>
                         <p className="text-xs text-muted-foreground">每行填寫一項認證、資格或學歷，並可上傳對應證書圖片供管理員審核</p>
                       </div>
                       {qualList.map((q, idx) => (

@@ -106,7 +106,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              針對香港運動教練市場資訊不對稱的痛點，建立標準化資歷與評價體系。透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練，消除盲目嘗試的時間與金錢浪費。
+              透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練，消除盲目嘗試的時間與金錢浪費。
             </p>
 
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
