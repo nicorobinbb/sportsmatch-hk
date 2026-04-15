@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreateCoach, useListCategories } from "@workspace/api-client-react";
+import { useCreateCoach } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -51,7 +51,6 @@ export default function CoachRegister() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const createCoach = useCreateCoach();
-  const { data: categories } = useListCategories();
 
   const [whatsappCC, setWhatsappCC] = useState("852");
   const [photoPreview, setPhotoPreview] = useState<string>("");
@@ -216,10 +215,10 @@ export default function CoachRegister() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {categories?.map(cat => (
-                                  <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
+                                {["游泳", "瑜伽", "籃球", "網球", "拳擊", "普拉提", "足球", "羽毛球", "跑步", "舞蹈", "高爾夫球", "乒乓球", "體操", "跆拳道", "空手道", "排球", "劍擊", "匹克球", "田徑"].map(sport => (
+                                  <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                                 ))}
-                                <SelectItem value="Other">其他</SelectItem>
+                                <SelectItem value="其他">其他</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
