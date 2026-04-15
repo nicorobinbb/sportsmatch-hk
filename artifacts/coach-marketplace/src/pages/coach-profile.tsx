@@ -6,12 +6,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, Trophy, ThumbsUp, Zap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Show, useUser } from "@clerk/react";
+import { getBaseUrl } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth-token";
 
 export default function CoachProfile() {
   const params = useParams();
@@ -34,6 +38,60 @@ export default function CoachProfile() {
   const createReview = useCreateReview();
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+
+  const [isSaved, setIsSaved] = useState(false);
+  const [savingWish, setSavingWish] = useState(false);
+
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDesc, setReportDesc] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  useEffect(() => {
+    if (!id || !user) return;
+    getAuthToken().then(token => {
+      if (!token) return;
+      fetch(`${getBaseUrl()}/api/wishlist/check/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(r => r.json()).then(d => setIsSaved(!!d.saved));
+    });
+  }, [id, user]);
+
+  async function toggleWishlist() {
+    if (!user) return;
+    setSavingWish(true);
+    const token = await getAuthToken();
+    if (isSaved) {
+      await fetch(`${getBaseUrl()}/api/wishlist/${id}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsSaved(false);
+    } else {
+      await fetch(`${getBaseUrl()}/api/wishlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ coachId: id }),
+      });
+      setIsSaved(true);
+    }
+    setSavingWish(false);
+  }
+
+  async function submitReport() {
+    if (!reportReason) return;
+    setSubmittingReport(true);
+    const token = await getAuthToken();
+    await fetch(`${getBaseUrl()}/api/reports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ coachId: id, reason: reportReason, description: reportDesc }),
+    });
+    setSubmittingReport(false);
+    setReportOpen(false);
+    setReportReason("");
+    setReportDesc("");
+    toast({ title: "舉報已提交", description: "我哋會盡快跟進處理，感謝你的反饋。" });
+  }
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,11 +181,38 @@ export default function CoachProfile() {
                         <CheckCircle2 className="w-3 h-3" /> 已認證
                       </Badge>
                     )}
+                    {coach.averageRating && coach.averageRating >= 4.8 && (
+                      <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 gap-1">
+                        <Trophy className="w-3 h-3" /> 頂尖教練
+                      </Badge>
+                    )}
+                    {coach.reviewCount >= 5 && (
+                      <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50 gap-1">
+                        <ThumbsUp className="w-3 h-3" /> 多人讚好
+                      </Badge>
+                    )}
+                    {coach.trialPrice && coach.trialPrice <= 200 && (
+                      <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50 gap-1">
+                        <Zap className="w-3 h-3" /> 超值體驗
+                      </Badge>
+                    )}
                   </div>
                   
-                  <h1 className="text-3xl md:text-4xl font-display font-bold flex items-center gap-2">
-                    {coach.name}
-                  </h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl md:text-4xl font-display font-bold">
+                      {coach.name}
+                    </h1>
+                    <Show when="signed-in">
+                      <button
+                        onClick={toggleWishlist}
+                        disabled={savingWish}
+                        className={`flex-shrink-0 p-2 rounded-full border-2 transition-all ${isSaved ? "bg-red-50 border-red-300 text-red-500 hover:bg-red-100" : "border-border text-muted-foreground hover:border-red-300 hover:text-red-400"}`}
+                        title={isSaved ? "從收藏移除" : "儲存教練"}
+                      >
+                        <Heart className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
+                      </button>
+                    </Show>
+                  </div>
                   
                   <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm font-medium">
                     <span className="flex items-center gap-1.5">
@@ -332,6 +417,14 @@ export default function CoachProfile() {
                         💡 所有費用直接支付予教練，本平台不收取任何課堂費用。
                       </p>
                     </div>
+                    <Show when="signed-in">
+                      <button
+                        onClick={() => setReportOpen(true)}
+                        className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors py-1"
+                      >
+                        <Flag className="w-3 h-3" /> 舉報此教練
+                      </button>
+                    </Show>
                   </div>
 
                 </CardContent>
@@ -341,6 +434,56 @@ export default function CoachProfile() {
           </div>
         </div>
       </div>
+
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="w-4 h-4 text-destructive" /> 舉報教練
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">請選擇舉報原因：</p>
+              <Select value={reportReason} onValueChange={setReportReason}>
+                <SelectTrigger>
+                  <SelectValue placeholder="選擇原因…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fake_profile">虛假或誤導性資料</SelectItem>
+                  <SelectItem value="inappropriate">不當行為或言論</SelectItem>
+                  <SelectItem value="scam">疑似詐騙</SelectItem>
+                  <SelectItem value="wrong_info">資料錯誤（地址/聯絡方式）</SelectItem>
+                  <SelectItem value="other">其他原因</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">詳細說明（選填）：</p>
+              <Textarea
+                value={reportDesc}
+                onChange={e => setReportDesc(e.target.value)}
+                placeholder="請提供更多資料幫助我哋調查…"
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+              🔒 你的身份將保密，舉報會由運對團隊跟進。嚴重個案可能導致教練帳戶被停用。
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setReportOpen(false)}>取消</Button>
+            <Button
+              variant="destructive"
+              onClick={submitReport}
+              disabled={!reportReason || submittingReport}
+            >
+              {submittingReport ? "提交中…" : "提交舉報"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

@@ -3,13 +3,27 @@ import { useUser } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminListPendingCoaches, useAdminApproveCoach, useAdminRejectCoach, useAdminListPendingReviews, useAdminApproveReview, useAdminRejectReview, useAdminListPendingPhotos, useAdminApprovePhoto, useAdminRejectPhoto } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy } from "lucide-react";
+import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListPendingCoachesQueryKey, getAdminListPendingReviewsQueryKey, getAdminListPendingPhotosQueryKey, getListCoachesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { getBaseUrl } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth-token";
+
+type Analytics = {
+  totalCoaches: number; totalReviews: number; pendingReports: number;
+  sportsCounts: { sport: string; count: number }[];
+  districtCounts: { district: string; count: number }[];
+};
+
+type Report = {
+  id: number; userId: string; coachId: number; coachName?: string;
+  reason: string; description?: string; status: string; adminNote?: string; createdAt: string;
+};
 
 export default function AdminDashboard() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -20,6 +34,40 @@ export default function AdminDashboard() {
   const { data: pendingCoaches } = useAdminListPendingCoaches();
   const { data: pendingReviews } = useAdminListPendingReviews();
   const { data: pendingPhotos } = useAdminListPendingPhotos();
+
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [updatingReport, setUpdatingReport] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!adminStatus?.isAdmin) return;
+    getAuthToken().then(token => {
+      const headers = { Authorization: `Bearer ${token}` };
+      fetch(`${getBaseUrl()}/api/admin/analytics`, { headers })
+        .then(r => r.json()).then(d => setAnalytics(d)).catch(() => {});
+      fetch(`${getBaseUrl()}/api/admin/reports`, { headers })
+        .then(r => r.json()).then(d => setReports(d.reports || [])).catch(() => {});
+    });
+  }, [adminStatus?.isAdmin]);
+
+  async function updateReport(id: number, status: string) {
+    setUpdatingReport(id);
+    const token = await getAuthToken();
+    const res = await fetch(`${getBaseUrl()}/api/admin/reports/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status }),
+    });
+    const data = await res.json();
+    setReports(prev => prev.map(r => r.id === id ? { ...r, ...data.report } : r));
+    setUpdatingReport(null);
+    toast({ title: status === "resolved" ? "舉報已處理" : "舉報已關閉" });
+  }
+
+  const reasonLabels: Record<string, string> = {
+    fake_profile: "虛假資料", inappropriate: "不當行為", scam: "疑似詐騙",
+    wrong_info: "資料錯誤", other: "其他"
+  };
 
   const approveCoach = useAdminApproveCoach();
   const rejectCoach = useAdminRejectCoach();
@@ -163,7 +211,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="coaches" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto gap-1">
             <TabsTrigger value="coaches" className="flex gap-2">
               待審核教練
               {pendingCoaches && pendingCoaches.length > 0 && (
@@ -181,6 +229,15 @@ export default function AdminDashboard() {
               {pendingPhotos && pendingPhotos.length > 0 && (
                 <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPhotos.length}</Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex gap-2">
+              <Flag className="w-3.5 h-3.5" /> 舉報管理
+              {reports.filter(r => r.status === "pending").length > 0 && (
+                <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{reports.filter(r => r.status === "pending").length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex gap-2">
+              <BarChart3 className="w-3.5 h-3.5" /> 平台數據
             </TabsTrigger>
           </TabsList>
 
@@ -272,6 +329,116 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-4">
+            {reports.length === 0 ? (
+              <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
+                暫無舉報紀錄。
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {reports.map(report => (
+                  <div key={report.id} className="bg-white dark:bg-card p-5 rounded-xl border shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <Badge variant={report.status === "pending" ? "destructive" : report.status === "resolved" ? "default" : "secondary"} className="text-xs">
+                            {report.status === "pending" ? "待處理" : report.status === "resolved" ? "已處理" : "已關閉"}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">{reasonLabels[report.reason] || report.reason}</Badge>
+                          {report.coachName && <span className="text-sm font-medium">教練：{report.coachName}</span>}
+                          <span className="text-xs text-muted-foreground">{new Date(report.createdAt).toLocaleDateString("zh-HK")}</span>
+                        </div>
+                        {report.description && (
+                          <p className="text-sm text-muted-foreground mb-2">{report.description}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">用戶 ID：{report.userId}</p>
+                      </div>
+                      {report.status === "pending" && (
+                        <div className="flex gap-2 shrink-0">
+                          <Button
+                            variant="outline" size="sm"
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                            onClick={() => updateReport(report.id, "resolved")}
+                            disabled={updatingReport === report.id}
+                          >
+                            <Check className="w-3.5 h-3.5 mr-1" /> 已處理
+                          </Button>
+                          <Button
+                            variant="outline" size="sm"
+                            className="text-slate-500 border-slate-200 hover:bg-slate-50"
+                            onClick={() => updateReport(report.id, "dismissed")}
+                            disabled={updatingReport === report.id}
+                          >
+                            <X className="w-3.5 h-3.5 mr-1" /> 關閉
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            {!analytics ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { label: "已認證教練", value: analytics.totalCoaches, color: "bg-blue-50 border-blue-200 text-blue-800" },
+                    { label: "已審核評價", value: analytics.totalReviews, color: "bg-green-50 border-green-200 text-green-800" },
+                    { label: "待處理舉報", value: analytics.pendingReports, color: "bg-red-50 border-red-200 text-red-800" },
+                  ].map(stat => (
+                    <div key={stat.label} className={`rounded-xl border p-5 ${stat.color}`}>
+                      <p className="text-3xl font-bold mb-1">{stat.value}</p>
+                      <p className="text-sm font-medium opacity-80">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
+                    <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> 各運動教練數</h3>
+                    <div className="space-y-2">
+                      {analytics.sportsCounts.slice(0, 10).map(item => (
+                        <div key={item.sport} className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground w-24 shrink-0 truncate">{item.sport}</span>
+                          <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${Math.max(8, (item.count / analytics.sportsCounts[0].count) * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-semibold w-8 text-right">{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-card rounded-xl border p-5 shadow-sm">
+                    <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> 各地區教練數</h3>
+                    <div className="space-y-2">
+                      {analytics.districtCounts.slice(0, 10).map(item => (
+                        <div key={item.district} className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground w-24 shrink-0 truncate">{item.district}</span>
+                          <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-400 rounded-full"
+                              style={{ width: `${Math.max(8, (item.count / analytics.districtCounts[0].count) * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-semibold w-8 text-right">{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </TabsContent>

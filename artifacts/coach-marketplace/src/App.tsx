@@ -12,6 +12,9 @@ import Home from "@/pages/home";
 import CoachProfile from "@/pages/coach-profile";
 import CoachRegister from "@/pages/coach-register";
 import AdminDashboard from "@/pages/admin-dashboard";
+import Onboarding from "@/pages/onboarding";
+import Dashboard from "@/pages/dashboard";
+import { setTokenGetter } from "@/lib/auth-token";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -75,10 +78,15 @@ function ClerkAuthTokenSetup() {
   useEffect(() => {
     if (isSignedIn) {
       setAuthTokenGetter(() => getToken());
+      setTokenGetter(() => getToken());
     } else {
       setAuthTokenGetter(null);
+      setTokenGetter(null);
     }
-    return () => setAuthTokenGetter(null);
+    return () => {
+      setAuthTokenGetter(null);
+      setTokenGetter(null);
+    };
   }, [getToken, isSignedIn]);
 
   return null;
@@ -103,6 +111,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/coaches/:id" component={CoachProfile} />
             <Route path="/coach/register" component={CoachRegister} />
             <Route path="/admin" component={AdminDashboard} />
+            <Route path="/onboarding" component={Onboarding} />
+            <Route path="/dashboard" component={Dashboard} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
             <Route component={NotFound} />

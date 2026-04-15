@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { coachesTable, reviewsTable, photosTable } from "@workspace/db";
+import { coachesTable, reviewsTable, photosTable, reportsTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, count } from "drizzle-orm";
 
 const router = Router();
 
@@ -233,6 +233,80 @@ router.post("/photos/:id/reject", requireAdmin, async (req, res) => {
     res.json({ ...photo, createdAt: photo.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "adminRejectPhoto error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/analytics", requireAdmin, async (req, res) => {
+  try {
+    const sportsCounts = await db
+      .select({ sport: coachesTable.sportsCategory, count: count() })
+      .from(coachesTable)
+      .where(eq(coachesTable.isApproved, true))
+      .groupBy(coachesTable.sportsCategory)
+      .orderBy(desc(count()));
+
+    const districtCounts = await db
+      .select({ district: coachesTable.location, count: count() })
+      .from(coachesTable)
+      .where(eq(coachesTable.isApproved, true))
+      .groupBy(coachesTable.location)
+      .orderBy(desc(count()));
+
+    const totalCoaches = await db.select({ count: count() }).from(coachesTable).where(eq(coachesTable.isApproved, true));
+    const totalReviews = await db.select({ count: count() }).from(reviewsTable).where(eq(reviewsTable.isApproved, true));
+    const pendingReports = await db.select({ count: count() }).from(reportsTable).where(eq(reportsTable.status, "pending"));
+
+    res.json({
+      sportsCounts: sportsCounts.map(r => ({ sport: r.sport, count: Number(r.count) })),
+      districtCounts: districtCounts.map(r => ({ district: r.district, count: Number(r.count) })),
+      totalCoaches: Number(totalCoaches[0]?.count ?? 0),
+      totalReviews: Number(totalReviews[0]?.count ?? 0),
+      pendingReports: Number(pendingReports[0]?.count ?? 0),
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminAnalytics error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/reports", requireAdmin, async (req, res) => {
+  try {
+    const reports = await db
+      .select({
+        id: reportsTable.id,
+        userId: reportsTable.userId,
+        coachId: reportsTable.coachId,
+        coachName: coachesTable.name,
+        reason: reportsTable.reason,
+        description: reportsTable.description,
+        status: reportsTable.status,
+        adminNote: reportsTable.adminNote,
+        createdAt: reportsTable.createdAt,
+      })
+      .from(reportsTable)
+      .leftJoin(coachesTable, eq(reportsTable.coachId, coachesTable.id))
+      .orderBy(desc(reportsTable.createdAt));
+
+    res.json({ reports: reports.map(r => ({ ...r, createdAt: r.createdAt?.toISOString() })) });
+  } catch (err) {
+    req.log.error({ err }, "adminListReports error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/reports/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const { status, adminNote } = req.body;
+    const [updated] = await db.update(reportsTable)
+      .set({ status, adminNote })
+      .where(eq(reportsTable.id, id))
+      .returning();
+    res.json({ report: { ...updated, createdAt: updated.createdAt.toISOString() } });
+  } catch (err) {
+    req.log.error({ err }, "adminUpdateReport error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

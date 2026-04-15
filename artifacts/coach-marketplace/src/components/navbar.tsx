@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Show, useClerk } from "@clerk/react";
 import { Button } from "@/components/ui/button";
-import { Activity, Dumbbell, ShieldCheck } from "lucide-react";
+import { Activity, Dumbbell, ShieldCheck, LayoutDashboard } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 
 export function Navbar() {
@@ -29,6 +29,12 @@ export function Navbar() {
             </Link>
           </Show>
           <Show when="signed-in">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="hidden sm:flex">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                我的主頁
+              </Button>
+            </Link>
             <Link href="/coach/register">
               <Button variant="outline" size="sm" className="hidden sm:flex border-primary text-primary hover:bg-primary/10">
                 <Dumbbell className="mr-2 h-4 w-4" />

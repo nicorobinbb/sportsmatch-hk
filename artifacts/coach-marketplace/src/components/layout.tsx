@@ -1,4 +1,5 @@
 import { Navbar } from "./navbar";
+import { SupportWidget } from "./support-widget";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <p className="mt-1 text-xs">香港最透明、最值得信賴的運動教練審核與搜尋平台</p>
         </div>
       </footer>
+      <SupportWidget />
     </div>
   );
 }

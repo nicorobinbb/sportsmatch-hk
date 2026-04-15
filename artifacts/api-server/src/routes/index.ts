@@ -7,6 +7,9 @@ import categoriesRouter from "./categories";
 import featuredRouter from "./featured";
 import userPreferencesRouter from "./userPreferences";
 import adminRouter from "./admin";
+import wishlistsRouter from "./wishlists";
+import reportsRouter from "./reports";
+import userProfileRouter from "./userProfile";
 
 const router: IRouter = Router();
 
@@ -17,6 +20,9 @@ router.use("/photos", photosRouter);
 router.use("/categories", categoriesRouter);
 router.use("/featured", featuredRouter);
 router.use("/user", userPreferencesRouter);
+router.use("/user/profile", userProfileRouter);
+router.use("/wishlist", wishlistsRouter);
+router.use("/reports", reportsRouter);
 router.use("/admin", adminRouter);
 
 export default router;
