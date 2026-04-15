@@ -139,6 +139,7 @@ export type ListCoachesParams = {
   sport?: string;
   location?: string;
   search?: string;
+  coachType?: string;
   limit?: number;
   offset?: number;
 };

@@ -121,7 +121,7 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const query = ListCoachesQueryParams.parse(req.query);
-    const { sport, location, search, limit = 50, offset = 0 } = query;
+    const { sport, location, search, coachType, limit = 50, offset = 0 } = query;
 
     const conditions: ReturnType<typeof eq>[] = [eq(coachesTable.isApproved, true)];
 
@@ -130,6 +130,14 @@ router.get("/", async (req, res) => {
     }
     if (location) {
       conditions.push(ilike(coachesTable.location, `%${location}%`));
+    }
+    if (coachType) {
+      const types = coachType.split(",").map(t => t.trim()).filter(Boolean);
+      if (types.length === 1) {
+        conditions.push(ilike(coachesTable.experienceLevel, `%${types[0]}%`));
+      } else if (types.length > 1) {
+        conditions.push(or(...types.map(t => ilike(coachesTable.experienceLevel, `%${t}%`))) as ReturnType<typeof eq>);
+      }
     }
     if (search) {
       const terms = expandSearch(search);

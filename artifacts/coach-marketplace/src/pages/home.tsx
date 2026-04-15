@@ -36,6 +36,14 @@ export default function Home() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedSport, setSelectedSport] = useState<string | undefined>();
   const [selectedLocation, setSelectedLocation] = useState<string | undefined>();
+  const [selectedCoachTypes, setSelectedCoachTypes] = useState<Set<string>>(new Set());
+
+  const toggleCoachType = (type: string) =>
+    setSelectedCoachTypes(prev => {
+      const next = new Set(prev);
+      next.has(type) ? next.delete(type) : next.add(type);
+      return next;
+    });
 
   const { data: stats } = useGetCoachStats();
   const { data: categories } = useListCategories();
@@ -46,6 +54,7 @@ export default function Home() {
     search: debouncedSearch || undefined,
     sport: selectedSport,
     location: selectedLocation,
+    coachType: selectedCoachTypes.size > 0 ? [...selectedCoachTypes].join(",") : undefined,
     limit: 20
   });
 
@@ -191,11 +200,44 @@ export default function Home() {
 
           {/* All Coaches List */}
           <div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
               <h2 className="text-2xl font-bold font-display">
                 {selectedSport ? `${selectedSport} 教練` : '探索教練'}
                 {selectedLocation && <span className="text-muted-foreground font-normal ml-2">於 {selectedLocation}</span>}
               </h2>
+            </div>
+
+            {/* Coach type filter pills */}
+            <div className="flex items-center gap-2 mb-6 flex-wrap">
+              <span className="text-sm text-muted-foreground shrink-0">篩選類型：</span>
+              {(["專業運動員", "持牌教練"] as const).map(type => {
+                const active = selectedCoachTypes.has(type);
+                return (
+                  <button
+                    key={type}
+                    onClick={() => toggleCoachType(type)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-white border-border hover:border-primary/50 hover:bg-primary/5"
+                    }`}
+                  >
+                    {type === "專業運動員" ? "🏅" : "📋"} {type}
+                    {active && <span className="ml-0.5 opacity-70">✓</span>}
+                  </button>
+                );
+              })}
+              {selectedCoachTypes.size > 0 && (
+                <button
+                  onClick={() => setSelectedCoachTypes(new Set())}
+                  className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+                >
+                  清除
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
               {coachesData && (
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
                   顯示 {coachesData.coaches.length} / {coachesData.total} 個結果
