@@ -692,7 +692,14 @@ export default function CoachProfile() {
                     );
                   })()}
 
-                  <div className="pt-4 space-y-3">
+                  {coach.packageDetails && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                      <p className="text-xs font-semibold text-primary mb-1">其他收費模式</p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{coach.packageDetails}</p>
+                    </div>
+                  )}
+
+                  <div className="pt-2 space-y-3">
                     {coach.whatsappNumber ? (
                       <a
                         href={`https://wa.me/${coach.whatsappNumber}`}
@@ -729,16 +736,6 @@ export default function CoachProfile() {
                 </CardContent>
               </Card>
 
-              {coach.packageDetails && (
-                <Card className="border-primary/20 shadow-sm overflow-hidden">
-                  <div className="bg-primary/5 p-3 border-b">
-                    <span className="font-semibold text-sm text-primary">其他收費模式</span>
-                  </div>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{coach.packageDetails}</p>
-                  </CardContent>
-                </Card>
-              )}
             </div>
             
           </div>
