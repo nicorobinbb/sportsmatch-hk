@@ -340,6 +340,50 @@ router.patch("/coaches/:id/featured", requireAdmin, async (req, res) => {
   }
 });
 
+router.patch("/coaches/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const {
+      name, sportsCategory, location, bio,
+      trialPrice, regularPrice, experienceLevel,
+      whatsappNumber, packageDetails, ageGroups,
+    } = req.body;
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (name !== undefined) updates.name = String(name).trim();
+    if (sportsCategory !== undefined) updates.sportsCategory = String(sportsCategory).trim();
+    if (location !== undefined) updates.location = String(location).trim();
+    if (bio !== undefined) updates.bio = String(bio).trim();
+    if (trialPrice !== undefined) updates.trialPrice = parseFloat(trialPrice);
+    if (regularPrice !== undefined) updates.regularPrice = parseFloat(regularPrice);
+    if (experienceLevel !== undefined) updates.experienceLevel = String(experienceLevel).trim();
+    if (whatsappNumber !== undefined) updates.whatsappNumber = String(whatsappNumber).trim();
+    if (packageDetails !== undefined) updates.packageDetails = String(packageDetails).trim();
+    if (ageGroups !== undefined) updates.ageGroups = ageGroups;
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set(updates)
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Coach not found" });
+    res.json({
+      coach: {
+        ...updated,
+        trialPrice: parseFloat(updated.trialPrice as unknown as string),
+        regularPrice: parseFloat(updated.regularPrice as unknown as string),
+        createdAt: updated.createdAt.toISOString(),
+      }
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminUpdateCoach error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/analytics", requireAdmin, async (req, res) => {
   try {
     const sportsCounts = await db

@@ -3,7 +3,7 @@ import { useUser } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminListPendingCoaches, useAdminApproveCoach, useAdminRejectCoach, useAdminListPendingReviews, useAdminApproveReview, useAdminRejectReview, useAdminListPendingPhotos, useAdminApprovePhoto, useAdminRejectPhoto } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight, Star } from "lucide-react";
+import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight, Star, Pencil, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListPendingCoachesQueryKey, getAdminListPendingReviewsQueryKey, getAdminListPendingPhotosQueryKey, getListCoachesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -68,6 +68,76 @@ export default function AdminDashboard() {
   const [togglingCoach, setTogglingCoach] = useState<number | null>(null);
   const [togglingFeatured, setTogglingFeatured] = useState<number | null>(null);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
+
+  type EditDraft = {
+    name: string; sportsCategory: string; location: string; bio: string;
+    trialPrice: string; regularPrice: string; experienceLevel: string; whatsappNumber: string;
+  };
+  const [expandedEditId, setExpandedEditId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  function openEdit(coach: CoachRow) {
+    if (expandedEditId === coach.id) {
+      setExpandedEditId(null);
+      setEditDraft(null);
+      return;
+    }
+    setExpandedEditId(coach.id);
+    setEditDraft({
+      name: coach.name,
+      sportsCategory: coach.sportsCategory,
+      location: coach.location,
+      bio: "",
+      trialPrice: String(coach.trialPrice),
+      regularPrice: String(coach.regularPrice),
+      experienceLevel: coach.experienceLevel,
+      whatsappNumber: coach.whatsappNumber || "",
+    });
+  }
+
+  async function saveEdit(coachId: number) {
+    if (!editDraft) return;
+    setSavingEdit(true);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/admin/coaches/${coachId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: editDraft.name,
+          sportsCategory: editDraft.sportsCategory,
+          location: editDraft.location,
+          bio: editDraft.bio || undefined,
+          trialPrice: parseFloat(editDraft.trialPrice),
+          regularPrice: parseFloat(editDraft.regularPrice),
+          experienceLevel: editDraft.experienceLevel,
+          whatsappNumber: editDraft.whatsappNumber || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAllCoaches(prev => prev.map(c => c.id === coachId ? {
+          ...c,
+          name: data.coach.name,
+          sportsCategory: data.coach.sportsCategory,
+          location: data.coach.location,
+          trialPrice: data.coach.trialPrice,
+          regularPrice: data.coach.regularPrice,
+          experienceLevel: data.coach.experienceLevel,
+          whatsappNumber: data.coach.whatsappNumber,
+        } : c));
+        toast({ title: "✅ 教練資料已更新" });
+        setExpandedEditId(null);
+        setEditDraft(null);
+      } else {
+        toast({ title: "儲存失敗", description: "請稍後再試", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "網絡錯誤", variant: "destructive" });
+    }
+    setSavingEdit(false);
+  }
 
   useEffect(() => {
     if (!adminStatus?.isAdmin) return;
@@ -473,90 +543,204 @@ export default function AdminDashboard() {
               ) : (
                 <div className="grid gap-3">
                   {allCoaches.map(coach => (
-                    <div key={coach.id} className="bg-white dark:bg-card rounded-xl border shadow-sm px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                      <div className="flex gap-3 flex-1 min-w-0">
-                        {/* Thumbnail */}
-                        <div className="shrink-0">
-                          {coach.profileImageUrl ? (
-                            <img src={coach.profileImageUrl} alt={coach.name} className="w-12 h-12 rounded-lg object-cover border" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-slate-100 border flex items-center justify-center text-slate-400 font-bold text-sm">
-                              {coach.name.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="font-semibold">{coach.name}</span>
-                            <Badge variant="secondary" className="text-xs">{coach.sportsCategory}</Badge>
-                            <Badge
-                              variant={coach.isApproved ? "default" : "outline"}
-                              className={`text-xs ${coach.isApproved ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}
-                            >
-                              {coach.isApproved ? "已啟用" : "已停用"}
-                            </Badge>
-                            {coach.isFeatured && (
-                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200">
-                                <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-400" /> 精選
+                    <div key={coach.id} className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden">
+                      {/* Row */}
+                      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex gap-3 flex-1 min-w-0">
+                          {/* Thumbnail */}
+                          <div className="shrink-0">
+                            {coach.profileImageUrl ? (
+                              <img src={coach.profileImageUrl} alt={coach.name} className="w-12 h-12 rounded-lg object-cover border" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-slate-100 border flex items-center justify-center text-slate-400 font-bold text-sm">
+                                {coach.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-semibold">{coach.name}</span>
+                              <Badge variant="secondary" className="text-xs">{coach.sportsCategory}</Badge>
+                              <Badge
+                                variant={coach.isApproved ? "default" : "outline"}
+                                className={`text-xs ${coach.isApproved ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}
+                              >
+                                {coach.isApproved ? "已啟用" : "已停用"}
                               </Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                            <span>📍 {coach.location}</span>
-                            <span>體驗堂 ${coach.trialPrice} · 正課 ${coach.regularPrice}</span>
-                            <span>{coach.experienceLevel}</span>
-                            {coach.whatsappNumber && (
-                              <a href={`https://wa.me/${coach.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
-                                WA: {coach.whatsappNumber}
-                              </a>
-                            )}
+                              {coach.isFeatured && (
+                                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200">
+                                  <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-400" /> 精選
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                              <span>📍 {coach.location}</span>
+                              <span>體驗堂 ${coach.trialPrice} · 正課 ${coach.regularPrice}</span>
+                              <span>{coach.experienceLevel}</span>
+                              {coach.whatsappNumber && (
+                                <a href={`https://wa.me/${coach.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
+                                  WA: {coach.whatsappNumber}
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => toggleCoachFeatured(coach.id, coach.isFeatured)}
+                            disabled={togglingFeatured === coach.id}
+                            title={coach.isFeatured ? "取消精選" : "設為精選"}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                              coach.isFeatured
+                                ? "border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100"
+                                : "border-slate-200 text-slate-500 hover:border-amber-300 hover:text-amber-600 hover:bg-amber-50"
+                            }`}
+                          >
+                            {togglingFeatured === coach.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Star className={`w-4 h-4 ${coach.isFeatured ? "fill-amber-400 text-amber-400" : ""}`} />
+                            )}
+                            <span className="hidden sm:inline">{coach.isFeatured ? "精選中" : "設精選"}</span>
+                          </button>
+                          <button
+                            onClick={() => toggleCoachStatus(coach.id, coach.isApproved)}
+                            disabled={togglingCoach === coach.id}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                              coach.isApproved
+                                ? "border-red-200 text-red-600 hover:bg-red-50"
+                                : "border-green-200 text-green-600 hover:bg-green-50"
+                            }`}
+                          >
+                            {togglingCoach === coach.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : coach.isApproved ? (
+                              <><ToggleRight className="w-4 h-4" /><span className="hidden sm:inline">停用</span></>
+                            ) : (
+                              <><ToggleLeft className="w-4 h-4" /><span className="hidden sm:inline">啟用</span></>
+                            )}
+                          </button>
+                          <a
+                            href={`/coaches/${coach.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-lg text-sm border border-border hover:bg-muted transition-colors text-muted-foreground"
+                          >
+                            查看
+                          </a>
+                          <button
+                            onClick={() => openEdit(coach)}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                              expandedEditId === coach.id
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary hover:bg-primary/5"
+                            }`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                            <span className="hidden sm:inline">編輯</span>
+                            {expandedEditId === coach.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => toggleCoachFeatured(coach.id, coach.isFeatured)}
-                          disabled={togglingFeatured === coach.id}
-                          title={coach.isFeatured ? "取消精選" : "設為精選"}
-                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                            coach.isFeatured
-                              ? "border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100"
-                              : "border-slate-200 text-slate-500 hover:border-amber-300 hover:text-amber-600 hover:bg-amber-50"
-                          }`}
-                        >
-                          {togglingFeatured === coach.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Star className={`w-4 h-4 ${coach.isFeatured ? "fill-amber-400 text-amber-400" : ""}`} />
-                          )}
-                          <span className="hidden sm:inline">{coach.isFeatured ? "精選中" : "設精選"}</span>
-                        </button>
-                        <button
-                          onClick={() => toggleCoachStatus(coach.id, coach.isApproved)}
-                          disabled={togglingCoach === coach.id}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                            coach.isApproved
-                              ? "border-red-200 text-red-600 hover:bg-red-50"
-                              : "border-green-200 text-green-600 hover:bg-green-50"
-                          }`}
-                        >
-                          {togglingCoach === coach.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : coach.isApproved ? (
-                            <><ToggleRight className="w-4 h-4" /><span className="hidden sm:inline">停用</span></>
-                          ) : (
-                            <><ToggleLeft className="w-4 h-4" /><span className="hidden sm:inline">啟用</span></>
-                          )}
-                        </button>
-                        <a
-                          href={`/coaches/${coach.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-2 rounded-lg text-sm border border-border hover:bg-muted transition-colors text-muted-foreground"
-                        >
-                          查看
-                        </a>
-                      </div>
+
+                      {/* Inline edit panel */}
+                      {expandedEditId === coach.id && editDraft && (
+                        <div className="border-t bg-slate-50 dark:bg-muted/30 px-5 py-5">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">編輯教練資料</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">姓名</label>
+                              <input
+                                value={editDraft.name}
+                                onChange={e => setEditDraft(d => d ? { ...d, name: e.target.value } : d)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">運動類別</label>
+                              <input
+                                value={editDraft.sportsCategory}
+                                onChange={e => setEditDraft(d => d ? { ...d, sportsCategory: e.target.value } : d)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">地點</label>
+                              <input
+                                value={editDraft.location}
+                                onChange={e => setEditDraft(d => d ? { ...d, location: e.target.value } : d)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">WhatsApp 號碼</label>
+                              <input
+                                value={editDraft.whatsappNumber}
+                                onChange={e => setEditDraft(d => d ? { ...d, whatsappNumber: e.target.value } : d)}
+                                placeholder="例：85298765432"
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">體驗堂價格（HKD）</label>
+                              <input
+                                type="number"
+                                value={editDraft.trialPrice}
+                                onChange={e => setEditDraft(d => d ? { ...d, trialPrice: e.target.value } : d)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">正課價格（HKD）</label>
+                              <input
+                                type="number"
+                                value={editDraft.regularPrice}
+                                onChange={e => setEditDraft(d => d ? { ...d, regularPrice: e.target.value } : d)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">經驗級別</label>
+                              <select
+                                value={editDraft.experienceLevel}
+                                onChange={e => setEditDraft(d => d ? { ...d, experienceLevel: e.target.value } : d)}
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                              >
+                                <option value="beginner">初級</option>
+                                <option value="intermediate">中級</option>
+                                <option value="advanced">高級</option>
+                                <option value="professional">專業</option>
+                              </select>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="block text-xs font-medium text-slate-600 mb-1">簡介（選填，留空則不更新）</label>
+                              <textarea
+                                value={editDraft.bio}
+                                onChange={e => setEditDraft(d => d ? { ...d, bio: e.target.value } : d)}
+                                rows={3}
+                                placeholder="留空則保留原有簡介"
+                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4 justify-end">
+                            <button
+                              onClick={() => { setExpandedEditId(null); setEditDraft(null); }}
+                              className="px-4 py-2 rounded-lg text-sm border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                            >
+                              取消
+                            </button>
+                            <button
+                              onClick={() => saveEdit(coach.id)}
+                              disabled={savingEdit}
+                              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
+                            >
+                              {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                              儲存更改
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
