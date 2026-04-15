@@ -168,14 +168,14 @@ export default function Home() {
                   className={`
                     flex flex-col items-center justify-center min-w-[100px] h-28 rounded-2xl border transition-all snap-center
                     ${isSelected ? 'bg-primary border-primary text-primary-foreground shadow-md' : 
-                      isPreferred ? 'bg-secondary/10 border-secondary/30 hover:border-secondary' : 
-                      'bg-card hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900'}
+                      isPreferred ? 'bg-blue-50 border-blue-200 hover:border-blue-400' : 
+                      'bg-card border-border hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900'}
                   `}
                 >
-                  <div className={`mb-2 p-2 rounded-full text-2xl leading-none ${isSelected ? 'bg-white/20' : 'bg-primary/10'}`}>
+                  <div className={`mb-2 p-2 rounded-full text-2xl leading-none ${isSelected ? 'bg-white/20' : 'bg-slate-100'}`}>
                     {sportEmojiMap[cat.name] ?? "🏅"}
                   </div>
-                  <span className="font-medium text-sm">{cat.name}</span>
+                  <span className={`font-medium text-sm ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>{cat.name}</span>
                   <span className={`text-xs mt-1 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                     {cat.coachCount} 位教練
                   </span>
