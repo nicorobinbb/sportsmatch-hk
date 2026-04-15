@@ -37,4 +37,4 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-ADMIN_USER_IDS = "user_3CL2v3QfZ8oeJFcMSutb6qClVmH"
+ADMIN_USER_IDS = "user_3CL2v3QfZ8oeJFcMSutb6qClVmH,user_3CL6ohwA5xBIDSQak8xNNYNhaEh"
