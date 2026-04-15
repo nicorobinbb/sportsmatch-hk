@@ -36,16 +36,17 @@ const coachSchema = z.object({
   trialPrice: z.coerce.number().min(0, "收費不能為負數"),
   regularPrice: z.coerce.number().min(0, "收費不能為負數"),
   packageDetails: z.string().optional(),
-  experienceLevel: z.string().min(1, "請選擇經驗等級"),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
+  qualifications: z.string().optional(),
+  qualificationProofUrl: z.string().optional().or(z.literal('')),
   whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
 });
 
 type CoachFormValues = z.infer<typeof coachSchema>;
 
 const AGE_GROUPS = ["兒童（12歲以下）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
-const EXPERIENCE_LEVELS = ["職業運動員", "持牌教練", "俱樂部水平", "運動愛好者"];
+const COACH_TYPES = ["專業運動員", "持牌教練"];
 
 export default function CoachRegister() {
   const { toast } = useToast();
@@ -66,12 +67,18 @@ export default function CoachRegister() {
       trialPrice: 0,
       regularPrice: 0,
       packageDetails: "",
-      experienceLevel: "",
       ageGroups: [],
       profileImageUrl: "",
+      qualifications: "",
+      qualificationProofUrl: "",
       whatsappLocalNumber: "",
     },
   });
+
+  const [coachTypes, setCoachTypes] = useState<string[]>([]);
+  const [coachTypeError, setCoachTypeError] = useState("");
+  const [qualProofPreview, setQualProofPreview] = useState<string>("");
+  const qualProofRef = useRef<HTMLInputElement>(null);
 
   const compressImage = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -116,7 +123,35 @@ export default function CoachRegister() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleQualProofChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "檔案太大", description: "請上傳 5MB 以內的圖片。", variant: "destructive" });
+      return;
+    }
+    try {
+      const dataUrl = await compressImage(file);
+      setQualProofPreview(dataUrl);
+      form.setValue("qualificationProofUrl", dataUrl);
+    } catch {
+      toast({ title: "無法讀取圖片", description: "請選擇其他檔案再試。", variant: "destructive" });
+    }
+  };
+
+  const removeQualProof = () => {
+    setQualProofPreview("");
+    form.setValue("qualificationProofUrl", "");
+    if (qualProofRef.current) qualProofRef.current.value = "";
+  };
+
   const onSubmit = (data: CoachFormValues) => {
+    if (coachTypes.length === 0) {
+      setCoachTypeError("請至少選擇一項身份");
+      return;
+    }
+    setCoachTypeError("");
+
     const whatsappNumber = data.whatsappLocalNumber
       ? (whatsappCC + data.whatsappLocalNumber).replace(/\D/g, "")
       : undefined;
@@ -129,12 +164,14 @@ export default function CoachRegister() {
         bio: data.bio,
         trialPrice: data.trialPrice,
         regularPrice: data.regularPrice,
-        experienceLevel: data.experienceLevel,
+        experienceLevel: coachTypes.join("、"),
         ageGroups: data.ageGroups,
         profileImageUrl: data.profileImageUrl || undefined,
         packageDetails: data.packageDetails || undefined,
         whatsappNumber,
-      }
+        qualifications: data.qualifications || undefined,
+        qualificationProofUrl: data.qualificationProofUrl || undefined,
+      } as any
     }, {
       onSuccess: () => {
         toast({
@@ -346,24 +383,78 @@ export default function CoachRegister() {
                       <h2 className="text-xl font-bold font-display">經驗與目標學員</h2>
                     </div>
 
+                    {/* Coach type checkboxes */}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium leading-none mb-1">教練身份 <span className="text-destructive">*</span></p>
+                        <p className="text-xs text-muted-foreground">可同時選擇多項（例如：既是專業運動員，也持有教練牌照）</p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {COACH_TYPES.map(type => (
+                          <label key={type} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all select-none ${coachTypes.includes(type) ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+                            <Checkbox
+                              checked={coachTypes.includes(type)}
+                              onCheckedChange={(checked) => {
+                                setCoachTypeError("");
+                                setCoachTypes(prev => checked ? [...prev, type] : prev.filter(t => t !== type));
+                              }}
+                            />
+                            <div>
+                              <p className="font-medium text-sm">{type}</p>
+                              <p className="text-xs text-muted-foreground">{type === "專業運動員" ? "曾代表隊伍或參加正式賽事" : "持有認可機構頒發的教練牌照"}</p>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                      {coachTypeError && <p className="text-sm text-destructive">{coachTypeError}</p>}
+                    </div>
+
+                    {/* Qualifications text input */}
                     <FormField
                       control={form.control}
-                      name="experienceLevel"
+                      name="qualifications"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>經驗等級</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="選擇你的資歷等級" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {EXPERIENCE_LEVELS.map(level => (
-                                <SelectItem key={level} value={level}>{level}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>資歷</FormLabel>
+                          <FormDescription>列出你的相關認證、牌照或學歷（例如：ACE-CPT, NSCA-CSCS, 香港游泳教練會一級）</FormDescription>
+                          <FormControl>
+                            <Input placeholder="例如：ACE-CPT 認證私人教練、香港體育學院一級游泳教練" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Qualification proof upload */}
+                    <FormField
+                      control={form.control}
+                      name="qualificationProofUrl"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>資歷證明文件</FormLabel>
+                          <FormDescription>上傳相關牌照、證書或認證的圖片（選填，PNG / JPG，上限 5MB）。文件僅供管理員審核用途，不會公開展示。</FormDescription>
+                          <FormControl>
+                            <div>
+                              {qualProofPreview ? (
+                                <div className="relative w-full max-w-sm">
+                                  <img src={qualProofPreview} alt="資歷證明" className="w-full rounded-xl border object-cover max-h-48" />
+                                  <button type="button" onClick={removeQualProof} className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow border">
+                                    <X className="w-4 h-4 text-destructive" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div
+                                  className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:border-primary/50 hover:bg-slate-50 transition-all"
+                                  onClick={() => qualProofRef.current?.click()}
+                                >
+                                  <Upload className="w-6 h-6 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground text-center">點擊上傳資歷證明圖片</p>
+                                  <p className="text-xs text-muted-foreground">PNG / JPG，上限 5MB</p>
+                                </div>
+                              )}
+                              <input ref={qualProofRef} type="file" accept="image/*" className="hidden" onChange={handleQualProofChange} />
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

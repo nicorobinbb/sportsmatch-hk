@@ -21,6 +21,8 @@ export const coachesTable = pgTable("coaches", {
   whatsappNumber: text("whatsapp_number"),
   youtubeUrl: text("youtube_url"),
   youtubePending: text("youtube_pending"),
+  qualifications: text("qualifications"),
+  qualificationProofUrl: text("qualification_proof_url"),
   pendingEdits: text("pending_edits"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
