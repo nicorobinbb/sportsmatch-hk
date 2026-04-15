@@ -62,8 +62,13 @@ export default function Home() {
   const preferredSports: string[] = userPreferences?.preferredCategories ?? [];
   const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0);
 
+  const featuredIds = new Set((featuredCoaches ?? []).map(c => c.id));
+  const showingFeatured = !isFiltered && (featuredCoaches?.length ?? 0) > 0;
+
   const sortedCoaches = (() => {
-    const coaches = coachesData?.coaches ?? [];
+    let coaches = coachesData?.coaches ?? [];
+    // Remove coaches already shown in the featured section above
+    if (showingFeatured) coaches = coaches.filter(c => !featuredIds.has(c.id));
     if (isFiltered || preferredSports.length === 0) return coaches;
     const preferred = coaches.filter(c => preferredSports.includes(c.sportsCategory));
     const rest = coaches.filter(c => !preferredSports.includes(c.sportsCategory));
