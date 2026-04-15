@@ -249,10 +249,12 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         sportsCategory: coachesTable.sportsCategory,
         location: coachesTable.location,
         isApproved: coachesTable.isApproved,
+        isFeatured: coachesTable.isFeatured,
         trialPrice: coachesTable.trialPrice,
         regularPrice: coachesTable.regularPrice,
         experienceLevel: coachesTable.experienceLevel,
         whatsappNumber: coachesTable.whatsappNumber,
+        profileImageUrl: coachesTable.profileImageUrl,
         createdAt: coachesTable.createdAt,
       })
       .from(coachesTable)
@@ -313,6 +315,27 @@ router.patch("/coaches/:id/status", requireAdmin, async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "adminUpdateCoachStatus error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/coaches/:id/featured", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const { isFeatured } = req.body;
+    if (typeof isFeatured !== "boolean") return res.status(400).json({ error: "isFeatured must be boolean" });
+
+    const [updated] = await db
+      .update(coachesTable)
+      .set({ isFeatured })
+      .where(eq(coachesTable.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Coach not found" });
+    res.json({ coach: { id: updated.id, isFeatured: updated.isFeatured } });
+  } catch (err) {
+    req.log.error({ err }, "adminUpdateCoachFeatured error");
     res.status(500).json({ error: "Internal server error" });
   }
 });
