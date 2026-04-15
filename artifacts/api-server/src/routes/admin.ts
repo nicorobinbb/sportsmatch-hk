@@ -260,6 +260,9 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         youtubeUrl: coachesTable.youtubeUrl,
         youtubePending: coachesTable.youtubePending,
         pendingEdits: coachesTable.pendingEdits,
+        pricingPlans: coachesTable.pricingPlans,
+        qualifications: coachesTable.qualifications,
+        packageDetails: coachesTable.packageDetails,
         createdAt: coachesTable.createdAt,
       })
       .from(coachesTable)
@@ -444,6 +447,7 @@ router.patch("/coaches/:id", requireAdmin, async (req, res) => {
       name, sportsCategory, location, bio,
       trialPrice, regularPrice, experienceLevel,
       whatsappNumber, packageDetails, ageGroups,
+      pricingPlans, qualifications,
     } = req.body;
 
     const updates: Record<string, unknown> = { updatedAt: new Date() };
@@ -457,6 +461,8 @@ router.patch("/coaches/:id", requireAdmin, async (req, res) => {
     if (whatsappNumber !== undefined) updates.whatsappNumber = String(whatsappNumber).trim();
     if (packageDetails !== undefined) updates.packageDetails = String(packageDetails).trim();
     if (ageGroups !== undefined) updates.ageGroups = ageGroups;
+    if (pricingPlans !== undefined) updates.pricingPlans = typeof pricingPlans === "string" ? pricingPlans : JSON.stringify(pricingPlans);
+    if (qualifications !== undefined) updates.qualifications = typeof qualifications === "string" ? qualifications : JSON.stringify(qualifications);
 
     const [updated] = await db
       .update(coachesTable)

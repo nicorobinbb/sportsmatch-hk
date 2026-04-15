@@ -3,7 +3,7 @@ import { useUser } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminListPendingCoaches, useAdminApproveCoach, useAdminRejectCoach, useAdminListPendingReviews, useAdminApproveReview, useAdminRejectReview, useAdminListPendingPhotos, useAdminApprovePhoto, useAdminRejectPhoto } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight, Star, Pencil, ChevronDown, ChevronUp, Save, Youtube, Clock } from "lucide-react";
+import { Check, X, ShieldAlert, ShieldCheck, Loader2, Copy, BarChart3, Flag, Users, Search, ToggleLeft, ToggleRight, Star, Pencil, ChevronDown, ChevronUp, Save, Youtube, Clock, Trash2, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAdminListPendingCoachesQueryKey, getAdminListPendingReviewsQueryKey, getAdminListPendingPhotosQueryKey, getListCoachesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +65,9 @@ export default function AdminDashboard() {
   const [userProfiles, setUserProfiles] = useState<UserProfileRow[]>([]);
   const [profileSearch, setProfileSearch] = useState("");
 
+  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string };
+  type QualEntry = { text: string; proofUrl: string };
+
   type CoachRow = {
     id: number; name: string; sportsCategory: string; location: string;
     isApproved: boolean; isRejected: boolean; isFeatured: boolean; trialPrice: number; regularPrice: number;
@@ -72,6 +75,7 @@ export default function AdminDashboard() {
     profileImageUrl?: string | null; createdAt: string;
     youtubeUrl?: string | null; youtubePending?: string | null;
     pendingEdits?: string | null;
+    pricingPlans?: string | null; qualifications?: string | null; packageDetails?: string | null;
   };
   const [allCoaches, setAllCoaches] = useState<CoachRow[]>([]);
   const [coachSearch, setCoachSearch] = useState("");
@@ -83,7 +87,11 @@ export default function AdminDashboard() {
   type EditDraft = {
     name: string; sportsCategory: string; location: string; bio: string;
     trialPrice: string; regularPrice: string; experienceLevel: string; whatsappNumber: string;
+    packageDetails: string;
+    pricingRows: PricingRow[];
+    qualList: QualEntry[];
   };
+  const newPricingRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "" });
   const [expandedEditId, setExpandedEditId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -217,6 +225,20 @@ export default function AdminDashboard() {
       setEditDraft(null);
       return;
     }
+    let pricingRows: PricingRow[] = [];
+    try {
+      const parsed = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : [];
+      pricingRows = Array.isArray(parsed) ? parsed.map((r: Omit<PricingRow, "id">) => ({ ...r, id: crypto.randomUUID() })) : [];
+    } catch {}
+    if (pricingRows.length === 0) pricingRows = [newPricingRow()];
+
+    let qualList: QualEntry[] = [];
+    try {
+      const parsed = coach.qualifications ? JSON.parse(coach.qualifications) : [];
+      qualList = Array.isArray(parsed) ? parsed : [];
+    } catch {}
+    if (qualList.length === 0) qualList = [{ text: "", proofUrl: "" }];
+
     setExpandedEditId(coach.id);
     setEditDraft({
       name: coach.name,
@@ -227,6 +249,9 @@ export default function AdminDashboard() {
       regularPrice: String(coach.regularPrice),
       experienceLevel: coach.experienceLevel,
       whatsappNumber: coach.whatsappNumber || "",
+      packageDetails: coach.packageDetails || "",
+      pricingRows,
+      qualList,
     });
   }
 
@@ -247,6 +272,9 @@ export default function AdminDashboard() {
           regularPrice: parseFloat(editDraft.regularPrice),
           experienceLevel: editDraft.experienceLevel,
           whatsappNumber: editDraft.whatsappNumber || undefined,
+          packageDetails: editDraft.packageDetails || undefined,
+          pricingPlans: JSON.stringify(editDraft.pricingRows.map(({ id: _id, ...r }) => r)),
+          qualifications: JSON.stringify(editDraft.qualList.filter(q => q.text.trim())),
         }),
       });
       if (res.ok) {
@@ -960,6 +988,127 @@ export default function AdminDashboard() {
                                 className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                               />
                             </div>
+                          </div>
+
+                          {/* Pricing Plans Editor */}
+                          <div className="mt-5">
+                            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">收費表</p>
+                            <div className="space-y-2">
+                              {editDraft.pricingRows.map((row, idx) => (
+                                <div key={row.id} className="grid grid-cols-12 gap-1.5 items-center bg-white border border-slate-200 rounded-lg p-2">
+                                  <div className="col-span-12 sm:col-span-3">
+                                    <select
+                                      value={row.sessionType}
+                                      onChange={e => setEditDraft(d => d ? { ...d, pricingRows: d.pricingRows.map(r => r.id === row.id ? { ...r, sessionType: e.target.value as PricingRow["sessionType"] } : r) } : d)}
+                                      className="w-full px-2 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    >
+                                      <option value="單對單">👤 單對單</option>
+                                      <option value="小組課堂">👥 小組課堂</option>
+                                    </select>
+                                  </div>
+                                  <div className="col-span-6 sm:col-span-2">
+                                    <input
+                                      type="number"
+                                      placeholder="價錢 $"
+                                      value={row.price}
+                                      onChange={e => setEditDraft(d => d ? { ...d, pricingRows: d.pricingRows.map(r => r.id === row.id ? { ...r, price: e.target.value } : r) } : d)}
+                                      className="w-full px-2 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    />
+                                  </div>
+                                  <div className="col-span-6 sm:col-span-2">
+                                    <input
+                                      placeholder="時長（分鐘）"
+                                      value={row.duration}
+                                      onChange={e => setEditDraft(d => d ? { ...d, pricingRows: d.pricingRows.map(r => r.id === row.id ? { ...r, duration: e.target.value } : r) } : d)}
+                                      className="w-full px-2 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    />
+                                  </div>
+                                  {row.sessionType === "小組課堂" && (
+                                    <>
+                                      <div className="col-span-5 sm:col-span-2">
+                                        <input
+                                          type="number"
+                                          placeholder="最少人數"
+                                          value={row.minStudents}
+                                          onChange={e => setEditDraft(d => d ? { ...d, pricingRows: d.pricingRows.map(r => r.id === row.id ? { ...r, minStudents: e.target.value } : r) } : d)}
+                                          className="w-full px-2 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                        />
+                                      </div>
+                                      <div className="col-span-5 sm:col-span-2">
+                                        <input
+                                          type="number"
+                                          placeholder="最多人數"
+                                          value={row.maxStudents}
+                                          onChange={e => setEditDraft(d => d ? { ...d, pricingRows: d.pricingRows.map(r => r.id === row.id ? { ...r, maxStudents: e.target.value } : r) } : d)}
+                                          className="w-full px-2 py-1.5 text-xs rounded border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+                                  <div className="col-span-2 sm:col-span-1 flex justify-end">
+                                    <button
+                                      onClick={() => setEditDraft(d => d && d.pricingRows.length > 1 ? { ...d, pricingRows: d.pricingRows.filter(r => r.id !== row.id) } : d)}
+                                      className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                      title="刪除此行"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                  <div className="col-span-12 text-[10px] text-slate-400 pl-0.5">
+                                    第 {idx + 1} 行
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => setEditDraft(d => d ? { ...d, pricingRows: [...d.pricingRows, newPricingRow()] } : d)}
+                              className="mt-2 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                            >
+                              <Plus className="w-3 h-3" /> 新增收費行
+                            </button>
+                          </div>
+
+                          {/* Other Pricing Details */}
+                          <div className="mt-3">
+                            <label className="block text-xs font-medium text-slate-600 mb-1">其他收費模式（選填）</label>
+                            <textarea
+                              value={editDraft.packageDetails}
+                              onChange={e => setEditDraft(d => d ? { ...d, packageDetails: e.target.value } : d)}
+                              rows={2}
+                              placeholder="例：月費套餐、課程包等"
+                              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                            />
+                          </div>
+
+                          {/* Qualifications Editor */}
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">專業資歷</p>
+                            <div className="space-y-2">
+                              {editDraft.qualList.map((q, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400 w-5 shrink-0">{idx + 1}.</span>
+                                  <input
+                                    value={q.text}
+                                    onChange={e => setEditDraft(d => d ? { ...d, qualList: d.qualList.map((qi, i) => i === idx ? { ...qi, text: e.target.value } : qi) } : d)}
+                                    placeholder="例：香港游泳教練資格証 (HKSI)"
+                                    className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                                  />
+                                  <button
+                                    onClick={() => setEditDraft(d => d && d.qualList.length > 1 ? { ...d, qualList: d.qualList.filter((_, i) => i !== idx) } : d)}
+                                    className="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                    title="刪除"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => setEditDraft(d => d ? { ...d, qualList: [...d.qualList, { text: "", proofUrl: "" }] } : d)}
+                              className="mt-2 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                            >
+                              <Plus className="w-3 h-3" /> 新增資歷
+                            </button>
                           </div>
                           <div className="flex gap-2 mt-4 justify-end">
                             <button
