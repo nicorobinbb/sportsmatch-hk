@@ -3,9 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, MapPin, CheckCircle2, Crown } from "lucide-react";
-import type { Coach } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Coach } from "@workspace/api-client-react";
 
-type PricingRow = { sessionType: "單對單" | "小組課堂"; price: string; minStudents?: string; maxStudents?: string; duration?: string };
+type PricingRow = { sessionType: "單對單" | "小組課堂"; price: string; minStudents?: string; maxStudents?: string; duration?: string; ageGroup?: string };
 
 function parsePricingPlans(raw?: string | null): PricingRow[] {
   try {

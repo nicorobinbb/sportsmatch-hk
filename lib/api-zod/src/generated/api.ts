@@ -25,6 +25,7 @@ export const ListCoachesQueryParams = zod.object({
   search: zod.coerce.string().optional(),
   limit: zod.coerce.number().optional(),
   offset: zod.coerce.number().optional(),
+  coachType: zod.coerce.string().optional(),
 });
 
 export const ListCoachesResponse = zod.object({

@@ -151,4 +151,5 @@ export type ListCoachesParams = {
   search?: string;
   limit?: number;
   offset?: number;
+  coachType?: string;
 };
