@@ -75,8 +75,9 @@ export default function CoachRegister() {
     },
   });
 
-  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string; };
-  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "" });
+  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string; ageGroup?: string };
+  const AGE_GROUP_PRICING_OPTIONS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
+  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", minStudents: "", maxStudents: "", duration: "", ageGroup: "" });
   const [pricingRows, setPricingRows] = useState<PricingRow[]>([newRow()]);
   const [pricingError, setPricingError] = useState("");
 
@@ -695,6 +696,25 @@ export default function CoachRegister() {
                                 onChange={e => updateRow(row.id, { price: e.target.value })}
                               />
                             </div>
+                          </div>
+
+                          {/* Age group (optional) */}
+                          <div className="flex-1 min-w-[140px]">
+                            <p className="text-xs text-muted-foreground mb-1">適合年齡組別 <span className="text-muted-foreground/60">（選填）</span></p>
+                            <Select
+                              value={row.ageGroup ?? ""}
+                              onValueChange={v => updateRow(row.id, { ageGroup: v })}
+                            >
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="所有年齡" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">所有年齡</SelectItem>
+                                {AGE_GROUP_PRICING_OPTIONS.map(ag => (
+                                  <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {/* Remove button */}
