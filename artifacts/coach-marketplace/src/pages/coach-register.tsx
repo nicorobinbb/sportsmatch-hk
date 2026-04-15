@@ -702,14 +702,14 @@ export default function CoachRegister() {
                           <div className="flex-1 min-w-[140px]">
                             <p className="text-xs text-muted-foreground mb-1">適合年齡組別 <span className="text-muted-foreground/60">（選填）</span></p>
                             <Select
-                              value={row.ageGroup ?? ""}
-                              onValueChange={v => updateRow(row.id, { ageGroup: v })}
+                              value={row.ageGroup || "_all"}
+                              onValueChange={v => updateRow(row.id, { ageGroup: v === "_all" ? "" : v })}
                             >
                               <SelectTrigger className="bg-white">
                                 <SelectValue placeholder="所有年齡" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">所有年齡</SelectItem>
+                                <SelectItem value="_all">所有年齡</SelectItem>
                                 {AGE_GROUP_PRICING_OPTIONS.map(ag => (
                                   <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                                 ))}
