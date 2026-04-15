@@ -75,8 +75,8 @@ export default function CoachRegister() {
     },
   });
 
-  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; maxStudents: string; };
-  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", maxStudents: "" });
+  type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; maxStudents: string; duration: string; };
+  const newRow = (): PricingRow => ({ id: crypto.randomUUID(), sessionType: "單對單", price: "", maxStudents: "", duration: "" });
   const [pricingRows, setPricingRows] = useState<PricingRow[]>([newRow()]);
   const [pricingError, setPricingError] = useState("");
 
@@ -574,6 +574,24 @@ export default function CoachRegister() {
                               </div>
                             </div>
                           )}
+
+                          {/* Duration */}
+                          <div className="flex-1 min-w-[110px]">
+                            <p className="text-xs text-muted-foreground mb-1">每堂時長</p>
+                            <Select
+                              value={row.duration}
+                              onValueChange={v => updateRow(row.id, { duration: v })}
+                            >
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="選擇時長" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["30分鐘", "45分鐘", "60分鐘", "90分鐘", "120分鐘"].map(d => (
+                                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
 
                           {/* Price */}
                           <div className="flex-1 min-w-[120px]">
