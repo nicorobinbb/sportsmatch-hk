@@ -11,8 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dumbbell, DollarSign, User, MapPin, Phone } from "lucide-react";
+import { Dumbbell, DollarSign, User, MapPin, Upload, X } from "lucide-react";
 import { Show } from "@clerk/react";
+import { useState, useRef } from "react";
+
+const COUNTRY_CODES = [
+  { code: "852", label: "+852 香港" },
+  { code: "86",  label: "+86 中國" },
+  { code: "886", label: "+886 台灣" },
+  { code: "65",  label: "+65 新加坡" },
+  { code: "1",   label: "+1 美國/加拿大" },
+  { code: "44",  label: "+44 英國" },
+  { code: "81",  label: "+81 日本" },
+  { code: "82",  label: "+82 韓國" },
+  { code: "61",  label: "+61 澳洲" },
+  { code: "60",  label: "+60 馬來西亞" },
+];
 
 const coachSchema = z.object({
   name: z.string().min(2, "姓名至少需要2個字元"),
@@ -24,8 +38,8 @@ const coachSchema = z.object({
   packageDetails: z.string().optional(),
   experienceLevel: z.string().min(1, "請選擇經驗等級"),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
-  profileImageUrl: z.string().url("必須是有效的網址").optional().or(z.literal('')),
-  whatsappNumber: z.string().regex(/^\d{8,15}$/, "請輸入有效的 WhatsApp 號碼（8至15位數字，不含+號或空格）").optional().or(z.literal('')),
+  profileImageUrl: z.string().optional().or(z.literal('')),
+  whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
 });
 
 type CoachFormValues = z.infer<typeof coachSchema>;
@@ -38,6 +52,10 @@ export default function CoachRegister() {
   const [, setLocation] = useLocation();
   const createCoach = useCreateCoach();
   const { data: categories } = useListCategories();
+
+  const [whatsappCC, setWhatsappCC] = useState("852");
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CoachFormValues>({
     resolver: zodResolver(coachSchema),
@@ -52,17 +70,50 @@ export default function CoachRegister() {
       experienceLevel: "",
       ageGroups: [],
       profileImageUrl: "",
-      whatsappNumber: "",
+      whatsappLocalNumber: "",
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "照片太大", description: "請上傳 5MB 以內的照片。", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setPhotoPreview(dataUrl);
+      form.setValue("profileImageUrl", dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoPreview("");
+    form.setValue("profileImageUrl", "");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const onSubmit = (data: CoachFormValues) => {
+    const whatsappNumber = data.whatsappLocalNumber
+      ? (whatsappCC + data.whatsappLocalNumber).replace(/\D/g, "")
+      : undefined;
+
     createCoach.mutate({
       data: {
-        ...data,
+        name: data.name,
+        sportsCategory: data.sportsCategory,
+        location: data.location,
+        bio: data.bio,
+        trialPrice: data.trialPrice,
+        regularPrice: data.regularPrice,
+        experienceLevel: data.experienceLevel,
+        ageGroups: data.ageGroups,
         profileImageUrl: data.profileImageUrl || undefined,
         packageDetails: data.packageDetails || undefined,
-        whatsappNumber: data.whatsappNumber || undefined,
+        whatsappNumber,
       }
     }, {
       onSuccess: () => {
@@ -72,7 +123,7 @@ export default function CoachRegister() {
         });
         setLocation("/");
       },
-      onError: (err) => {
+      onError: () => {
         toast({
           title: "提交失敗",
           description: "請檢查輸入內容後再試。",
@@ -108,7 +159,7 @@ export default function CoachRegister() {
             <div className="bg-white dark:bg-card rounded-2xl shadow-sm border p-6 md:p-10">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
-                  
+
                   {/* Basic Info */}
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 border-b pb-2">
@@ -170,31 +221,81 @@ export default function CoachRegister() {
                       )}
                     />
 
+                    {/* Photo upload */}
                     <FormField
                       control={form.control}
                       name="profileImageUrl"
-                      render={({ field }) => (
+                      render={() => (
                         <FormItem>
-                          <FormLabel>個人照片網址（選填）</FormLabel>
+                          <FormLabel>個人照片（選填）</FormLabel>
+                          <FormDescription>上傳一張清晰的個人照片，最大 5MB。</FormDescription>
                           <FormControl>
-                            <Input placeholder="https://example.com/photo.jpg" {...field} />
+                            <div>
+                              {photoPreview ? (
+                                <div className="relative inline-block">
+                                  <img
+                                    src={photoPreview}
+                                    alt="預覽"
+                                    className="w-28 h-28 object-cover rounded-xl border shadow-sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={removePhoto}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 transition-colors"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-colors cursor-pointer gap-2"
+                                >
+                                  <Upload className="w-7 h-7 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">點擊上傳照片</span>
+                                  <span className="text-xs text-muted-foreground/70">JPG、PNG、WEBP，最大 5MB</span>
+                                </button>
+                              )}
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                                onChange={handleFileChange}
+                              />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
+                    {/* WhatsApp */}
                     <FormField
                       control={form.control}
-                      name="whatsappNumber"
+                      name="whatsappLocalNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>WhatsApp 聯絡號碼</FormLabel>
+                          <FormLabel>WhatsApp 聯絡號碼（選填）</FormLabel>
                           <FormDescription>學員將透過 WhatsApp 直接聯絡你預約課堂。</FormDescription>
                           <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">+</span>
-                              <Input placeholder="85298765432（含國家碼，不含+號）" className="pl-7" {...field} />
+                            <div className="flex gap-2">
+                              <Select value={whatsappCC} onValueChange={setWhatsappCC}>
+                                <SelectTrigger className="w-44 shrink-0">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {COUNTRY_CODES.map(cc => (
+                                    <SelectItem key={cc.code} value={cc.code}>{cc.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                placeholder="例如：98765432"
+                                className="flex-1"
+                                {...field}
+                              />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -263,32 +364,26 @@ export default function CoachRegister() {
                                 key={item}
                                 control={form.control}
                                 name="ageGroups"
-                                render={({ field }) => {
-                                  return (
-                                    <FormItem
-                                      key={item}
-                                      className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-slate-50 transition-colors"
-                                    >
-                                      <FormControl>
-                                        <Checkbox
-                                          checked={field.value?.includes(item)}
-                                          onCheckedChange={(checked) => {
-                                            return checked
-                                              ? field.onChange([...field.value, item])
-                                              : field.onChange(
-                                                  field.value?.filter(
-                                                    (value) => value !== item
-                                                  )
-                                                )
-                                          }}
-                                        />
-                                      </FormControl>
-                                      <FormLabel className="font-normal cursor-pointer w-full">
-                                        {item}
-                                      </FormLabel>
-                                    </FormItem>
-                                  )
-                                }}
+                                render={({ field }) => (
+                                  <FormItem
+                                    key={item}
+                                    className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-slate-50 transition-colors"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(item)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value, item])
+                                            : field.onChange(field.value?.filter((v) => v !== item));
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal cursor-pointer w-full">
+                                      {item}
+                                    </FormLabel>
+                                  </FormItem>
+                                )}
                               />
                             ))}
                           </div>
@@ -298,7 +393,7 @@ export default function CoachRegister() {
                     />
                   </div>
 
-                  {/* Pricing (明碼實價) */}
+                  {/* Pricing */}
                   <div className="space-y-6 bg-primary/5 -mx-6 md:-mx-10 px-6 md:px-10 py-8 border-y">
                     <div className="flex flex-col mb-2">
                       <div className="flex items-center gap-2 mb-1">
