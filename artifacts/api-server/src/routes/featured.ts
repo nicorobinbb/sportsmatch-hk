@@ -3,6 +3,31 @@ import { db } from "@workspace/db";
 import { coachesTable, reviewsTable } from "@workspace/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
+function buildPricingPlans(
+  pricingPlans: string | null | undefined,
+  trialPrice: number,
+  regularPrice: number
+): string {
+  if (pricingPlans) {
+    try {
+      const parsed = JSON.parse(pricingPlans);
+      if (Array.isArray(parsed) && parsed.length > 0) return pricingPlans;
+    } catch {}
+  }
+  const trial = Math.round(trialPrice);
+  const regular = Math.round(regularPrice);
+  if (trial > 0 && trial < regular) {
+    return JSON.stringify([
+      { sessionType: "單對單", price: String(trial) },
+      { sessionType: "單對單", price: String(regular) },
+    ]);
+  }
+  if (regular > 0) {
+    return JSON.stringify([{ sessionType: "單對單", price: String(regular) }]);
+  }
+  return JSON.stringify([]);
+}
+
 const router = Router();
 
 router.get("/", async (req, res) => {
@@ -39,14 +64,19 @@ router.get("/", async (req, res) => {
       .limit(6);
 
     res.json(
-      coaches.map((c) => ({
-        ...c,
-        trialPrice: parseFloat(c.trialPrice as unknown as string),
-        regularPrice: parseFloat(c.regularPrice as unknown as string),
-        averageRating: c.averageRating ? parseFloat(c.averageRating as unknown as string) : null,
-        reviewCount: c.reviewCount ?? 0,
-        createdAt: c.createdAt.toISOString(),
-      }))
+      coaches.map((c) => {
+        const trialPrice = parseFloat(c.trialPrice as unknown as string);
+        const regularPrice = parseFloat(c.regularPrice as unknown as string);
+        return {
+          ...c,
+          trialPrice,
+          regularPrice,
+          pricingPlans: buildPricingPlans(c.pricingPlans, trialPrice, regularPrice),
+          averageRating: c.averageRating ? parseFloat(c.averageRating as unknown as string) : null,
+          reviewCount: c.reviewCount ?? 0,
+          createdAt: c.createdAt.toISOString(),
+        };
+      })
     );
   } catch (err) {
     req.log.error({ err }, "listFeatured error");
