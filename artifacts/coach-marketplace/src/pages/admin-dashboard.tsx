@@ -948,24 +948,6 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-slate-600 mb-1">體驗堂價格（HKD）</label>
-                              <input
-                                type="number"
-                                value={editDraft.trialPrice}
-                                onChange={e => setEditDraft(d => d ? { ...d, trialPrice: e.target.value } : d)}
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-slate-600 mb-1">正課價格（HKD）</label>
-                              <input
-                                type="number"
-                                value={editDraft.regularPrice}
-                                onChange={e => setEditDraft(d => d ? { ...d, regularPrice: e.target.value } : d)}
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                              />
-                            </div>
-                            <div>
                               <label className="block text-xs font-medium text-slate-600 mb-1">經驗級別</label>
                               <select
                                 value={editDraft.experienceLevel}
