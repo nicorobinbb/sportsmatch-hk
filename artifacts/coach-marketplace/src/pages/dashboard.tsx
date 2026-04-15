@@ -9,7 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
+import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +24,7 @@ type SavedCoach = {
 };
 
 type UserProfile = {
+  firstName?: string | null; lastName?: string | null;
   goals: string[]; availability: string[]; preferredDistricts: string[]; preferredSports: string[];
   onboardingCompleted: boolean;
 };
@@ -72,8 +75,15 @@ export default function Dashboard() {
   const [editingCoach, setEditingCoach] = useState<MyCoach | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [submittingEdit, setSubmittingEdit] = useState(false);
-  // Track per-coach pending edits overrides after submission
   const [pendingEditsOverride, setPendingEditsOverride] = useState<Record<number, string | null>>({});
+
+  // Profile edit state
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
+  const [profileEditFirstName, setProfileEditFirstName] = useState("");
+  const [profileEditLastName, setProfileEditLastName] = useState("");
+  const [profileEditSports, setProfileEditSports] = useState<string[]>([]);
+  const [profileEditGoals, setProfileEditGoals] = useState<string[]>([]);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -206,6 +216,49 @@ export default function Dashboard() {
       headers: { Authorization: `Bearer ${token}` },
     });
     setSavedCoaches(prev => prev.filter(c => c.id !== coachId));
+  }
+
+  function openProfileEdit() {
+    setProfileEditFirstName(profile?.firstName || "");
+    setProfileEditLastName(profile?.lastName || "");
+    setProfileEditSports(profile?.preferredSports || []);
+    setProfileEditGoals(profile?.goals || []);
+    setProfileEditOpen(true);
+  }
+
+  async function saveProfileEdit() {
+    setSavingProfile(true);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/user/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          firstName: profileEditFirstName.trim() || null,
+          lastName: profileEditLastName.trim() || null,
+          preferredSports: profileEditSports,
+          goals: profileEditGoals,
+          onboardingCompleted: true,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data.profile);
+        setProfileEditOpen(false);
+        toast({ title: "個人資料已更新 ✓" });
+      }
+    } catch {
+      toast({ title: "更新失敗，請稍後再試", variant: "destructive" });
+    }
+    setSavingProfile(false);
+  }
+
+  function toggleProfileSport(sport: string) {
+    setProfileEditSports(prev => prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]);
+  }
+
+  function toggleProfileGoal(goal: string) {
+    setProfileEditGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal]);
   }
 
   function getEffectivePending(coach: MyCoach): string | null {
@@ -355,24 +408,63 @@ export default function Dashboard() {
           </Card>
         ) : null}
 
-        {profile && (profile.goals?.length > 0 || profile.preferredSports?.length > 0) && (
-          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-primary/5 border-primary/30">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">你的訓練檔案</span>
-                <Link href="/onboarding">
-                  <span className="ml-auto text-xs text-primary underline cursor-pointer">更新</span>
-                </Link>
+        {/* Profile & Preferences Card — always visible */}
+        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-primary/5 border-primary/30">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">個人資料與喜好</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {profile.preferredSports?.map(s => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}
-                {profile.goals?.map(g => <Badge key={g} className="text-xs bg-primary/10 text-primary-foreground border-primary/20">{goalLabels[g] || g}</Badge>)}
-                {profile.availability?.map(a => <Badge key={a} variant="outline" className="text-xs">{availabilityLabels[a] || a}</Badge>)}
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openProfileEdit}>
+                <Pencil className="w-3 h-3" /> 編輯
+              </Button>
+            </div>
+
+            {/* Name row */}
+            <div className="flex items-center gap-2 mb-3">
+              <Avatar className="h-9 w-9 border border-primary/20">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                  {profile?.lastName?.[0] || user?.firstName?.[0] || "用"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                {(profile?.firstName || profile?.lastName) ? (
+                  <p className="font-semibold text-sm">{profile.lastName}{profile.firstName}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">尚未設定姓名</p>
+                )}
+                <p className="text-xs text-muted-foreground">{user?.emailAddresses?.[0]?.emailAddress}</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+
+            {/* Sports */}
+            <div className="mb-2.5">
+              <p className="text-xs text-muted-foreground mb-1.5 font-medium">喜愛運動</p>
+              {profile?.preferredSports?.length ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.preferredSports.map(s => (
+                    <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                  ))}
+                </div>
+              ) : (
+                <button onClick={openProfileEdit} className="text-xs text-primary underline">＋ 新增喜愛運動</button>
+              )}
+            </div>
+
+            {/* Goals */}
+            {profile?.goals?.length ? (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1.5 font-medium">訓練目標</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.goals.map(g => (
+                    <Badge key={g} className="text-xs bg-primary/10 text-primary border-primary/20">{goalLabels[g] || g}</Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
@@ -527,7 +619,100 @@ export default function Dashboard() {
         </section>
       </div>
 
-      {/* Edit Profile Dialog */}
+      {/* User Profile & Preferences Edit Dialog */}
+      <Dialog open={profileEditOpen} onOpenChange={setProfileEditOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" /> 編輯個人資料與喜好
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            {/* Name */}
+            <div>
+              <p className="text-sm font-semibold mb-3">姓名</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="pe-lastName">姓氏</Label>
+                  <Input id="pe-lastName" placeholder="例：陳" value={profileEditLastName}
+                    onChange={e => setProfileEditLastName(e.target.value)} className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="pe-firstName">名字</Label>
+                  <Input id="pe-firstName" placeholder="例：大文" value={profileEditFirstName}
+                    onChange={e => setProfileEditFirstName(e.target.value)} className="h-10" />
+                </div>
+              </div>
+            </div>
+
+            {/* Sports */}
+            <div>
+              <p className="text-sm font-semibold mb-2">喜愛運動 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: "游泳", emoji: "🏊" }, { name: "瑜伽", emoji: "🧘" }, { name: "普拉提", emoji: "🤸" },
+                  { name: "足球", emoji: "⚽" }, { name: "籃球", emoji: "🏀" }, { name: "網球", emoji: "🎾" },
+                  { name: "羽毛球", emoji: "🏸" }, { name: "拳擊", emoji: "🥊" }, { name: "跑步", emoji: "🏃" },
+                  { name: "舞蹈", emoji: "💃" }, { name: "高爾夫球", emoji: "⛳" }, { name: "劍擊", emoji: "🤺" },
+                  { name: "田徑", emoji: "🏅" }, { name: "乒乓球", emoji: "🏓" }, { name: "跆拳道", emoji: "🥋" },
+                  { name: "排球", emoji: "🏐" },
+                ].map(sport => {
+                  const active = profileEditSports.includes(sport.name);
+                  return (
+                    <button key={sport.name} type="button" onClick={() => toggleProfileSport(sport.name)}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${
+                        active ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border hover:border-primary/50"
+                      }`}>
+                      {sport.emoji} {sport.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Goals */}
+            <div>
+              <p className="text-sm font-semibold mb-2">訓練目標 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { id: "weight_loss", emoji: "💪", label: "減重塑形", desc: "健康瘦身、改善體態" },
+                  { id: "muscle_gain", emoji: "🏋️", label: "增肌強壯", desc: "增加肌肉量、體能訓練" },
+                  { id: "competition", emoji: "🏆", label: "備戰比賽", desc: "學界、業餘或專業賽事" },
+                  { id: "fitness", emoji: "❤️", label: "提升健康", desc: "改善體能、心肺功能" },
+                  { id: "skill", emoji: "🎯", label: "學習技術", desc: "掌握新技能、提升水平" },
+                  { id: "fun", emoji: "🎉", label: "興趣娛樂", desc: "享受運動樂趣" },
+                  { id: "rehab", emoji: "🌿", label: "康復調理", desc: "運動傷患復健" },
+                ].map(g => {
+                  const active = profileEditGoals.includes(g.id);
+                  return (
+                    <button key={g.id} type="button" onClick={() => toggleProfileGoal(g.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                        active ? "bg-primary border-primary shadow-sm" : "bg-white border-border hover:border-primary/40"
+                      }`}>
+                      <span className="text-lg shrink-0">{g.emoji}</span>
+                      <div className="flex-1">
+                        <span className={`font-medium text-sm ${active ? "text-primary-foreground" : ""}`}>{g.label}</span>
+                        <span className={`text-xs ml-2 ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{g.desc}</span>
+                      </div>
+                      {active && <CheckCircle2 className="w-4 h-4 text-primary-foreground/80 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setProfileEditOpen(false)}>取消</Button>
+            <Button onClick={saveProfileEdit} disabled={savingProfile}>
+              {savingProfile ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />儲存中…</> : "儲存更改"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Coach Profile Dialog */}
       <Dialog open={!!editingCoach} onOpenChange={open => { if (!open) { setEditingCoach(null); setEditForm(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
