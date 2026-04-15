@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
         coachCount: sql<number>`count(*)::int`,
       })
       .from(coachesTable)
-      .where(eq(coachesTable.isApproved, true))
+      .where(and(eq(coachesTable.isApproved, true), ne(coachesTable.sportsCategory, "個人訓練")))
       .groupBy(coachesTable.sportsCategory)
       .orderBy(sql`count(*) desc`);
 
