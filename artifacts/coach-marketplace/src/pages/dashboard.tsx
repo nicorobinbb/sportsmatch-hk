@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,6 +63,7 @@ type EditForm = {
 
 export default function Dashboard() {
   const { user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const [savedCoaches, setSavedCoaches] = useState<SavedCoach[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -86,8 +87,19 @@ export default function Dashboard() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setLoading(false);
+      setLoadingMyCoaches(false);
+      return;
+    }
     async function load() {
       const token = await getAuthToken();
+      if (!token) {
+        setLoading(false);
+        setLoadingMyCoaches(false);
+        return;
+      }
       const headers = { Authorization: `Bearer ${token}` };
       try {
         const [wishRes, profileRes, coachRes] = await Promise.all([
@@ -117,7 +129,7 @@ export default function Dashboard() {
       setLoadingMyCoaches(false);
     }
     load();
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   function openEdit(coach: MyCoach) {
     setEditingCoach(coach);
