@@ -55,8 +55,19 @@ export default function Home() {
     sport: selectedSport,
     location: selectedLocation,
     coachType: selectedCoachTypes.size > 0 ? [...selectedCoachTypes].join(",") : undefined,
-    limit: 20
+    limit: 40
   });
+
+  const preferredSports: string[] = userPreferences?.preferredCategories ?? [];
+  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || selectedCoachTypes.size > 0);
+
+  const sortedCoaches = (() => {
+    const coaches = coachesData?.coaches ?? [];
+    if (isFiltered || preferredSports.length === 0) return coaches;
+    const preferred = coaches.filter(c => preferredSports.includes(c.sportsCategory));
+    const rest = coaches.filter(c => !preferredSports.includes(c.sportsCategory));
+    return [...preferred, ...rest];
+  })();
 
   const trackClick = useTrackCategoryClick();
 
@@ -201,10 +212,21 @@ export default function Home() {
           {/* All Coaches List */}
           <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-              <h2 className="text-2xl font-bold font-display">
-                {selectedSport ? `${selectedSport} 教練` : '探索教練'}
-                {selectedLocation && <span className="text-muted-foreground font-normal ml-2">於 {selectedLocation}</span>}
-              </h2>
+              <div>
+                <h2 className="text-2xl font-bold font-display">
+                  {selectedSport
+                    ? `${selectedSport} 教練`
+                    : !isFiltered && preferredSports.length > 0
+                      ? '根據您的喜好推薦'
+                      : '探索教練'}
+                  {selectedLocation && <span className="text-muted-foreground font-normal ml-2">於 {selectedLocation}</span>}
+                </h2>
+                {!isFiltered && preferredSports.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    優先顯示您感興趣的運動：{preferredSports.join('、')}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Coach type filter pills */}
@@ -240,7 +262,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
               {coachesData && (
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                  顯示 {coachesData.coaches.length} / {coachesData.total} 個結果
+                  顯示 {sortedCoaches.length} / {coachesData.total} 個結果
                 </span>
               )}
             </div>
@@ -259,7 +281,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            ) : coachesData?.coaches.length === 0 ? (
+            ) : sortedCoaches.length === 0 ? (
               <Empty
                 icon={<Search className="w-12 h-12 text-muted-foreground" />}
                 title="找不到教練"
@@ -277,7 +299,7 @@ export default function Home() {
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {coachesData?.coaches.map((coach) => (
+                {sortedCoaches.map((coach) => (
                   <CoachCard key={coach.id} coach={coach} />
                 ))}
               </div>
