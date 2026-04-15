@@ -12,6 +12,7 @@ export const userProfilesTable = pgTable("user_profiles", {
   availability: text("availability").array().notNull().default([]),
   preferredDistricts: text("preferred_districts").array().notNull().default([]),
   preferredSports: text("preferred_sports").array().notNull().default([]),
+  preferredAgeGroups: text("preferred_age_groups").array().notNull().default([]),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

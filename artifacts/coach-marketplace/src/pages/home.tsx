@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
 import { Empty } from "@/components/ui/empty";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 const AGE_GROUPS = [
   { label: "幼童", sub: "8歲以下", emoji: "👶", prefix: "幼童" },
@@ -60,6 +61,7 @@ export default function Home() {
   const { data: categories } = useListCategories();
   const { data: featuredCoaches, isLoading: isFeaturedLoading } = useListFeaturedCoaches();
   const { data: userPreferences } = useGetUserPreferences();
+  const { profile: userProfile } = useUserProfile();
   
   const { data: coachesData, isLoading: isCoachesLoading } = useListCoaches({
     search: debouncedSearch || undefined,
@@ -69,7 +71,13 @@ export default function Home() {
     limit: 40
   });
 
-  const preferredSports: string[] = userPreferences?.preferredCategories ?? [];
+  const preferredSports: string[] = [
+    ...(userProfile?.preferredSports ?? []),
+    ...(userPreferences?.preferredCategories ?? []),
+  ].filter((v, i, a) => a.indexOf(v) === i);
+
+  const preferredDistricts: string[] = userProfile?.preferredDistricts ?? [];
+  const hasProfilePrefs = (userProfile?.preferredSports?.length ?? 0) > 0 || preferredDistricts.length > 0;
   const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0 || selectedAgeGroup);
 
   const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null }, prefix: string) => {
@@ -84,10 +92,15 @@ export default function Home() {
     const ageFiltered = selectedAgeGroup
       ? coaches.filter(c => coachMatchesAgeGroup(c, selectedAgeGroup))
       : coaches;
-    if (isFiltered || preferredSports.length === 0) return ageFiltered;
-    const preferred = ageFiltered.filter(c => preferredSports.includes(c.sportsCategory));
-    const rest = ageFiltered.filter(c => !preferredSports.includes(c.sportsCategory));
-    return [...preferred, ...rest];
+    if (isFiltered) return ageFiltered;
+    if (preferredSports.length === 0 && preferredDistricts.length === 0) return ageFiltered;
+    const score = (c: typeof ageFiltered[0]) => {
+      let s = 0;
+      if (preferredSports.length > 0 && preferredSports.includes(c.sportsCategory)) s += 2;
+      if (preferredDistricts.length > 0 && preferredDistricts.some(d => c.location?.includes(d))) s += 1;
+      return s;
+    };
+    return [...ageFiltered].sort((a, b) => score(b) - score(a));
   })();
 
   const filteredFeatured = selectedAgeGroup
@@ -303,14 +316,16 @@ export default function Home() {
                 <h2 className="text-2xl font-bold font-display">
                   {selectedSport
                     ? `${selectedSport} 教練`
-                    : !isFiltered && preferredSports.length > 0
+                    : !isFiltered && hasProfilePrefs
                       ? '根據您的喜好推薦'
                       : '探索教練'}
                   {selectedLocation && <span className="text-muted-foreground font-normal ml-2">於 {selectedLocation}</span>}
                 </h2>
-                {!isFiltered && preferredSports.length > 0 && (
+                {!isFiltered && hasProfilePrefs && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    優先顯示您感興趣的運動：{preferredSports.join('、')}
+                    {userProfile?.preferredSports?.length ? `運動：${userProfile.preferredSports.join('、')}` : ""}
+                    {userProfile?.preferredSports?.length && preferredDistricts.length ? "　" : ""}
+                    {preferredDistricts.length ? `地區：${preferredDistricts.join('、')}` : ""}
                   </p>
                 )}
               </div>

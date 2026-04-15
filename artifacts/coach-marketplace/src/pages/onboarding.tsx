@@ -37,11 +37,52 @@ const GOALS = [
   { id: "rehab", emoji: "🌿", label: "康復調理", desc: "運動傷患復健" },
 ];
 
+const AGE_GROUPS = [
+  { id: "兒童", emoji: "🧒", desc: "12歲以下" },
+  { id: "青少年", emoji: "🧑", desc: "12–17歲" },
+  { id: "成人", emoji: "👨", desc: "18歲以上" },
+  { id: "長者", emoji: "👴", desc: "60歲以上" },
+];
+
+const HK_DISTRICTS = [
+  { name: "中西區", emoji: "🏙️" },
+  { name: "灣仔", emoji: "🌃" },
+  { name: "東區", emoji: "🌅" },
+  { name: "南區", emoji: "⛵" },
+  { name: "油尖旺", emoji: "🛍️" },
+  { name: "深水埗", emoji: "🏘️" },
+  { name: "九龍城", emoji: "🏯" },
+  { name: "黃大仙", emoji: "🛕" },
+  { name: "觀塘", emoji: "🏭" },
+  { name: "葵青", emoji: "🌿" },
+  { name: "荃灣", emoji: "🌊" },
+  { name: "屯門", emoji: "⛩️" },
+  { name: "元朗", emoji: "🌾" },
+  { name: "北區", emoji: "🏔️" },
+  { name: "大埔", emoji: "🌲" },
+  { name: "沙田", emoji: "🏇" },
+  { name: "西貢", emoji: "🐟" },
+  { name: "離島", emoji: "🏝️" },
+];
+
 const STEPS = [
   { id: 1, title: "您好，請告訴我們您的姓名", subtitle: "方便我們為您提供個人化體驗" },
-  { id: 2, title: "您喜愛哪些運動？", subtitle: "可多選，我們用此為您推薦合適教練" },
+  { id: 2, title: "您想搵邊類運動嘅教練？", subtitle: "可多選，我哋用此為您推薦合適教練" },
   { id: 3, title: "您的訓練目標是？", subtitle: "選擇目標幫助我們配對最合適的教練（可多選）" },
+  { id: 4, title: "教練教嘅年齡層？", subtitle: "您或您的小朋友屬於哪個年齡層？（可多選）" },
+  { id: 5, title: "您偏好哪個地區上課？", subtitle: "選擇方便您的地區，我們優先推薦附近的教練（可多選）" },
 ];
+
+function isAsciiOnly(s: string) {
+  return /^[\x00-\x7F]*$/.test(s);
+}
+
+function formatDisplayName(last: string, first: string) {
+  if (!last && !first) return "";
+  if (!last) return first;
+  if (!first) return last;
+  return (isAsciiOnly(last) && isAsciiOnly(first)) ? `${last} ${first}` : `${last}${first}`;
+}
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
@@ -50,6 +91,8 @@ export default function Onboarding() {
   const [nameError, setNameError] = useState("");
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [, navigate] = useLocation();
   const { user } = useUser();
@@ -82,6 +125,8 @@ export default function Onboarding() {
           lastName: lastName.trim() || undefined,
           preferredSports: selectedSports,
           goals: selectedGoals,
+          preferredAgeGroups: selectedAgeGroups,
+          preferredDistricts: selectedDistricts,
           onboardingCompleted: true,
         }),
       });
@@ -104,6 +149,7 @@ export default function Onboarding() {
   }
 
   const currentStep = STEPS[step - 1];
+  const displayName = formatDisplayName(lastName, firstName);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10 flex flex-col items-center justify-center px-4 py-10">
@@ -144,7 +190,7 @@ export default function Onboarding() {
                   <Label htmlFor="lastName">姓氏</Label>
                   <Input
                     id="lastName"
-                    placeholder="例：陳"
+                    placeholder="例：陳 / Chan"
                     value={lastName}
                     onChange={e => { setLastName(e.target.value); setNameError(""); }}
                     className="h-11"
@@ -155,7 +201,7 @@ export default function Onboarding() {
                   <Label htmlFor="firstName">名字</Label>
                   <Input
                     id="firstName"
-                    placeholder="例：大文"
+                    placeholder="例：大文 / Felix"
                     value={firstName}
                     onChange={e => { setFirstName(e.target.value); setNameError(""); }}
                     className="h-11"
@@ -166,8 +212,8 @@ export default function Onboarding() {
               {nameError && <p className="text-sm text-destructive">{nameError}</p>}
               {firstName && lastName && (
                 <div className="flex items-center gap-2 text-sm text-primary bg-primary/5 rounded-lg px-3 py-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  您好，{lastName}{firstName}！
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  您好，{displayName}！
                 </div>
               )}
             </div>
@@ -227,6 +273,61 @@ export default function Onboarding() {
               })}
             </div>
           )}
+
+          {/* Step 4 — Age Group */}
+          {step === 4 && (
+            <div className="grid grid-cols-2 gap-3">
+              {AGE_GROUPS.map(ag => {
+                const selected = selectedAgeGroups.includes(ag.id);
+                return (
+                  <button
+                    key={ag.id}
+                    type="button"
+                    onClick={() => toggle(selectedAgeGroups, setSelectedAgeGroups, ag.id)}
+                    className={`relative flex flex-col items-center justify-center gap-2 p-5 rounded-xl border text-sm font-medium transition-all ${
+                      selected
+                        ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                        : "bg-white border-border text-foreground hover:border-primary/50 hover:bg-primary/5"
+                    }`}
+                  >
+                    {selected && (
+                      <CheckCircle2 className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-primary-foreground/80" />
+                    )}
+                    <span className="text-3xl leading-none">{ag.emoji}</span>
+                    <span className="font-bold">{ag.id}</span>
+                    <span className={`text-xs ${selected ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{ag.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Step 5 — Preferred Districts */}
+          {step === 5 && (
+            <div className="grid grid-cols-3 gap-2">
+              {HK_DISTRICTS.map(d => {
+                const selected = selectedDistricts.includes(d.name);
+                return (
+                  <button
+                    key={d.name}
+                    type="button"
+                    onClick={() => toggle(selectedDistricts, setSelectedDistricts, d.name)}
+                    className={`relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border text-sm font-medium transition-all ${
+                      selected
+                        ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                        : "bg-white border-border text-foreground hover:border-primary/50 hover:bg-primary/5"
+                    }`}
+                  >
+                    {selected && (
+                      <CheckCircle2 className="absolute top-1.5 right-1.5 w-3 h-3 text-primary-foreground/80" />
+                    )}
+                    <span className="text-xl leading-none">{d.emoji}</span>
+                    <span className="text-xs text-center leading-tight">{d.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -242,7 +343,7 @@ export default function Onboarding() {
             </Button>
           ) : (
             <Button onClick={finish} disabled={saving} className="flex-1 h-11 font-bold">
-              {saving ? "儲存中…" : selectedGoals.length === 0 ? "略過，完成設定" : "完成設定 🎉"}
+              {saving ? "儲存中…" : selectedDistricts.length === 0 ? "略過，完成設定" : "完成設定 🎉"}
             </Button>
           )}
         </div>
