@@ -439,8 +439,8 @@ export default function CoachProfile() {
               </div>
 
               <Tabs defaultValue="about" className="w-full">
-                <div className="relative overflow-hidden border-b mb-6">
-                  <TabsList className="flex w-max min-w-full justify-start overflow-x-auto scrollbar-none rounded-none h-auto p-0 bg-transparent">
+                <div className="relative overflow-x-auto border-b mb-6">
+                  <TabsList className="flex w-max min-w-full justify-start rounded-none h-auto p-0 bg-transparent">
                     <TabsTrigger value="about" className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium">關於教練</TabsTrigger>
                     <TabsTrigger value="posts" onClick={() => { if (!postsFetched) fetchPosts(); }} className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-3 px-5 text-sm sm:text-base font-medium flex items-center gap-1.5">
                       <Newspaper className="w-4 h-4" /> 最新動向

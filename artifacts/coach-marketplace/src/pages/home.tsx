@@ -70,7 +70,7 @@ export default function Home() {
     sport: selectedSport,
     location: selectedLocation,
     coachType: appliedCoachTypes.size > 0 ? [...appliedCoachTypes].join(",") : undefined,
-    limit: 40
+    limit: 100
   });
 
   const preferredSports: string[] = [
