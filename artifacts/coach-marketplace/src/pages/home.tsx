@@ -182,7 +182,7 @@ export default function Home() {
             </form>
 
             {/* Coach type checkboxes */}
-            <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
               <span className="text-sm text-muted-foreground">篩選類型：</span>
               {(["專業運動員", "持牌教練"] as const).map(type => {
                 const checked = stagedCoachTypes.has(type);
@@ -209,7 +209,7 @@ export default function Home() {
             </div>
 
             {/* Age group filter */}
-            <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
               <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />年齡層：
               </span>
@@ -238,7 +238,7 @@ export default function Home() {
             </div>
 
             {stats && (
-              <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-2 text-sm font-medium text-muted-foreground">
+              <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-1 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground font-display">{stats.totalCoaches}</span>
                   位活躍教練
