@@ -26,8 +26,44 @@ type SavedCoach = {
 type UserProfile = {
   firstName?: string | null; lastName?: string | null;
   goals: string[]; availability: string[]; preferredDistricts: string[]; preferredSports: string[];
+  preferredAgeGroups: string[];
   onboardingCompleted: boolean;
 };
+
+const PROFILE_SPORTS = [
+  { name: "游泳", emoji: "🏊" }, { name: "瑜伽", emoji: "🧘" }, { name: "普拉提", emoji: "🤸" },
+  { name: "足球", emoji: "⚽" }, { name: "籃球", emoji: "🏀" }, { name: "網球", emoji: "🎾" },
+  { name: "羽毛球", emoji: "🏸" }, { name: "拳擊", emoji: "🥊" }, { name: "跑步", emoji: "🏃" },
+  { name: "舞蹈", emoji: "💃" }, { name: "高爾夫球", emoji: "⛳" }, { name: "劍擊", emoji: "🤺" },
+  { name: "田徑", emoji: "🏅" }, { name: "乒乓球", emoji: "🏓" }, { name: "跆拳道", emoji: "🥋" },
+  { name: "排球", emoji: "🏐" },
+];
+
+const PROFILE_AGE_GROUPS = [
+  { id: "兒童", emoji: "🧒", desc: "12歲以下" },
+  { id: "青少年", emoji: "🧑", desc: "12–17歲" },
+  { id: "成人", emoji: "👨", desc: "18歲以上" },
+  { id: "長者", emoji: "👴", desc: "60歲以上" },
+];
+
+const PROFILE_GOALS = [
+  { id: "weight_loss", emoji: "💪", label: "減重塑形", desc: "健康瘦身、改善體態" },
+  { id: "muscle_gain", emoji: "🏋️", label: "增肌強壯", desc: "增加肌肉量、體能訓練" },
+  { id: "competition", emoji: "🏆", label: "備戰比賽", desc: "學界、業餘或專業賽事" },
+  { id: "fitness", emoji: "❤️", label: "提升健康", desc: "改善體能、心肺功能" },
+  { id: "skill", emoji: "🎯", label: "學習技術", desc: "掌握新技能、提升水平" },
+  { id: "fun", emoji: "🎉", label: "興趣娛樂", desc: "享受運動樂趣" },
+  { id: "rehab", emoji: "🌿", label: "康復調理", desc: "運動傷患復健" },
+];
+
+const PROFILE_DISTRICTS = [
+  { name: "中西區", emoji: "🏙️" }, { name: "灣仔", emoji: "🌃" }, { name: "東區", emoji: "🌅" },
+  { name: "南區", emoji: "⛵" }, { name: "油尖旺", emoji: "🛍️" }, { name: "深水埗", emoji: "🏘️" },
+  { name: "九龍城", emoji: "🏯" }, { name: "黃大仙", emoji: "🛕" }, { name: "觀塘", emoji: "🏭" },
+  { name: "葵青", emoji: "🌿" }, { name: "荃灣", emoji: "🌊" }, { name: "屯門", emoji: "⛩️" },
+  { name: "元朗", emoji: "🌾" }, { name: "北區", emoji: "🏔️" }, { name: "大埔", emoji: "🌲" },
+  { name: "沙田", emoji: "🏇" }, { name: "西貢", emoji: "🐟" }, { name: "離島", emoji: "🏝️" },
+];
 
 type PricingRow = { id: string; sessionType: "單對單" | "小組課堂"; price: string; minStudents: string; maxStudents: string; duration: string; ageGroup?: string };
 type QualEntry = { text: string; proofUrl: string };
@@ -84,6 +120,8 @@ export default function Dashboard() {
   const [profileEditLastName, setProfileEditLastName] = useState("");
   const [profileEditSports, setProfileEditSports] = useState<string[]>([]);
   const [profileEditGoals, setProfileEditGoals] = useState<string[]>([]);
+  const [profileEditAgeGroups, setProfileEditAgeGroups] = useState<string[]>([]);
+  const [profileEditDistricts, setProfileEditDistricts] = useState<string[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -235,6 +273,8 @@ export default function Dashboard() {
     setProfileEditLastName(profile?.lastName || "");
     setProfileEditSports(profile?.preferredSports || []);
     setProfileEditGoals(profile?.goals || []);
+    setProfileEditAgeGroups(profile?.preferredAgeGroups || []);
+    setProfileEditDistricts(profile?.preferredDistricts || []);
     setProfileEditOpen(true);
   }
 
@@ -250,6 +290,8 @@ export default function Dashboard() {
           lastName: profileEditLastName.trim() || null,
           preferredSports: profileEditSports,
           goals: profileEditGoals,
+          preferredAgeGroups: profileEditAgeGroups,
+          preferredDistricts: profileEditDistricts,
           onboardingCompleted: true,
         }),
       });
@@ -271,6 +313,14 @@ export default function Dashboard() {
 
   function toggleProfileGoal(goal: string) {
     setProfileEditGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal]);
+  }
+
+  function toggleProfileAgeGroup(ag: string) {
+    setProfileEditAgeGroups(prev => prev.includes(ag) ? prev.filter(a => a !== ag) : [...prev, ag]);
+  }
+
+  function toggleProfileDistrict(d: string) {
+    setProfileEditDistricts(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
   }
 
   function getEffectivePending(coach: MyCoach): string | null {
@@ -662,14 +712,7 @@ export default function Dashboard() {
             <div>
               <p className="text-sm font-semibold mb-2">喜愛運動 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
               <div className="flex flex-wrap gap-2">
-                {[
-                  { name: "游泳", emoji: "🏊" }, { name: "瑜伽", emoji: "🧘" }, { name: "普拉提", emoji: "🤸" },
-                  { name: "足球", emoji: "⚽" }, { name: "籃球", emoji: "🏀" }, { name: "網球", emoji: "🎾" },
-                  { name: "羽毛球", emoji: "🏸" }, { name: "拳擊", emoji: "🥊" }, { name: "跑步", emoji: "🏃" },
-                  { name: "舞蹈", emoji: "💃" }, { name: "高爾夫球", emoji: "⛳" }, { name: "劍擊", emoji: "🤺" },
-                  { name: "田徑", emoji: "🏅" }, { name: "乒乓球", emoji: "🏓" }, { name: "跆拳道", emoji: "🥋" },
-                  { name: "排球", emoji: "🏐" },
-                ].map(sport => {
+                {PROFILE_SPORTS.map(sport => {
                   const active = profileEditSports.includes(sport.name);
                   return (
                     <button key={sport.name} type="button" onClick={() => toggleProfileSport(sport.name)}
@@ -687,15 +730,7 @@ export default function Dashboard() {
             <div>
               <p className="text-sm font-semibold mb-2">訓練目標 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
               <div className="grid grid-cols-1 gap-2">
-                {[
-                  { id: "weight_loss", emoji: "💪", label: "減重塑形", desc: "健康瘦身、改善體態" },
-                  { id: "muscle_gain", emoji: "🏋️", label: "增肌強壯", desc: "增加肌肉量、體能訓練" },
-                  { id: "competition", emoji: "🏆", label: "備戰比賽", desc: "學界、業餘或專業賽事" },
-                  { id: "fitness", emoji: "❤️", label: "提升健康", desc: "改善體能、心肺功能" },
-                  { id: "skill", emoji: "🎯", label: "學習技術", desc: "掌握新技能、提升水平" },
-                  { id: "fun", emoji: "🎉", label: "興趣娛樂", desc: "享受運動樂趣" },
-                  { id: "rehab", emoji: "🌿", label: "康復調理", desc: "運動傷患復健" },
-                ].map(g => {
+                {PROFILE_GOALS.map(g => {
                   const active = profileEditGoals.includes(g.id);
                   return (
                     <button key={g.id} type="button" onClick={() => toggleProfileGoal(g.id)}
@@ -708,6 +743,49 @@ export default function Dashboard() {
                         <span className={`text-xs ml-2 ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{g.desc}</span>
                       </div>
                       {active && <CheckCircle2 className="w-4 h-4 text-primary-foreground/80 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Age Groups */}
+            <div>
+              <p className="text-sm font-semibold mb-2">訓練對象年齡層 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
+              <div className="grid grid-cols-2 gap-2">
+                {PROFILE_AGE_GROUPS.map(ag => {
+                  const active = profileEditAgeGroups.includes(ag.id);
+                  return (
+                    <button key={ag.id} type="button" onClick={() => toggleProfileAgeGroup(ag.id)}
+                      className={`relative flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                        active ? "bg-primary border-primary shadow-sm" : "bg-white border-border hover:border-primary/40"
+                      }`}>
+                      <span className="text-xl shrink-0">{ag.emoji}</span>
+                      <div>
+                        <div className={`font-semibold text-sm ${active ? "text-primary-foreground" : ""}`}>{ag.id}</div>
+                        <div className={`text-xs ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{ag.desc}</div>
+                      </div>
+                      {active && <CheckCircle2 className="w-4 h-4 text-primary-foreground/80 shrink-0 ml-auto" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Districts */}
+            <div>
+              <p className="text-sm font-semibold mb-2">偏好上課地區 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
+              <div className="grid grid-cols-3 gap-2">
+                {PROFILE_DISTRICTS.map(d => {
+                  const active = profileEditDistricts.includes(d.name);
+                  return (
+                    <button key={d.name} type="button" onClick={() => toggleProfileDistrict(d.name)}
+                      className={`relative flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                        active ? "bg-primary border-primary text-primary-foreground shadow-sm" : "bg-white border-border hover:border-primary/50"
+                      }`}>
+                      {active && <CheckCircle2 className="absolute top-1.5 right-1.5 w-3 h-3 text-primary-foreground/80" />}
+                      <span className="text-lg leading-none">{d.emoji}</span>
+                      <span className="text-xs">{d.name}</span>
                     </button>
                   );
                 })}
