@@ -137,31 +137,26 @@ export default function Home() {
       {/* Hero Section */}
       <section className="bg-primary/5 border-b relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800" />
-        <div className="container max-w-screen-2xl px-4 md:px-10 py-10 md:py-14 relative">
-          <div className="max-w-5xl mx-auto text-center space-y-4">
-            <div className="flex justify-center -mb-2">
-              <img
-                src={`${import.meta.env.BASE_URL}logo-transparent.png`}
-                alt="SportsMatch 運對"
-                className="h-20 md:h-80 w-auto object-contain"
-              />
-            </div>
+        <div className="container max-w-screen-2xl px-4 md:px-10 py-8 md:py-12 relative">
+          <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-5">
+            <img
+              src={`${import.meta.env.BASE_URL}logo-hero.png`}
+              alt="SportsMatch 運對"
+              className="h-20 md:h-28 w-auto object-contain"
+            />
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
-              做運動、搵對的教練
+              香港最透明、最值得信賴的運動教練平台
             </Badge>
-            <h1 className="text-3xl md:text-5xl font-bold font-display tracking-tight text-foreground">
-              香港最透明、<br />最值得信賴的<br />
-              <span className="text-primary relative inline-block mt-2">
-                運動教練審核與搜尋平台
-                <div className="absolute -bottom-2 left-0 w-full h-3 bg-secondary/40 -z-10 transform -rotate-1" />
-              </span>
+            <h1 className="text-3xl md:text-5xl font-bold font-display tracking-tight text-foreground leading-snug">
+              香港最透明、最值得信賴的<br />
+              <span className="text-primary">運動教練審核與搜尋平台</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              本平台不收費不抽佣，透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練，消除盲目嘗試的時間與金錢浪費。
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              本平台不收費不抽佣，透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練。
             </p>
 
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto mt-4 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 w-full max-w-3xl bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
               <div className="relative flex-1 flex items-center">
                 <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <Input 
