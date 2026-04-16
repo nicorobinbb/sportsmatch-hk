@@ -28,7 +28,7 @@ export function Navbar() {
       <div className="container max-w-screen-2xl flex h-16 items-center justify-between px-4 md:px-10">
         {/* Logo */}
         <Link href="/" className="flex items-center" onClick={() => setMobileOpen(false)}>
-          <img src={`${import.meta.env.BASE_URL}logo-transparent.png`} alt="SportsMatch 運對" className="h-9 w-auto" />
+          <img src={`${import.meta.env.BASE_URL}logo-transparent.png`} alt="SportsMatch 運對" className="h-14 w-auto" />
         </Link>
 
         {/* Desktop nav */}

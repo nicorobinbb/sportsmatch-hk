@@ -146,7 +146,7 @@ export default function Home() {
             />
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
-              香港最透明、最值得信賴的運動教練平台
+              做運動、搵對的教練
             </Badge>
             <h1 className="text-3xl md:text-5xl font-bold font-display tracking-tight text-foreground leading-snug">
               香港最透明、最值得信賴的<br />
