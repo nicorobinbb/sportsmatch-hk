@@ -81,11 +81,14 @@ export default function Home() {
   const hasProfilePrefs = (userProfile?.preferredSports?.length ?? 0) > 0 || preferredDistricts.length > 0;
   const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0 || selectedAgeGroup);
 
-  const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null }, prefix: string) => {
+  const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null; ageGroups?: string[] }, prefix: string) => {
     try {
       const rows: Array<{ ageGroup?: string }> = JSON.parse(coach.pricingPlans ?? "[]");
-      return rows.some(r => r.ageGroup?.startsWith(prefix));
-    } catch { return false; }
+      if (rows.some(r => r.ageGroup)) {
+        return rows.some(r => r.ageGroup?.startsWith(prefix));
+      }
+    } catch {}
+    return (coach.ageGroups ?? []).some(ag => ag.startsWith(prefix));
   };
 
   const sortedCoaches = (() => {
