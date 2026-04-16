@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Show, useClerk } from "@clerk/react";
 import { Button } from "@/components/ui/button";
-import { Activity, Dumbbell, ShieldCheck, LayoutDashboard, Heart, Menu, X, LogOut } from "lucide-react";
+import { Dumbbell, ShieldCheck, LayoutDashboard, Heart, Menu, X, LogOut } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useWishlistCount } from "@/hooks/use-wishlist-count";
 
@@ -27,11 +27,8 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Activity className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-primary">運對</span>
+        <Link href="/" className="flex items-center" onClick={() => setMobileOpen(false)}>
+          <img src={`${import.meta.env.BASE_URL}logo-transparent.png`} alt="SportsMatch 運對" className="h-9 w-auto" />
         </Link>
 
         {/* Desktop nav */}

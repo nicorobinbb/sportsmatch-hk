@@ -268,7 +268,7 @@ export default function Home() {
                   className={`
                     flex flex-col items-center justify-center min-w-[100px] h-28 rounded-2xl border transition-all snap-center
                     ${isSelected ? 'bg-primary border-primary text-primary-foreground shadow-md' : 
-                      isPreferred ? 'bg-blue-50 border-blue-200 hover:border-blue-400' : 
+                      isPreferred ? 'bg-orange-50 border-orange-200 hover:border-orange-400' : 
                       'bg-card border-border hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900'}
                   `}
                 >

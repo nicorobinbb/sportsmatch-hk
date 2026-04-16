@@ -400,7 +400,7 @@ export default function CoachProfile() {
                       </Badge>
                     )}
                     {coach.reviewCount >= 5 && (
-                      <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50 gap-1">
+                      <Badge variant="outline" className="text-primary border-orange-200 bg-orange-50 gap-1">
                         <ThumbsUp className="w-3 h-3" /> 多人讚好
                       </Badge>
                     )}
@@ -558,7 +558,7 @@ export default function CoachProfile() {
                     )}
 
                     {isOwner && (
-                      <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                      <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-4 py-3">
                         💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
                       </p>
                     )}
@@ -638,7 +638,7 @@ export default function CoachProfile() {
                     ) : null}
 
                     {isOwner && (
-                      <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                      <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-4 py-3">
                         💡 相片經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
                       </p>
                     )}
@@ -709,7 +709,7 @@ export default function CoachProfile() {
                             <span className="ml-1.5">提交</span>
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                        <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
                           💡 影片連結經管理員審核後才會公開顯示，每位教練只可提交一條影片連結。
                         </p>
                       </form>
@@ -1033,7 +1033,7 @@ export default function CoachProfile() {
                 <input type="file" accept="image/*" className="hidden" onChange={handlePostImageAdd} />
               </label>
             )}
-            <p className="text-xs text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+            <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
               💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
             </p>
           </div>

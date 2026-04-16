@@ -1147,7 +1147,7 @@ export default function AdminDashboard() {
                                     href={coach.youtubePending}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:underline truncate block"
+                                    className="text-sm text-primary hover:underline truncate block"
                                   >
                                     {coach.youtubePending}
                                   </a>
@@ -1188,7 +1188,7 @@ export default function AdminDashboard() {
                                 href={coach.youtubeUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:underline truncate block"
+                                className="text-xs text-primary hover:underline truncate block"
                               >
                                 {coach.youtubeUrl}
                               </a>
@@ -1330,7 +1330,7 @@ export default function AdminDashboard() {
                   {/* ── Summary stats ── */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                      { label: "已登記用戶", value: userAnalytics.totalUsers, color: "bg-blue-50 border-blue-200 text-blue-800" },
+                      { label: "已登記用戶", value: userAnalytics.totalUsers, color: "bg-orange-50 border-orange-200 text-orange-800" },
                       { label: "完成問卷用戶", value: userAnalytics.onboardedUsers, color: "bg-green-50 border-green-200 text-green-800" },
                       { label: "問卷完成率", value: `${onboardingRate}%`, color: "bg-purple-50 border-purple-200 text-purple-800" },
                       { label: "收藏教練次數", value: userAnalytics.totalWishlists, color: "bg-amber-50 border-amber-200 text-amber-800" },
@@ -1526,7 +1526,7 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    { label: "已認證教練", value: analytics.totalCoaches, color: "bg-blue-50 border-blue-200 text-blue-800" },
+                    { label: "已認證教練", value: analytics.totalCoaches, color: "bg-orange-50 border-orange-200 text-orange-800" },
                     { label: "已審核評價", value: analytics.totalReviews, color: "bg-green-50 border-green-200 text-green-800" },
                     { label: "待處理舉報", value: analytics.pendingReports, color: "bg-red-50 border-red-200 text-red-800" },
                   ].map(stat => (

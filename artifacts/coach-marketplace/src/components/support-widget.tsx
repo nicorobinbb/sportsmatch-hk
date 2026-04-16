@@ -49,7 +49,7 @@ export function SupportWidget() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="p-3 bg-blue-50 border-b">
+            <div className="p-3 bg-orange-50 border-b">
               <p className="text-xs text-muted-foreground">👋 有咩可以幫到你？</p>
             </div>
             <div className="divide-y max-h-72 overflow-y-auto">
@@ -57,12 +57,12 @@ export function SupportWidget() {
                 <div key={i}>
                   <button
                     onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-                    className="w-full flex items-center justify-between p-3 text-left hover:bg-blue-50/50 transition-colors">
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-orange-50/50 transition-colors">
                     <span className="text-sm font-medium pr-2">{faq.q}</span>
                     <ChevronRight className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${expandedFaq === i ? "rotate-90" : ""}`} />
                   </button>
                   {expandedFaq === i && (
-                    <div className="px-3 pb-3 text-xs text-muted-foreground bg-blue-50/30 leading-relaxed">
+                    <div className="px-3 pb-3 text-xs text-muted-foreground bg-orange-50/30 leading-relaxed">
                       {faq.a}
                     </div>
                   )}
