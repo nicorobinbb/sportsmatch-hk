@@ -141,7 +141,7 @@ export default function Home() {
           <div className="max-w-5xl mx-auto text-center space-y-4">
             <div className="flex justify-center">
               <img
-                src={`${import.meta.env.BASE_URL}logo-banner.png`}
+                src={`${import.meta.env.BASE_URL}logo-transparent.png`}
                 alt="SportsMatch 運對"
                 className="h-16 md:h-20 w-auto object-contain"
               />
