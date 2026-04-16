@@ -3,8 +3,7 @@ import { CoachCard } from "@/components/coach-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, ShieldCheck, Star, Users } from "lucide-react";
+import { Search, MapPin, Star, Users } from "lucide-react";
 import { useState, useRef } from "react";
 
 import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
@@ -140,21 +139,10 @@ export default function Home() {
         <div className="container max-w-screen-2xl px-4 md:px-10 py-8 md:py-12 relative">
           <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-5">
             <img
-              src={`${import.meta.env.BASE_URL}logo-hero.png`}
-              alt="SportsMatch 運對"
-              className="h-20 md:h-28 w-auto object-contain"
+              src={`${import.meta.env.BASE_URL}hero-banner.jpg`}
+              alt="SportsMatch 運對 — 香港最透明、最值得信賴的運動教練審核與搜尋平台"
+              className="w-full max-w-3xl rounded-2xl shadow-md object-contain"
             />
-            <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
-              <ShieldCheck className="w-4 h-4 mr-1.5" />
-              做運動、搵對的教練
-            </Badge>
-            <h1 className="text-3xl md:text-5xl font-bold font-display tracking-tight text-foreground leading-snug">
-              香港最透明、最值得信賴的<br />
-              <span className="text-primary">運動教練審核與搜尋平台</span>
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              本平台不收費不抽佣，透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練。
-            </p>
 
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 w-full max-w-3xl bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
               <div className="relative flex-1 flex items-center">
