@@ -109,6 +109,9 @@ export default function Home() {
     ? (featuredCoaches ?? []).filter(c => coachMatchesAgeGroup(c, selectedAgeGroup))
     : featuredCoaches ?? [];
 
+  const featuredIds = new Set((featuredCoaches ?? []).map(c => c.id));
+  const showingFeatured = !debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0;
+
   const trackClick = useTrackCategoryClick();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -291,7 +294,7 @@ export default function Home() {
         <div className="container max-w-screen-2xl px-4 md:px-10 space-y-10">
           
           {/* Featured Coaches */}
-          {!debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0 && (
+          {showingFeatured && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold font-display flex items-center gap-2">
@@ -323,7 +326,7 @@ export default function Home() {
                     ? `${selectedSport} 教練`
                     : !isFiltered && hasProfilePrefs
                       ? '根據您的喜好推薦'
-                      : '探索教練'}
+                      : '尋找教練'}
                   {selectedLocation && <span className="text-muted-foreground font-normal ml-2">於 {selectedLocation}</span>}
                 </h2>
                 {!isFiltered && hasProfilePrefs && (
@@ -339,7 +342,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
               {coachesData && (
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                  顯示 {sortedCoaches.length} / {coachesData.total} 個結果
+                  顯示 {showingFeatured ? sortedCoaches.filter(c => !featuredIds.has(c.id)).length : sortedCoaches.length} / {coachesData.total} 個結果
                 </span>
               )}
             </div>
@@ -383,7 +386,7 @@ export default function Home() {
               </Empty>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-                {sortedCoaches.map((coach) => (
+                {(showingFeatured ? sortedCoaches.filter(c => !featuredIds.has(c.id)) : sortedCoaches).map((coach) => (
                   <CoachCard key={coach.id} coach={coach} />
                 ))}
               </div>
