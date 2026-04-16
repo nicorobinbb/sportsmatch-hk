@@ -138,14 +138,15 @@ export default function Home() {
     <Layout>
       {/* Hero Section */}
       <section className="bg-primary/5 border-b relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800" />
-        <div className="container max-w-screen-2xl px-4 md:px-10 py-8 md:py-12 relative">
+        {/* Full-bleed banner */}
+        <img
+          src={`${import.meta.env.BASE_URL}hero-banner.jpg`}
+          alt="SportsMatch 運對 — 香港最透明、最值得信賴的運動教練審核與搜尋平台"
+          className="w-full object-cover block"
+        />
+
+        <div className="container max-w-screen-2xl px-4 md:px-10 py-6 md:py-8 relative">
           <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-5">
-            <img
-              src={`${import.meta.env.BASE_URL}hero-banner.jpg`}
-              alt="SportsMatch 運對 — 香港最透明、最值得信賴的運動教練審核與搜尋平台"
-              className="w-full max-w-3xl rounded-2xl shadow-md object-contain"
-            />
 
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 w-full max-w-3xl bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
               <div className="relative flex-1 flex items-center">
