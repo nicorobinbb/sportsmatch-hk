@@ -134,8 +134,8 @@ export default function Home() {
       {/* Hero Section */}
       <section className="bg-primary/5 border-b relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800" />
-        <div className="container max-w-screen-2xl px-4 md:px-10 py-16 md:py-24 relative">
-          <div className="max-w-5xl mx-auto text-center space-y-6">
+        <div className="container max-w-screen-2xl px-4 md:px-10 py-10 md:py-14 relative">
+          <div className="max-w-5xl mx-auto text-center space-y-4">
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
               香港運動教練審核與搜尋平台
@@ -151,7 +151,7 @@ export default function Home() {
               本平台不收費不抽佣，透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練，消除盲目嘗試的時間與金錢浪費。
             </p>
 
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto mt-4 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
               <div className="relative flex-1 flex items-center">
                 <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <Input 
@@ -233,7 +233,7 @@ export default function Home() {
             </div>
 
             {stats && (
-              <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 text-sm font-medium text-muted-foreground">
+              <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-4 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-foreground font-display">{stats.totalCoaches}</span>
                   位活躍教練
@@ -253,9 +253,9 @@ export default function Home() {
       </section>
 
       {/* Categories */}
-      <section className="py-12 bg-white dark:bg-background border-b">
+      <section className="py-6 bg-white dark:bg-background border-b">
         <div className="container max-w-screen-2xl px-4 md:px-10">
-          <h2 className="text-xl font-bold font-display mb-6">按運動類別瀏覽</h2>
+          <h2 className="text-xl font-bold font-display mb-4">按運動類別瀏覽</h2>
           <div className="flex overflow-x-auto pb-4 gap-4 snap-x hide-scrollbar">
             {categories?.map((cat) => {
               const isPreferred = userPreferences?.preferredCategories.includes(cat.name);
@@ -287,8 +287,8 @@ export default function Home() {
       </section>
 
       {/* Main Content */}
-      <section className="py-12 flex-1">
-        <div className="container max-w-screen-2xl px-4 md:px-10 space-y-16">
+      <section className="py-8 flex-1">
+        <div className="container max-w-screen-2xl px-4 md:px-10 space-y-10">
           
           {/* Featured Coaches */}
           {!debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0 && (
