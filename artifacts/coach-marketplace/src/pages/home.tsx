@@ -143,7 +143,7 @@ export default function Home() {
               <img
                 src={`${import.meta.env.BASE_URL}logo-transparent.png`}
                 alt="SportsMatch 運對"
-                className="h-16 md:h-20 w-auto object-contain"
+                className="h-20 md:h-80 w-auto object-contain"
               />
             </div>
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
