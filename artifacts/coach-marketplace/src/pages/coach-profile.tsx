@@ -461,6 +461,61 @@ export default function CoachProfile() {
                       <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">{coach.bio}</p>
                     </div>
 
+                    {/* Credential sections */}
+                    {(() => {
+                      const isPro = coach.experienceLevel?.includes("專業運動員");
+                      const isCert = coach.experienceLevel?.includes("持牌教練");
+                      let quals: { text: string; proofUrl?: string }[] = [];
+                      try { quals = coach.qualifications ? JSON.parse(coach.qualifications as unknown as string) : []; } catch {}
+                      const proQuals = quals.filter(q => q.text?.trim());
+
+                      return (
+                        <>
+                          {isPro && (
+                            <div className="mt-6 pt-6 border-t">
+                              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                <Award className="w-4 h-4 text-primary" />
+                                專業運動員
+                              </h4>
+                              <div className="space-y-2">
+                                <div className="flex items-start gap-2 text-sm">
+                                  <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                  <span>{coach.sportsCategory} 代表級運動員背景</span>
+                                </div>
+                                {proQuals.map((q, i) => (
+                                  <div key={i} className="flex items-start gap-2 text-sm">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                    <span>{q.text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {isCert && (
+                            <div className="mt-6 pt-6 border-t">
+                              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-primary" />
+                                持證書教練
+                              </h4>
+                              <div className="space-y-2">
+                                {proQuals.length > 0 ? proQuals.map((q, i) => (
+                                  <div key={i} className="flex items-start gap-2 text-sm">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                    <span>{q.text}</span>
+                                  </div>
+                                )) : (
+                                  <div className="flex items-start gap-2 text-sm">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                    <span>持認可 {coach.sportsCategory} 教練資格</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
                     <div className="mt-8 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
                         <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">適合年齡組別</h4>
