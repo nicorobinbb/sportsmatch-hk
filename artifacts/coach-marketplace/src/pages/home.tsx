@@ -134,8 +134,8 @@ export default function Home() {
       {/* Hero Section */}
       <section className="bg-primary/5 border-b relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800" />
-        <div className="container px-4 md:px-6 py-16 md:py-24 relative">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
+        <div className="container max-w-screen-2xl px-4 md:px-10 py-16 md:py-24 relative">
+          <div className="max-w-5xl mx-auto text-center space-y-6">
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
               香港運動教練審核與搜尋平台
@@ -147,11 +147,11 @@ export default function Home() {
                 <div className="absolute -bottom-2 left-0 w-full h-3 bg-secondary/40 -z-10 transform -rotate-1" />
               </span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               本平台不收費不抽佣，透過透明的教練檔案、真實評分及公開收費資訊，讓家長與學生快速精準地對比並直接聯繫合適教練，消除盲目嘗試的時間與金錢浪費。
             </p>
 
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto mt-8 bg-white dark:bg-card p-2 rounded-2xl shadow-lg border">
               <div className="relative flex-1 flex items-center">
                 <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <Input 
@@ -254,7 +254,7 @@ export default function Home() {
 
       {/* Categories */}
       <section className="py-12 bg-white dark:bg-background border-b">
-        <div className="container px-4 md:px-6">
+        <div className="container max-w-screen-2xl px-4 md:px-10">
           <h2 className="text-xl font-bold font-display mb-6">按運動類別瀏覽</h2>
           <div className="flex overflow-x-auto pb-4 gap-4 snap-x hide-scrollbar">
             {categories?.map((cat) => {
@@ -288,7 +288,7 @@ export default function Home() {
 
       {/* Main Content */}
       <section className="py-12 flex-1">
-        <div className="container px-4 md:px-6 space-y-16">
+        <div className="container max-w-screen-2xl px-4 md:px-10 space-y-16">
           
           {/* Featured Coaches */}
           {!debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0 && (
@@ -345,7 +345,7 @@ export default function Home() {
             </div>
 
             {isCoachesLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <div key={i} className="rounded-xl border bg-card text-card-foreground shadow-sm h-[380px] overflow-hidden flex flex-col">
                     <Skeleton className="h-32 w-full rounded-none" />
@@ -382,7 +382,7 @@ export default function Home() {
                 </EmptyContent>
               </Empty>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
                 {sortedCoaches.map((coach) => (
                   <CoachCard key={coach.id} coach={coach} />
                 ))}
