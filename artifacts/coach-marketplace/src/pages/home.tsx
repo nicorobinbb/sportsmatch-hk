@@ -139,6 +139,13 @@ export default function Home() {
         <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800" />
         <div className="container max-w-screen-2xl px-4 md:px-10 py-10 md:py-14 relative">
           <div className="max-w-5xl mx-auto text-center space-y-4">
+            <div className="flex justify-center">
+              <img
+                src={`${import.meta.env.BASE_URL}logo-banner.png`}
+                alt="SportsMatch 運對"
+                className="h-16 md:h-20 w-auto object-contain"
+              />
+            </div>
             <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm font-medium border-primary/20 bg-primary/10 text-primary">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
               香港運動教練審核與搜尋平台
