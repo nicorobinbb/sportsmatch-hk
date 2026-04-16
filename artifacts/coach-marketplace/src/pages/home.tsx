@@ -392,7 +392,7 @@ export default function Home() {
                 </EmptyContent>
               </Empty>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {(showingFeatured ? sortedCoaches.filter(c => !featuredIds.has(c.id)) : sortedCoaches).map((coach) => (
                   <CoachCard key={coach.id} coach={coach} />
                 ))}

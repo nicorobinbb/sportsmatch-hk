@@ -20,17 +20,24 @@ export function CoachCard({ coach }: { coach: Coach }) {
     <Link href={`/coaches/${coach.id}`}>
       <Card className="group overflow-hidden h-full flex flex-col cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 bg-white">
         <CardContent className="pt-5 pb-4 flex-1">
-          {/* Top row: avatar + name/location + rating */}
-          <div className="flex items-start gap-4 mb-4">
-            <Avatar className="h-16 w-16 shrink-0 border-2 border-primary/10 shadow-sm bg-white">
+          {/* Top row: avatar + name/location/rating */}
+          <div className="flex items-start gap-3 mb-4">
+            <Avatar className="h-14 w-14 shrink-0 border-2 border-primary/10 shadow-sm bg-white">
               <AvatarImage src={coach.profileImageUrl || undefined} alt={coach.name} className="object-cover" />
-              <AvatarFallback className="text-xl bg-primary/10 text-primary font-bold">{coach.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-lg bg-primary/10 text-primary font-bold">{coach.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-base leading-tight flex items-center gap-1 flex-wrap">
-                <span className="truncate">{coach.name}</span>
-                {coach.isApproved && <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />}
-              </h3>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-display font-bold text-base leading-tight flex items-center gap-1 min-w-0">
+                  <span className="truncate">{coach.name}</span>
+                  {coach.isApproved && <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />}
+                </h3>
+                <div className="flex items-center bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-md text-amber-600 font-medium text-xs shrink-0">
+                  <Star className="w-3 h-3 fill-current mr-0.5" />
+                  {coach.averageRating ? coach.averageRating.toFixed(1) : "New"}
+                  <span className="text-amber-500/70 ml-0.5">({coach.reviewCount})</span>
+                </div>
+              </div>
               <div className="flex items-center text-muted-foreground text-xs mt-0.5 gap-1">
                 <MapPin className="w-3 h-3 shrink-0" />
                 <span className="truncate">{coach.location}</span>
@@ -45,11 +52,6 @@ export function CoachCard({ coach }: { coach: Coach }) {
                   {coach.sportsCategory}
                 </Badge>
               </div>
-            </div>
-            <div className="flex items-center bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg text-amber-600 font-medium text-xs shrink-0">
-              <Star className="w-3 h-3 fill-current mr-0.5" />
-              {coach.averageRating ? coach.averageRating.toFixed(1) : "New"}
-              <span className="text-amber-500/70 ml-0.5">({coach.reviewCount})</span>
             </div>
           </div>
 
