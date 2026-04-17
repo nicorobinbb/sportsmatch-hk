@@ -15,6 +15,10 @@ export interface CoachDetail {
   nameZh?: string | null;
   /** @nullable */
   nameEn?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  instagramUrl?: string | null;
   sportsCategory: string;
   location: string;
   bio: string;

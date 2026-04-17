@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus, Facebook, Instagram } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -976,6 +976,33 @@ export default function CoachProfile() {
                         <Phone className="w-5 h-5 mr-2" />
                         聯絡方式待更新
                       </Button>
+                    )}
+                    {((coach as any).facebookUrl || (coach as any).instagramUrl) && (
+                      <div className="flex items-center justify-center gap-3 pt-1">
+                        {(coach as any).facebookUrl && (
+                          <a
+                            href={(coach as any).facebookUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Facebook"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#1877F2] hover:bg-[#0e63cf] text-white transition-colors"
+                          >
+                            <Facebook className="w-5 h-5" />
+                          </a>
+                        )}
+                        {(coach as any).instagramUrl && (
+                          <a
+                            href={(coach as any).instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Instagram"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full text-white transition-opacity hover:opacity-90"
+                            style={{ background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" }}
+                          >
+                            <Instagram className="w-5 h-5" />
+                          </a>
+                        )}
+                      </div>
                     )}
                     <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       <p className="text-xs text-amber-800 text-center leading-relaxed">

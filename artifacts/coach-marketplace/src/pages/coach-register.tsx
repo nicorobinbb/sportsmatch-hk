@@ -43,6 +43,8 @@ const coachSchema = z.object({
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
   whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
+  facebookUrl: z.string().url("請輸入有效的 Facebook 連結").optional().or(z.literal('')),
+  instagramUrl: z.string().url("請輸入有效的 Instagram 連結").optional().or(z.literal('')),
 });
 
 type CoachFormValues = z.infer<typeof coachSchema>;
@@ -81,6 +83,8 @@ export default function CoachRegister() {
       ageGroups: [],
       profileImageUrl: "",
       whatsappLocalNumber: "",
+      facebookUrl: "",
+      instagramUrl: "",
     },
   });
 
@@ -198,6 +202,8 @@ export default function CoachRegister() {
         pricingPlans: JSON.stringify(pricingRows.map(({ id: _id, ...r }) => r)),
         teachingAchievements: data.teachingAchievements || undefined,
         sportsAchievements: data.sportsAchievements || undefined,
+        facebookUrl: data.facebookUrl || undefined,
+        instagramUrl: data.instagramUrl || undefined,
       } as any
     }, {
       onSuccess: () => {
@@ -440,6 +446,36 @@ export default function CoachRegister() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Social Media */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="facebookUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Facebook 主頁（選填）</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://facebook.com/your-page" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="instagramUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Instagram 帳戶（選填）</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://instagram.com/your-handle" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
                       control={form.control}
