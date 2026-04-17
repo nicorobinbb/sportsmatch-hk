@@ -97,17 +97,13 @@ export function CoachCard({ coach }: { coach: Coach }) {
                 <span className="truncate max-w-[20ch]">{coach.location}</span>
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5">
-              <Star className="w-4 h-4 shrink-0 fill-amber-400 text-amber-400" />
-              {coach.averageRating ? (
-                <>
-                  <span className="font-semibold text-foreground">{coach.averageRating.toFixed(1)}</span>
-                  <span>（{coach.reviewCount} 評價）</span>
-                </>
-              ) : (
-                <span>新教練</span>
-              )}
-            </span>
+            {coach.averageRating ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Star className="w-4 h-4 shrink-0 fill-amber-400 text-amber-400" />
+                <span className="font-semibold text-foreground">{coach.averageRating.toFixed(1)}</span>
+                <span>（{coach.reviewCount} 評價）</span>
+              </span>
+            ) : null}
           </div>
         </div>
 
