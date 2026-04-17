@@ -37,40 +37,32 @@ export function CoachCard({ coach }: { coach: Coach }) {
               <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">{coach.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <h3 className="font-display font-bold text-xl md:text-2xl leading-tight text-foreground truncate">
-                  {coach.name}
-                </h3>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {coach.isFeatured && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-amber-300 text-amber-700 bg-amber-50 text-xs font-semibold">
-                      <Crown className="w-3 h-3" />
-                      精選
-                    </span>
-                  )}
-                  {coach.isApproved && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-emerald-300 text-emerald-700 bg-emerald-50 text-xs font-semibold">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      已認證
-                    </span>
-                  )}
-                </div>
+              <h3 className="font-display font-bold text-xl md:text-2xl leading-tight text-foreground mb-1.5 break-words">
+                {coach.name}
+              </h3>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {coach.isFeatured && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-amber-300 text-amber-700 bg-amber-50 text-xs font-semibold">
+                    <Crown className="w-3 h-3" />
+                    精選
+                  </span>
+                )}
+                {coach.isApproved && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-emerald-300 text-emerald-700 bg-emerald-50 text-xs font-semibold">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    已認證
+                  </span>
+                )}
+                {coachTypes.map((t, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-semibold"
+                  >
+                    {t === "專業運動員" ? "🏅 " : t === "持牌教練" ? "📋 " : ""}
+                    {t}
+                  </span>
+                ))}
               </div>
-
-              {/* Coach type pills */}
-              {coachTypes.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {coachTypes.map((t, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-semibold"
-                    >
-                      {t === "專業運動員" ? "🏅 " : t === "持牌教練" ? "📋 " : ""}
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
