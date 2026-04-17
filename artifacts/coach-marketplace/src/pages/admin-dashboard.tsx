@@ -25,6 +25,96 @@ type Report = {
   reason: string; description?: string; status: string; adminNote?: string; createdAt: string;
 };
 
+function formatEditValue(key: string, val: unknown): React.ReactNode {
+  if (val === null || val === undefined || val === "") return <span className="text-muted-foreground italic">（清空）</span>;
+
+  if (key === "ageGroups" && Array.isArray(val)) {
+    return (
+      <div className="flex flex-wrap gap-1">
+        {(val as string[]).map((a, i) => (
+          <span key={i} className="inline-block px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs">{a}</span>
+        ))}
+      </div>
+    );
+  }
+
+  if (key === "experienceLevel" && typeof val === "string") {
+    return (
+      <div className="flex flex-wrap gap-1">
+        {val.split(/[、,]/).map((t, i) => (
+          <span key={i} className="inline-block px-2 py-0.5 rounded-md bg-primary/10 border border-primary/30 text-primary text-xs">{t.trim()}</span>
+        ))}
+      </div>
+    );
+  }
+
+  if (key === "pricingPlans" && typeof val === "string") {
+    try {
+      const rows = JSON.parse(val) as Array<{ sessionType?: string; price?: string; minStudents?: string; maxStudents?: string; duration?: string; ageGroup?: string }>;
+      if (!Array.isArray(rows) || rows.length === 0) return <span className="text-muted-foreground italic">（無）</span>;
+      return (
+        <div className="space-y-1">
+          {rows.map((r, i) => {
+            const isGroup = r.sessionType === "小組課堂";
+            const students = isGroup
+              ? (r.minStudents && r.maxStudents ? `${r.minStudents}-${r.maxStudents}人` : r.maxStudents ? `≤${r.maxStudents}人` : "")
+              : "1對1";
+            const parts = [
+              r.sessionType,
+              `HK$${r.price || "—"}`,
+              students,
+              r.duration,
+              r.ageGroup,
+            ].filter(Boolean);
+            return (
+              <div key={i} className="flex flex-wrap gap-x-2 gap-y-0.5">
+                <span className="text-muted-foreground">·</span>
+                {parts.map((p, j) => (
+                  <span key={j}>{j === 1 ? <strong className="text-primary">{p}</strong> : p}</span>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      );
+    } catch { return String(val); }
+  }
+
+  if (key === "qualifications" && typeof val === "string") {
+    try {
+      const list = JSON.parse(val) as Array<{ text?: string; proofUrl?: string }>;
+      if (!Array.isArray(list) || list.length === 0) return <span className="text-muted-foreground italic">（無）</span>;
+      return (
+        <ul className="space-y-0.5 list-disc list-inside">
+          {list.map((q, i) => (
+            <li key={i}>
+              {q.text}
+              {q.proofUrl && <a href={q.proofUrl} target="_blank" rel="noreferrer" className="ml-2 text-primary underline">證明</a>}
+            </li>
+          ))}
+        </ul>
+      );
+    } catch { return String(val); }
+  }
+
+  if (key === "profileImageUrl" && typeof val === "string") {
+    return (
+      <div className="flex items-center gap-2">
+        <img src={val} alt="新頭像" className="w-12 h-12 rounded-lg object-cover border" />
+        <a href={val} target="_blank" rel="noreferrer" className="text-primary underline text-xs">查看原圖</a>
+      </div>
+    );
+  }
+
+  if ((key === "trialPrice" || key === "regularPrice") && (typeof val === "number" || typeof val === "string")) {
+    return <span><strong className="text-primary">HK${val}</strong></span>;
+  }
+
+  if (Array.isArray(val)) return (val as unknown[]).join("、");
+  if (typeof val === "object") return JSON.stringify(val);
+  return String(val);
+}
+
 export default function AdminDashboard() {
   const { user, isSignedIn, isLoaded } = useUser();
   const { toast } = useToast();
@@ -821,9 +911,9 @@ export default function AdminDashboard() {
                               {Object.entries(edits).map(([key, val]) => (
                                 <div key={key} className="flex gap-2 text-xs">
                                   <span className="font-medium text-slate-600 w-28 shrink-0">{fieldLabels[key] || key}</span>
-                                  <span className="text-slate-800 break-all whitespace-pre-wrap">
-                                    {Array.isArray(val) ? (val as string[]).join("、") : typeof val === "object" ? JSON.stringify(val) : String(val)}
-                                  </span>
+                                  <div className="text-slate-800 break-all whitespace-pre-wrap flex-1">
+                                    {formatEditValue(key, val)}
+                                  </div>
                                 </div>
                               ))}
                             </div>
