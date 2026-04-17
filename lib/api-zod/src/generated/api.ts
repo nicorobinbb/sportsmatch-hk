@@ -26,6 +26,7 @@ export const ListCoachesQueryParams = zod.object({
   limit: zod.coerce.number().optional(),
   offset: zod.coerce.number().optional(),
   coachType: zod.coerce.string().optional(),
+  teachingFocus: zod.coerce.string().optional(),
 });
 
 export const ListCoachesResponse = zod.object({
@@ -46,6 +47,7 @@ export const ListCoachesResponse = zod.object({
       packageDetails: zod.string().nullish(),
       pricingPlans: zod.string().nullish(),
       ageGroups: zod.array(zod.string()),
+      teachingFocus: zod.array(zod.string()).optional(),
       experienceLevel: zod.string(),
       isFeatured: zod.boolean(),
       isApproved: zod.boolean(),
@@ -78,6 +80,7 @@ export const CreateCoachBody = zod.object({
   regularPrice: zod.number(),
   packageDetails: zod.string().optional(),
   ageGroups: zod.array(zod.string()),
+  teachingFocus: zod.array(zod.string()).optional(),
   experienceLevel: zod.string(),
   profileImageUrl: zod.string().optional(),
 });
@@ -105,6 +108,7 @@ export const GetCoachResponse = zod.object({
   packageDetails: zod.string().nullish(),
   pricingPlans: zod.string().nullish(),
   ageGroups: zod.array(zod.string()),
+  teachingFocus: zod.array(zod.string()).optional(),
   experienceLevel: zod.string(),
   isFeatured: zod.boolean(),
   isApproved: zod.boolean(),
@@ -236,6 +240,7 @@ export const ListFeaturedCoachesResponseItem = zod.object({
   packageDetails: zod.string().nullish(),
   pricingPlans: zod.string().nullish(),
   ageGroups: zod.array(zod.string()),
+  teachingFocus: zod.array(zod.string()).optional(),
   experienceLevel: zod.string(),
   isFeatured: zod.boolean(),
   isApproved: zod.boolean(),
@@ -299,6 +304,7 @@ export const AdminListPendingCoachesResponseItem = zod.object({
   packageDetails: zod.string().nullish(),
   pricingPlans: zod.string().nullish(),
   ageGroups: zod.array(zod.string()),
+  teachingFocus: zod.array(zod.string()).optional(),
   experienceLevel: zod.string(),
   isFeatured: zod.boolean(),
   isApproved: zod.boolean(),
@@ -336,6 +342,7 @@ export const AdminApproveCoachResponse = zod.object({
   packageDetails: zod.string().nullish(),
   pricingPlans: zod.string().nullish(),
   ageGroups: zod.array(zod.string()),
+  teachingFocus: zod.array(zod.string()).optional(),
   experienceLevel: zod.string(),
   isFeatured: zod.boolean(),
   isApproved: zod.boolean(),
@@ -370,6 +377,7 @@ export const AdminRejectCoachResponse = zod.object({
   packageDetails: zod.string().nullish(),
   pricingPlans: zod.string().nullish(),
   ageGroups: zod.array(zod.string()),
+  teachingFocus: zod.array(zod.string()).optional(),
   experienceLevel: zod.string(),
   isFeatured: zod.boolean(),
   isApproved: zod.boolean(),

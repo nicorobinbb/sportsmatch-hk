@@ -520,6 +520,19 @@ export default function CoachProfile() {
                       </div>
                     )}
 
+                    {((coach as any).teachingFocus?.length ?? 0) > 0 && (
+                      <div className="mt-8 pt-8 border-t">
+                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">教學類型</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {(coach as any).teachingFocus.map((focus: string) => (
+                            <Badge key={focus} className="bg-primary/10 text-primary border-primary/30 hover:bg-primary/15">
+                              {focus === "競賽" ? "🏆 " : "🎯 "}{focus}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-8 pt-8 border-t">
                       <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">適合年齡組別</h4>
                       <div className="flex flex-wrap gap-2">

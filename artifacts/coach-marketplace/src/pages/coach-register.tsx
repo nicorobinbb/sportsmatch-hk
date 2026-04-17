@@ -53,6 +53,10 @@ type CoachFormValues = z.infer<typeof coachSchema>;
 
 const AGE_GROUPS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
 const COACH_TYPES = ["專業運動員", "持牌教練"];
+const TEACHING_FOCUS_OPTIONS = [
+  { value: "競賽", label: "競賽", desc: "備戰比賽、技術提升、成績為導向" },
+  { value: "興趣", label: "興趣", desc: "輕鬆學習、強身健體、培養興趣" },
+];
 const HK_DISTRICTS = [
   "中西區", "灣仔", "東區", "南區",
   "油尖旺", "深水埗", "九龍城", "黃大仙", "觀塘",
@@ -127,6 +131,7 @@ export default function CoachRegister() {
 
   const [coachTypes, setCoachTypes] = useState<string[]>([]);
   const [coachTypeError, setCoachTypeError] = useState("");
+  const [teachingFocus, setTeachingFocus] = useState<string[]>([]);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<CoachFormValues | null>(null);
@@ -223,6 +228,7 @@ export default function CoachRegister() {
         facebookUrl: data.facebookUrl || undefined,
         instagramUrl: data.instagramUrl || undefined,
         scrcNumber: data.scrcNumber || undefined,
+        teachingFocus,
       } as any
     }, {
       onSuccess: () => {
@@ -591,6 +597,30 @@ export default function CoachRegister() {
                         ))}
                       </div>
                       {coachTypeError && <p className="text-sm text-destructive">{coachTypeError}</p>}
+                    </div>
+
+                    {/* Teaching focus checkboxes */}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium leading-none mb-1">教學類型 <span className="text-muted-foreground text-xs">（選填，可多選）</span></p>
+                        <p className="text-xs text-muted-foreground">讓學員了解你主要的教學方向</p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {TEACHING_FOCUS_OPTIONS.map(opt => (
+                          <label key={opt.value} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all select-none ${teachingFocus.includes(opt.value) ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+                            <Checkbox
+                              checked={teachingFocus.includes(opt.value)}
+                              onCheckedChange={(checked) => {
+                                setTeachingFocus(prev => checked ? [...prev, opt.value] : prev.filter(v => v !== opt.value));
+                              }}
+                            />
+                            <div>
+                              <p className="font-medium text-sm">{opt.value === "競賽" ? "🏆 " : "🎯 "}{opt.label}</p>
+                              <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Qualifications multi-row with per-entry upload */}

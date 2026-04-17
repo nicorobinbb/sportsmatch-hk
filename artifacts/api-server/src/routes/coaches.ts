@@ -146,7 +146,7 @@ const router = Router();
 router.get("/", async (req, res) => {
   try {
     const query = ListCoachesQueryParams.parse(req.query);
-    const { sport, location, search, coachType, limit = 50, offset = 0 } = query;
+    const { sport, location, search, coachType, teachingFocus, limit = 50, offset = 0 } = query;
 
     const conditions: ReturnType<typeof eq>[] = [eq(coachesTable.isApproved, true)];
 
@@ -162,6 +162,12 @@ router.get("/", async (req, res) => {
         conditions.push(ilike(coachesTable.experienceLevel, `%${types[0]}%`));
       } else if (types.length > 1) {
         conditions.push(or(...types.map(t => ilike(coachesTable.experienceLevel, `%${t}%`))) as ReturnType<typeof eq>);
+      }
+    }
+    if (teachingFocus) {
+      const focuses = teachingFocus.split(",").map(t => t.trim()).filter(Boolean);
+      if (focuses.length > 0) {
+        conditions.push(sql`${coachesTable.teachingFocus} && ARRAY[${sql.join(focuses.map(f => sql`${f}`), sql`, `)}]::text[]` as ReturnType<typeof eq>);
       }
     }
     if (search) {
@@ -187,6 +193,7 @@ router.get("/", async (req, res) => {
         regularPrice: coachesTable.regularPrice,
         packageDetails: coachesTable.packageDetails,
         ageGroups: coachesTable.ageGroups,
+        teachingFocus: coachesTable.teachingFocus,
         experienceLevel: coachesTable.experienceLevel,
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
@@ -260,6 +267,7 @@ router.post("/", async (req, res) => {
         regularPrice: String(body.regularPrice),
         packageDetails: body.packageDetails ?? null,
         ageGroups: body.ageGroups,
+        teachingFocus: (body as any).teachingFocus ?? [],
         experienceLevel: body.experienceLevel,
         profileImageUrl: body.profileImageUrl ?? null,
         coverPhotoUrl: body.coverPhotoUrl ?? null,
@@ -364,6 +372,7 @@ router.get("/:id", async (req, res) => {
         regularPrice: coachesTable.regularPrice,
         packageDetails: coachesTable.packageDetails,
         ageGroups: coachesTable.ageGroups,
+        teachingFocus: coachesTable.teachingFocus,
         experienceLevel: coachesTable.experienceLevel,
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
@@ -506,7 +515,7 @@ router.patch("/:id/edit-request", async (req, res) => {
     if (!coach) return res.status(404).json({ error: "Coach not found" });
     if (coach.userId !== auth.userId) return res.status(403).json({ error: "Forbidden" });
 
-    const allowed = ["name", "nameZh", "nameEn", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl", "coverPhotoUrl", "qualifications", "qualificationProofUrl", "pricingPlans", "teachingAchievements", "sportsAchievements", "facebookUrl", "instagramUrl", "scrcNumber"];
+    const allowed = ["name", "nameZh", "nameEn", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl", "coverPhotoUrl", "qualifications", "qualificationProofUrl", "pricingPlans", "teachingAchievements", "sportsAchievements", "facebookUrl", "instagramUrl", "scrcNumber", "teachingFocus"];
     const edits: Record<string, unknown> = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) edits[key] = req.body[key];

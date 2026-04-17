@@ -54,6 +54,8 @@ export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState<string | undefined>();
   const [stagedCoachTypes, setStagedCoachTypes] = useState<Set<string>>(new Set());
   const [appliedCoachTypes, setAppliedCoachTypes] = useState<Set<string>>(new Set());
+  const [stagedTeachingFocus, setStagedTeachingFocus] = useState<Set<string>>(new Set());
+  const [appliedTeachingFocus, setAppliedTeachingFocus] = useState<Set<string>>(new Set());
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string | undefined>();
 
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -62,6 +64,13 @@ export default function Home() {
     setStagedCoachTypes(prev => {
       const next = new Set(prev);
       next.has(type) ? next.delete(type) : next.add(type);
+      return next;
+    });
+
+  const toggleTeachingFocus = (focus: string) =>
+    setStagedTeachingFocus(prev => {
+      const next = new Set(prev);
+      next.has(focus) ? next.delete(focus) : next.add(focus);
       return next;
     });
 
@@ -76,6 +85,7 @@ export default function Home() {
     sport: selectedSport,
     location: selectedLocation,
     coachType: appliedCoachTypes.size > 0 ? [...appliedCoachTypes].join(",") : undefined,
+    teachingFocus: appliedTeachingFocus.size > 0 ? [...appliedTeachingFocus].join(",") : undefined,
     limit: 100
   });
 
@@ -86,7 +96,7 @@ export default function Home() {
 
   const preferredDistricts: string[] = userProfile?.preferredDistricts ?? [];
   const hasProfilePrefs = (userProfile?.preferredSports?.length ?? 0) > 0 || preferredDistricts.length > 0;
-  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0 || selectedAgeGroup);
+  const isFiltered = !!(debouncedSearch || selectedSport || selectedLocation || appliedCoachTypes.size > 0 || appliedTeachingFocus.size > 0 || selectedAgeGroup);
 
   const coachMatchesAgeGroup = (coach: { pricingPlans?: string | null; ageGroups?: string[] }, prefix: string) => {
     try {
@@ -127,6 +137,7 @@ export default function Home() {
     e.preventDefault();
     setDebouncedSearch(search);
     setAppliedCoachTypes(new Set(stagedCoachTypes));
+    setAppliedTeachingFocus(new Set(stagedTeachingFocus));
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -223,9 +234,36 @@ export default function Home() {
               </Button>
             </form>
 
+            {/* Teaching focus checkboxes */}
+            <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
+              <span className="text-sm text-muted-foreground">教學類型：</span>
+              {(["競賽", "興趣"] as const).map(focus => {
+                const checked = stagedTeachingFocus.has(focus);
+                return (
+                  <label
+                    key={focus}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full border cursor-pointer select-none transition-all text-sm font-medium ${
+                      checked
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-white border-border text-foreground hover:border-primary/50 hover:bg-primary/5"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() => toggleTeachingFocus(focus)}
+                    />
+                    {focus === "競賽" ? "🏆" : "🎯"} {focus}
+                    {checked && <span className="opacity-70 text-xs">✓</span>}
+                  </label>
+                );
+              })}
+            </div>
+
             {/* Coach type checkboxes */}
             <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
-              <span className="text-sm text-muted-foreground">篩選類型：</span>
+              <span className="text-sm text-muted-foreground">專業資歷：</span>
               {(["專業運動員", "持牌教練"] as const).map(type => {
                 const checked = stagedCoachTypes.has(type);
                 return (

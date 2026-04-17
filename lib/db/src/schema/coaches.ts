@@ -15,6 +15,7 @@ export const coachesTable = pgTable("coaches", {
   regularPrice: numeric("regular_price", { precision: 10, scale: 2 }).notNull(),
   packageDetails: text("package_details"),
   ageGroups: text("age_groups").array().notNull().default([]),
+  teachingFocus: text("teaching_focus").array().notNull().default([]),
   experienceLevel: text("experience_level").notNull(),
   isFeatured: boolean("is_featured").notNull().default(false),
   isApproved: boolean("is_approved").notNull().default(false),

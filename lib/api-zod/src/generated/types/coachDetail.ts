@@ -31,6 +31,7 @@ export interface CoachDetail {
   /** @nullable */
   pricingPlans?: string | null;
   ageGroups: string[];
+  teachingFocus?: string[];
   experienceLevel: string;
   isFeatured: boolean;
   isApproved: boolean;

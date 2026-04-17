@@ -20,6 +20,7 @@ export interface CreateCoachBody {
   regularPrice: number;
   packageDetails?: string;
   ageGroups: string[];
+  teachingFocus?: string[];
   experienceLevel: string;
   profileImageUrl?: string;
 }

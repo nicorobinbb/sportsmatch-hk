@@ -13,4 +13,5 @@ export type ListCoachesParams = {
   limit?: number;
   offset?: number;
   coachType?: string;
+  teachingFocus?: string;
 };

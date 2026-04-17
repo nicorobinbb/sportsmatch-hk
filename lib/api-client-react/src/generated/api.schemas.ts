@@ -32,6 +32,7 @@ export interface Coach {
   /** @nullable */
   pricingPlans?: string | null;
   ageGroups: string[];
+  teachingFocus?: string[];
   experienceLevel: string;
   isFeatured: boolean;
   isApproved: boolean;
@@ -89,6 +90,7 @@ export interface CoachDetail {
   /** @nullable */
   pricingPlans?: string | null;
   ageGroups: string[];
+  teachingFocus?: string[];
   experienceLevel: string;
   isFeatured: boolean;
   isApproved: boolean;
@@ -130,6 +132,7 @@ export interface CreateCoachBody {
   regularPrice: number;
   packageDetails?: string;
   ageGroups: string[];
+  teachingFocus?: string[];
   experienceLevel: string;
   profileImageUrl?: string;
 }
@@ -181,4 +184,5 @@ export type ListCoachesParams = {
   limit?: number;
   offset?: number;
   coachType?: string;
+  teachingFocus?: string;
 };

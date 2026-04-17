@@ -68,6 +68,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: teachingFocus
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: List of coaches
@@ -496,6 +500,10 @@ components:
           type: array
           items:
             type: string
+        teachingFocus:
+          type: array
+          items:
+            type: string
         experienceLevel:
           type: string
         isFeatured:
@@ -563,6 +571,10 @@ components:
           type: ["string", "null"]
           nullable: true
         ageGroups:
+          type: array
+          items:
+            type: string
+        teachingFocus:
           type: array
           items:
             type: string
@@ -657,6 +669,10 @@ components:
         packageDetails:
           type: string
         ageGroups:
+          type: array
+          items:
+            type: string
+        teachingFocus:
           type: array
           items:
             type: string
