@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Show, useClerk } from "@clerk/react";
+import { useAuth, useClerk } from "@clerk/react";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, ShieldCheck, LayoutDashboard, Heart, Menu, X, LogOut } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-admin-status";
@@ -8,6 +8,7 @@ import { useWishlistCount } from "@/hooks/use-wishlist-count";
 
 export function Navbar() {
   const { signOut } = useClerk();
+  const { isSignedIn } = useAuth();
   const { data: adminStatus } = useAdminStatus();
   const { data: wishlistCount } = useWishlistCount();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,15 +34,15 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-2">
-          <Show when="signed-out">
+          {!isSignedIn && (<>
             <Link href="/sign-in">
               <Button variant="ghost" size="sm">登入</Button>
             </Link>
             <Link href="/sign-up">
               <Button size="sm">註冊</Button>
             </Link>
-          </Show>
-          <Show when="signed-in">
+          </>)}
+          {isSignedIn && (<>
             {/* Wishlist badge */}
             <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="relative">
@@ -77,12 +78,12 @@ export function Navbar() {
               <LogOut className="mr-2 h-4 w-4" />
               登出
             </Button>
-          </Show>
+          </>)}
         </nav>
 
         {/* Mobile right side */}
         <div className="flex sm:hidden items-center gap-2">
-          <Show when="signed-in">
+          {isSignedIn && (<>
             <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
               <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
                 <Heart className="h-5 w-5 text-foreground" />
@@ -93,12 +94,12 @@ export function Navbar() {
                 )}
               </button>
             </Link>
-          </Show>
-          <Show when="signed-out">
+          </>)}
+          {!isSignedIn && (
             <Link href="/sign-in">
               <Button variant="ghost" size="sm">登入</Button>
             </Link>
-          </Show>
+          )}
           <button
             onClick={() => setMobileOpen(v => !v)}
             className="p-2 rounded-md hover:bg-muted transition-colors"
@@ -113,7 +114,7 @@ export function Navbar() {
       {mobileOpen && (
         <div className="sm:hidden border-t bg-background shadow-lg animate-in slide-in-from-top-2 fade-in">
           <div className="container px-4 py-3 flex flex-col gap-1">
-            <Show when="signed-out">
+            {!isSignedIn && (<>
               <button
                 onClick={() => handleNavigate("/sign-in")}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium transition-colors"
@@ -126,8 +127,8 @@ export function Navbar() {
               >
                 註冊
               </button>
-            </Show>
-            <Show when="signed-in">
+            </>)}
+            {isSignedIn && (<>
               <button
                 onClick={() => handleNavigate("/dashboard")}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium transition-colors"
@@ -164,7 +165,7 @@ export function Navbar() {
                 <LogOut className="h-4 w-4" />
                 登出
               </button>
-            </Show>
+            </>)}
           </div>
         </div>
       )}
