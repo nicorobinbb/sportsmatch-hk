@@ -40,7 +40,7 @@ function SignInPage() {
   return (
     <Layout>
       <div className="flex justify-center items-center flex-1 py-12 px-4">
-        <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+        <SignIn routing="virtual" signUpUrl={`${basePath}/sign-up`} fallbackRedirectUrl={`${basePath}/`} />
       </div>
     </Layout>
   );
@@ -50,7 +50,7 @@ function SignUpPage() {
   return (
     <Layout>
       <div className="flex justify-center items-center flex-1 py-12 px-4">
-        <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+        <SignUp routing="virtual" signInUrl={`${basePath}/sign-in`} fallbackRedirectUrl={`${basePath}/`} />
       </div>
     </Layout>
   );
