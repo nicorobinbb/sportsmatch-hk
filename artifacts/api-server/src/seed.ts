@@ -83,16 +83,27 @@ export async function seedIfEmpty() {
     }
 
     logger.info("Database is empty — seeding sample coaches...");
+    const round10 = (n: number) => Math.max(80, Math.round(n / 10) * 10);
+    const buildPlans = (regularPrice: number, trialPrice: number, ageGroups: string[]) => {
+      const ag = (ageGroups && ageGroups.length > 0 ? ageGroups[0] : "成人（18歲以上）");
+      const soloPrice = round10(regularPrice || trialPrice || 400);
+      const groupPrice = round10(soloPrice * 0.55);
+      return [
+        { sessionType: "單對單", price: String(soloPrice), maxStudents: "1", duration: "60分鐘", ageGroup: ag },
+        { sessionType: "小組", price: String(groupPrice), minStudents: "3", maxStudents: "6", duration: "60分鐘", ageGroup: ag },
+      ];
+    };
     const coachesWithAchievements = coaches.map(c => {
       const isPro = c.experienceLevel?.includes("職業") || c.experienceLevel?.includes("專業運動員");
       const sport = c.sportsCategory;
       return {
         ...c,
-        teachingAchievements: c.teachingAchievements ??
+        teachingAchievements: (c as any).teachingAchievements ??
           `執教${sport}超過5年，累計指導逾200名學員。曾任職本地學校及體育會教練，多位學員於校際及公開賽事中獲獎。教學風格因材施教，注重基本功及運動安全。`,
-        sportsAchievements: c.sportsAchievements ?? (isPro
+        sportsAchievements: (c as any).sportsAchievements ?? (isPro
           ? `前香港${sport}代表隊成員，曾參與多項國際及亞洲區賽事。本地公開賽多次獲得獎項，並擁有多年高水平比賽經驗。`
           : `本地${sport}愛好者及持證教練，曾參與多項本地賽事並取得不俗成績。持續進修以掌握最新的訓練方法及運動科學知識。`),
+        pricingPlans: JSON.stringify(buildPlans(parseFloat(c.regularPrice), parseFloat(c.trialPrice), c.ageGroups)),
       };
     });
     const inserted = await db.insert(coachesTable).values(coachesWithAchievements).returning({ id: coachesTable.id });

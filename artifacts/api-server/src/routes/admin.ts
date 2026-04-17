@@ -36,7 +36,36 @@ const requireAdmin = (req: any, res: any, next: any) => {
   next();
 };
 
-// One-time backfill endpoint to populate teaching/sports achievements on coaches that don't have them.
+// One-time backfill endpoint to populate teaching/sports achievements + pricing plans on coaches that don't have them.
+function buildDefaultPricingPlans(opts: {
+  regularPrice: number;
+  trialPrice: number;
+  ageGroups: string[] | null;
+}) {
+  const { regularPrice, trialPrice, ageGroups } = opts;
+  const ag = (ageGroups && ageGroups.length > 0 ? ageGroups[0] : "成人（18歲以上）");
+  const round10 = (n: number) => Math.max(80, Math.round(n / 10) * 10);
+  const soloPrice = round10(regularPrice || trialPrice || 400);
+  const groupPrice = round10(soloPrice * 0.55);
+  return [
+    {
+      sessionType: "單對單",
+      price: String(soloPrice),
+      maxStudents: "1",
+      duration: "60分鐘",
+      ageGroup: ag,
+    },
+    {
+      sessionType: "小組",
+      price: String(groupPrice),
+      minStudents: "3",
+      maxStudents: "6",
+      duration: "60分鐘",
+      ageGroup: ag,
+    },
+  ];
+}
+
 router.post("/backfill-achievements", requireAdmin, async (_req, res) => {
   try {
     const allCoaches = await db
@@ -48,6 +77,10 @@ router.post("/backfill-achievements", requireAdmin, async (_req, res) => {
         teaching: coachesTable.teachingAchievements,
         sports: coachesTable.sportsAchievements,
         teachingFocus: coachesTable.teachingFocus,
+        ageGroups: coachesTable.ageGroups,
+        trialPrice: coachesTable.trialPrice,
+        regularPrice: coachesTable.regularPrice,
+        pricingPlans: coachesTable.pricingPlans,
       })
       .from(coachesTable);
 
@@ -66,9 +99,39 @@ router.post("/backfill-achievements", requireAdmin, async (_req, res) => {
         ? (isPro || competitiveRe.test(c.bio ?? "") ? ["競賽", "興趣"] : ["興趣"])
         : c.teachingFocus;
 
-      if (c.teaching !== teaching || c.sports !== sports || needsFocus) {
+      let needsPricing = false;
+      let nextPricingPlans = c.pricingPlans;
+      try {
+        const parsed = c.pricingPlans ? JSON.parse(c.pricingPlans) : null;
+        const hasGroup = Array.isArray(parsed) && parsed.some((p: any) => p?.sessionType === "小組");
+        if (!Array.isArray(parsed) || parsed.length === 0 || !hasGroup) {
+          needsPricing = true;
+        }
+      } catch {
+        needsPricing = true;
+      }
+      if (needsPricing) {
+        const plans = buildDefaultPricingPlans({
+          regularPrice: parseFloat(c.regularPrice as unknown as string) || 0,
+          trialPrice: parseFloat(c.trialPrice as unknown as string) || 0,
+          ageGroups: c.ageGroups as string[] | null,
+        });
+        nextPricingPlans = JSON.stringify(plans);
+      }
+
+      if (
+        c.teaching !== teaching ||
+        c.sports !== sports ||
+        needsFocus ||
+        needsPricing
+      ) {
         await db.update(coachesTable)
-          .set({ teachingAchievements: teaching, sportsAchievements: sports, teachingFocus: focus })
+          .set({
+            teachingAchievements: teaching,
+            sportsAchievements: sports,
+            teachingFocus: focus,
+            pricingPlans: nextPricingPlans,
+          })
           .where(eq(coachesTable.id, c.id));
         updated++;
       }
