@@ -263,6 +263,10 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         pricingPlans: coachesTable.pricingPlans,
         qualifications: coachesTable.qualifications,
         packageDetails: coachesTable.packageDetails,
+        bio: coachesTable.bio,
+        ageGroups: coachesTable.ageGroups,
+        teachingAchievements: coachesTable.teachingAchievements,
+        sportsAchievements: coachesTable.sportsAchievements,
         createdAt: coachesTable.createdAt,
       })
       .from(coachesTable)
