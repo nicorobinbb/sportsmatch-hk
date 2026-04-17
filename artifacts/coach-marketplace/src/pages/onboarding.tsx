@@ -27,16 +27,6 @@ const SPORTS = [
   { name: "排球", emoji: "🏐" },
 ];
 
-const GOALS = [
-  { id: "weight_loss", emoji: "💪", label: "減重塑形", desc: "健康瘦身、改善體態" },
-  { id: "muscle_gain", emoji: "🏋️", label: "增肌強壯", desc: "增加肌肉量、體能訓練" },
-  { id: "competition", emoji: "🏆", label: "備戰比賽", desc: "學界、業餘或專業賽事" },
-  { id: "fitness", emoji: "❤️", label: "提升健康", desc: "改善體能、心肺功能" },
-  { id: "skill", emoji: "🎯", label: "學習技術", desc: "掌握新技能、提升水平" },
-  { id: "fun", emoji: "🎉", label: "興趣娛樂", desc: "享受運動樂趣" },
-  { id: "rehab", emoji: "🌿", label: "康復調理", desc: "運動傷患復健" },
-];
-
 const AGE_GROUPS = [
   { id: "兒童", emoji: "🧒", desc: "12歲以下" },
   { id: "青少年", emoji: "🧑", desc: "12–17歲" },
@@ -68,9 +58,8 @@ const HK_DISTRICTS = [
 const STEPS = [
   { id: 1, title: "您好，請告訴我們您的姓名", subtitle: "方便我們為您提供個人化體驗" },
   { id: 2, title: "您想搵邊類運動嘅教練？", subtitle: "可多選，我哋用此為您推薦合適教練" },
-  { id: 3, title: "您的訓練目標是？", subtitle: "選擇目標幫助我們配對最合適的教練（可多選）" },
-  { id: 4, title: "教練教嘅年齡層？", subtitle: "您或您的小朋友屬於哪個年齡層？（可多選）" },
-  { id: 5, title: "您偏好哪個地區上課？", subtitle: "選擇方便您的地區，我們優先推薦附近的教練（可多選）" },
+  { id: 3, title: "教練教嘅年齡層？", subtitle: "您或您的小朋友屬於哪個年齡層？（可多選）" },
+  { id: 4, title: "您偏好哪個地區上課？", subtitle: "選擇方便您的地區，我們優先推薦附近的教練（可多選）" },
 ];
 
 function isAsciiOnly(s: string) {
@@ -90,7 +79,6 @@ export default function Onboarding() {
   const [lastName, setLastName] = useState("");
   const [nameError, setNameError] = useState("");
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -124,7 +112,6 @@ export default function Onboarding() {
           firstName: firstName.trim() || undefined,
           lastName: lastName.trim() || undefined,
           preferredSports: selectedSports,
-          goals: selectedGoals,
           preferredAgeGroups: selectedAgeGroups,
           preferredDistricts: selectedDistricts,
           onboardingCompleted: true,
@@ -246,36 +233,8 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 3 — Goals */}
+          {/* Step 3 — Age Group */}
           {step === 3 && (
-            <div className="space-y-2.5">
-              {GOALS.map(g => {
-                const selected = selectedGoals.includes(g.id);
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => toggle(selectedGoals, setSelectedGoals, g.id)}
-                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all ${
-                      selected
-                        ? "bg-primary border-primary shadow-sm"
-                        : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
-                    }`}
-                  >
-                    <span className="text-xl shrink-0">{g.emoji}</span>
-                    <div className="flex-1">
-                      <div className={`font-semibold text-sm ${selected ? "text-primary-foreground" : "text-foreground"}`}>{g.label}</div>
-                      <div className={`text-xs mt-0.5 ${selected ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{g.desc}</div>
-                    </div>
-                    {selected && <CheckCircle2 className="w-4 h-4 text-primary-foreground/80 shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Step 4 — Age Group */}
-          {step === 4 && (
             <div className="grid grid-cols-2 gap-3">
               {AGE_GROUPS.map(ag => {
                 const selected = selectedAgeGroups.includes(ag.id);
@@ -302,8 +261,8 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 5 — Preferred Districts */}
-          {step === 5 && (
+          {/* Step 4 — Preferred Districts */}
+          {step === 4 && (
             <div className="grid grid-cols-3 gap-2">
               {HK_DISTRICTS.map(d => {
                 const selected = selectedDistricts.includes(d.name);
