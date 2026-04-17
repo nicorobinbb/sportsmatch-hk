@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "0IZ54aUFpxsmAIs8jGmLw"
@@ -60,3 +59,9 @@ id = "FLHFVFHli8PwR3nBVcrEO"
 uri = "file://artifacts/coach-marketplace/public/covers/fencing.png"
 type = "image"
 title = "fencing arena cover"
+
+[[outputs]]
+id = "mLBEHrSNK2igkqye1Vm_J"
+uri = "file://exports/coach-marketplace-tsx.tar.gz"
+type = "unspecified"
+title = "All .tsx files (135 files)"
