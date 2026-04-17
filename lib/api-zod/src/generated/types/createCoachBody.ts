@@ -12,6 +12,7 @@ export interface CreateCoachBody {
   nameEn?: string;
   facebookUrl?: string;
   instagramUrl?: string;
+  scrcNumber?: string;
   sportsCategory: string;
   location: string;
   bio: string;

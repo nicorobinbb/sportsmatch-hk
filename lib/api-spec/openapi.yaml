@@ -475,6 +475,8 @@ components:
           type: ["string", "null"]
         instagramUrl:
           type: ["string", "null"]
+        scrcNumber:
+          type: ["string", "null"]
         sportsCategory:
           type: string
         location:
@@ -542,6 +544,8 @@ components:
         facebookUrl:
           type: ["string", "null"]
         instagramUrl:
+          type: ["string", "null"]
+        scrcNumber:
           type: ["string", "null"]
         sportsCategory:
           type: string
@@ -637,6 +641,8 @@ components:
         facebookUrl:
           type: string
         instagramUrl:
+          type: string
+        scrcNumber:
           type: string
         sportsCategory:
           type: string

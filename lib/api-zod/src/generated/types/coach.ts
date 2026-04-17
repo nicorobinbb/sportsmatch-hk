@@ -17,6 +17,8 @@ export interface Coach {
   facebookUrl?: string | null;
   /** @nullable */
   instagramUrl?: string | null;
+  /** @nullable */
+  scrcNumber?: string | null;
   sportsCategory: string;
   location: string;
   bio: string;

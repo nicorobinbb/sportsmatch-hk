@@ -26,6 +26,7 @@ export const coachesTable = pgTable("coaches", {
   youtubePending: text("youtube_pending"),
   facebookUrl: text("facebook_url"),
   instagramUrl: text("instagram_url"),
+  scrcNumber: text("scrc_number"),
   pricingPlans: text("pricing_plans"),
   qualifications: text("qualifications"),
   teachingAchievements: text("teaching_achievements"),

@@ -43,9 +43,10 @@ const coachSchema = z.object({
   packageDetails: z.string().optional(),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
-  whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
+  whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的 WhatsApp 號碼（數字，不含+號或空格）"),
   facebookUrl: z.string().url("請輸入有效的 Facebook 連結").optional().or(z.literal('')),
   instagramUrl: z.string().url("請輸入有效的 Instagram 連結").optional().or(z.literal('')),
+  scrcNumber: z.string().optional().or(z.literal('')),
 });
 
 type CoachFormValues = z.infer<typeof coachSchema>;
@@ -86,6 +87,7 @@ export default function CoachRegister() {
       whatsappLocalNumber: "",
       facebookUrl: "",
       instagramUrl: "",
+      scrcNumber: "",
     },
   });
 
@@ -220,6 +222,7 @@ export default function CoachRegister() {
         sportsAchievements: data.sportsAchievements || undefined,
         facebookUrl: data.facebookUrl || undefined,
         instagramUrl: data.instagramUrl || undefined,
+        scrcNumber: data.scrcNumber || undefined,
       } as any
     }, {
       onSuccess: () => {
@@ -437,8 +440,8 @@ export default function CoachRegister() {
                       name="whatsappLocalNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>WhatsApp 聯絡號碼（選填）</FormLabel>
-                          <FormDescription>學員將透過 WhatsApp 直接聯絡你預約課堂。</FormDescription>
+                          <FormLabel>WhatsApp 聯絡號碼 <span className="text-destructive">*</span></FormLabel>
+                          <FormDescription>學員將透過 WhatsApp 直接聯絡你預約課堂。此為必填項目。</FormDescription>
                           <FormControl>
                             <div className="flex gap-2">
                               <Select value={whatsappCC} onValueChange={setWhatsappCC}>
@@ -457,6 +460,24 @@ export default function CoachRegister() {
                                 {...field}
                               />
                             </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* SCRC Number */}
+                    <FormField
+                      control={form.control}
+                      name="scrcNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SCRC 編號（選填）</FormLabel>
+                          <FormDescription>
+                            如你已註冊「體育教練註冊計劃」（Sports Coach Registration Card），請填寫你的 SCRC 編號以提高審核可信度。
+                          </FormDescription>
+                          <FormControl>
+                            <Input placeholder="例如：SCRC-2024-12345" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
