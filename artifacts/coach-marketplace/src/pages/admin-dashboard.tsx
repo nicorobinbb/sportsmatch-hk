@@ -962,6 +962,33 @@ export default function AdminDashboard() {
 
           <TabsContent value="manage">
             <div className="space-y-4">
+              <div className="bg-white dark:bg-card rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">資料維護：補全教練成就資料</p>
+                  <p className="text-xs text-muted-foreground">為未填寫「教學成就」及「運動成就」的教練自動填入預設內容（僅補空白欄位）。</p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    if (!confirm("確認為所有缺失的教練補全成就資料？")) return;
+                    try {
+                      const token = await getAuthToken();
+                      const res = await fetch(`${getBaseUrl()}/api/admin/backfill-achievements`, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      const data = await res.json();
+                      if (res.ok) alert(`已完成：共 ${data.total} 位教練，更新 ${data.updated} 位。`);
+                      else alert(`失敗：${data.error || res.status}`);
+                    } catch (e: any) {
+                      alert(`錯誤：${e.message}`);
+                    }
+                  }}
+                >
+                  執行補全
+                </Button>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
