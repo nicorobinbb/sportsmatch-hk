@@ -369,22 +369,6 @@ export default function CoachProfile() {
                 </Avatar>
                 
                 <div className="flex-1 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20">
-                      {coach.sportsCategory}
-                    </Badge>
-                    {coach.isApproved && (
-                      <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> 已認證
-                      </Badge>
-                    )}
-                    {coach.reviewCount >= 5 && (
-                      <Badge variant="outline" className="text-primary border-orange-200 bg-orange-50 gap-1">
-                        <ThumbsUp className="w-3 h-3" /> 多人讚好
-                      </Badge>
-                    )}
-                  </div>
-                  
                   <div className="flex items-center gap-3">
                     <h1 className="text-3xl md:text-4xl font-display font-bold">
                       {coach.name}
@@ -399,6 +383,23 @@ export default function CoachProfile() {
                         <Heart className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
                       </button>
                     </Show>
+                  </div>
+
+                  <div className="inline-flex items-center px-4 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xl md:text-2xl font-display font-bold">
+                    {coach.sportsCategory}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {coach.isApproved && (
+                      <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> 已認證
+                      </Badge>
+                    )}
+                    {coach.reviewCount >= 5 && (
+                      <Badge variant="outline" className="text-primary border-orange-200 bg-orange-50 gap-1">
+                        <ThumbsUp className="w-3 h-3" /> 多人讚好
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm font-medium">
