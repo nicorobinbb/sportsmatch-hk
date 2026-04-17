@@ -22,7 +22,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </p>
             </div>
 
-            <div className="md:col-span-3 md:col-start-7">
+            <div className="md:col-span-2 md:col-start-6">
+              <h4 className="text-sm font-semibold text-white mb-4">關於我們</h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <a href="/about" className="text-white/85 hover:text-white transition-colors">
+                    關於我們
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div className="md:col-span-2">
               <h4 className="text-sm font-semibold text-white mb-4">支援</h4>
               <ul className="space-y-3 text-sm">
                 <li>
@@ -49,11 +60,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <li>
                   <a href="/privacy" className="text-white/85 hover:text-white transition-colors">
                     隱私權政策
-                  </a>
-                </li>
-                <li>
-                  <a href="/about" className="text-white/85 hover:text-white transition-colors">
-                    關於我們
                   </a>
                 </li>
               </ul>
