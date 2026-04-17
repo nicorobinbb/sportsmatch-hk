@@ -17,6 +17,7 @@ import Dashboard from "@/pages/dashboard";
 import Terms from "@/pages/terms";
 import Disclaimer from "@/pages/disclaimer";
 import Privacy from "@/pages/privacy";
+import About from "@/pages/about";
 import Faq from "@/pages/faq";
 import { setTokenGetter } from "@/lib/auth-token";
 
@@ -152,6 +153,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/terms" component={Terms} />
             <Route path="/disclaimer" component={Disclaimer} />
             <Route path="/privacy" component={Privacy} />
+            <Route path="/about" component={About} />
             <Route path="/faq" component={Faq} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />

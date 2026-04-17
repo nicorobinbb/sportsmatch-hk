@@ -51,6 +51,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     隱私權政策
                   </a>
                 </li>
+                <li>
+                  <a href="/about" className="text-white/85 hover:text-white transition-colors">
+                    關於我們
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
