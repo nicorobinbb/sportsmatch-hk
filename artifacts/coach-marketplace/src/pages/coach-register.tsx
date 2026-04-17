@@ -31,7 +31,7 @@ const COUNTRY_CODES = [
 const coachSchema = z.object({
   name: z.string().min(2, "姓名至少需要2個字元"),
   sportsCategory: z.string().min(1, "請選擇運動類別"),
-  location: z.string().min(2, "請填寫訓練地點"),
+  location: z.string().min(1, "請至少選擇一個授課地區"),
   bio: z.string().min(20, "個人簡介至少需要20個字元以吸引學員"),
   trialPrice: z.coerce.number().min(0, "收費不能為負數"),
   regularPrice: z.coerce.number().min(0, "收費不能為負數"),
@@ -46,6 +46,11 @@ type CoachFormValues = z.infer<typeof coachSchema>;
 
 const AGE_GROUPS = ["幼童（8歲以下）", "兒童（8至12歲）", "青少年（12-17歲）", "成人（18歲以上）", "長者（60歲以上）"];
 const COACH_TYPES = ["專業運動員", "持牌教練"];
+const HK_DISTRICTS = [
+  "中西區", "灣仔", "東區", "南區",
+  "油尖旺", "深水埗", "九龍城", "黃大仙", "觀塘",
+  "葵青", "荃灣", "屯門", "元朗", "北區", "大埔", "沙田", "西貢", "離島",
+];
 
 export default function CoachRegister() {
   const { toast } = useToast();
@@ -304,15 +309,41 @@ export default function CoachRegister() {
                     <FormField
                       control={form.control}
                       name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>常用訓練地點</FormLabel>
-                          <FormControl>
-                            <Input placeholder="例如：維多利亞公園，港島東" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const selected = (field.value || "").split("、").filter(Boolean);
+                        const toggle = (d: string) => {
+                          const next = selected.includes(d) ? selected.filter(x => x !== d) : [...selected, d];
+                          field.onChange(next.join("、"));
+                        };
+                        return (
+                          <FormItem>
+                            <FormLabel>授課地區</FormLabel>
+                            <FormDescription>選擇你經常授課的地區（可多選）</FormDescription>
+                            <FormControl>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {HK_DISTRICTS.map(d => {
+                                  const active = selected.includes(d);
+                                  return (
+                                    <button
+                                      key={d}
+                                      type="button"
+                                      onClick={() => toggle(d)}
+                                      className={`px-3.5 py-1.5 rounded-full border text-sm font-medium transition-all ${
+                                        active
+                                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                          : "bg-white text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                                      }`}
+                                    >
+                                      {d}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     {/* Cover photo upload */}
