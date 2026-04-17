@@ -9,9 +9,9 @@ export default function About() {
           <img
             src={`${import.meta.env.BASE_URL}logo-about.png`}
             alt="SportsMatch 運對 — 香港運動教練配對平台"
-            className="h-24 md:h-32 w-auto mx-auto mb-6"
+            className="h-14 md:h-16 w-auto mx-auto mb-6"
           />
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 font-display">關於我們</h1>
+          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-4 font-display">關於我們</h1>
         </div>
 
         <section className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-8 md:p-10 mb-12">
