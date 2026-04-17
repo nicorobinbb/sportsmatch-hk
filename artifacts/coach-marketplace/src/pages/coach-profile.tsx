@@ -21,8 +21,28 @@ import { getAuthToken } from "@/lib/auth-token";
 function ShareCoachButton({ coach }: { coach: any }) {
   const { toast } = useToast();
   const url = typeof window !== "undefined" ? window.location.href : "";
-  const text = `推薦你「${coach.name}」教練（${coach.sportsCategory} · ${coach.location}），透過 SportsMatch 運對睇佢嘅資料：`;
-  const shareText = `${text} ${url}`;
+  const rating = typeof coach.averageRating === "number" && coach.reviewCount > 0
+    ? `⭐ ${coach.averageRating.toFixed(1)}／5（${coach.reviewCount} 個評價）`
+    : null;
+  const trial = coach.trialPrice ? `🎯 試堂價：HK$${coach.trialPrice}／堂` : null;
+  const regular = coach.regularPrice ? `💰 正價：HK$${coach.regularPrice}／堂` : null;
+  const lines = [
+    `🏅 我喺 SportsMatch 運對搵到一位${coach.sportsCategory}教練 —「${coach.name}」，分享俾你睇下！`,
+    "",
+    `🏷️ 運動項目：${coach.sportsCategory}`,
+    `📍 授課地區：${coach.location}`,
+    coach.experienceLevel ? `🎖️ 教練資歷：${coach.experienceLevel}` : null,
+    rating,
+    trial,
+    regular,
+    "",
+    `👉 即睇詳細介紹、相片同學員評價：`,
+    url,
+    "",
+    `— 由 SportsMatch 運對 提供｜香港最透明、最值得信賴的運動教練配對平台`,
+  ].filter(Boolean);
+  const shareText = lines.join("\n");
+  const text = shareText;
 
   const openShare = (href: string) => {
     window.open(href, "_blank", "noopener,noreferrer,width=600,height=700");
