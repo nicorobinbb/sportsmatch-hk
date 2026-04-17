@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -496,14 +496,36 @@ export default function CoachProfile() {
                       );
                     })()}
 
-                    <div className="mt-8 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">適合年齡組別</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {coach.ageGroups.map(age => (
-                            <Badge key={age} variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">{age}</Badge>
-                          ))}
-                        </div>
+                    {coach.teachingAchievements?.trim() && (
+                      <div className="mt-6 pt-6 border-t">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <Award className="w-4 h-4 text-primary" />
+                          教學成就或經驗
+                        </h4>
+                        <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed text-sm">
+                          {coach.teachingAchievements}
+                        </p>
+                      </div>
+                    )}
+
+                    {coach.sportsAchievements?.trim() && (
+                      <div className="mt-6 pt-6 border-t">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-primary" />
+                          運動成就
+                        </h4>
+                        <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed text-sm">
+                          {coach.sportsAchievements}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-8 pt-8 border-t">
+                      <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">適合年齡組別</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {coach.ageGroups.map(age => (
+                          <Badge key={age} variant="outline" className="bg-slate-100 text-slate-700 border-slate-200">{age}</Badge>
+                        ))}
                       </div>
                     </div>
                   </div>

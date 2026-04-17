@@ -24,6 +24,8 @@ export const coachesTable = pgTable("coaches", {
   youtubePending: text("youtube_pending"),
   pricingPlans: text("pricing_plans"),
   qualifications: text("qualifications"),
+  teachingAchievements: text("teaching_achievements"),
+  sportsAchievements: text("sports_achievements"),
   qualificationProofUrl: text("qualification_proof_url"),
   pendingEdits: text("pending_edits"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

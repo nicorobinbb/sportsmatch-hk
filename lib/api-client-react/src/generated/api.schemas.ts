@@ -79,6 +79,10 @@ export interface CoachDetail {
   /** @nullable */
   qualifications?: string | null;
   /** @nullable */
+  teachingAchievements?: string | null;
+  /** @nullable */
+  sportsAchievements?: string | null;
+  /** @nullable */
   averageRating?: number | null;
   reviewCount: number;
   userId: string;

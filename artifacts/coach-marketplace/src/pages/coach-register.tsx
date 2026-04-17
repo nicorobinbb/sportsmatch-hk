@@ -33,6 +33,8 @@ const coachSchema = z.object({
   sportsCategory: z.string().min(1, "請選擇運動類別"),
   location: z.string().min(1, "請至少選擇一個授課地區"),
   bio: z.string().min(20, "個人簡介至少需要20個字元以吸引學員"),
+  teachingAchievements: z.string().optional(),
+  sportsAchievements: z.string().optional(),
   trialPrice: z.coerce.number().min(0, "收費不能為負數"),
   regularPrice: z.coerce.number().min(0, "收費不能為負數"),
   packageDetails: z.string().optional(),
@@ -67,6 +69,8 @@ export default function CoachRegister() {
       sportsCategory: "",
       location: "",
       bio: "",
+      teachingAchievements: "",
+      sportsAchievements: "",
       trialPrice: 0,
       regularPrice: 0,
       packageDetails: "",
@@ -186,6 +190,8 @@ export default function CoachRegister() {
         whatsappNumber,
         qualifications: JSON.stringify(qualList.filter(q => q.text.trim()).map(({ id: _id, ...rest }) => rest)) || undefined,
         pricingPlans: JSON.stringify(pricingRows.map(({ id: _id, ...r }) => r)),
+        teachingAchievements: data.teachingAchievements || undefined,
+        sportsAchievements: data.sportsAchievements || undefined,
       } as any
     }, {
       onSuccess: () => {
@@ -410,6 +416,36 @@ export default function CoachRegister() {
                           <FormDescription>向學員介紹你的教練理念和背景。</FormDescription>
                           <FormControl>
                             <Textarea placeholder="我有5年的教練經驗…" className="h-32" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="teachingAchievements"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>教學成就或經驗（選填）</FormLabel>
+                          <FormDescription>例如：曾任職學校教練、學員獲獎紀錄、累計學員人數等。</FormDescription>
+                          <FormControl>
+                            <Textarea placeholder="例如：執教學校校隊5年，學員多次獲全港賽事獎項…" className="h-28" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="sportsAchievements"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>運動成就（選填）</FormLabel>
+                          <FormDescription>例如：曾參加比賽、得獎紀錄、代表隊經歷等。</FormDescription>
+                          <FormControl>
+                            <Textarea placeholder="例如：香港代表隊成員、2022年全港公開賽冠軍…" className="h-28" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

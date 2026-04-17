@@ -96,6 +96,8 @@ export const GetCoachResponse = zod.object({
   profileImageUrl: zod.string().nullish(),
   coverPhotoUrl: zod.string().nullish(),
   qualifications: zod.string().nullish(),
+  teachingAchievements: zod.string().nullish(),
+  sportsAchievements: zod.string().nullish(),
   averageRating: zod.number().nullish(),
   reviewCount: zod.number(),
   userId: zod.string(),

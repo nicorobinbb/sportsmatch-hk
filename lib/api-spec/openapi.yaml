@@ -558,6 +558,10 @@ components:
           type: ["string", "null"]
         qualifications:
           type: ["string", "null"]
+        teachingAchievements:
+          type: ["string", "null"]
+        sportsAchievements:
+          type: ["string", "null"]
         averageRating:
           type: ["number", "null"]
         reviewCount:

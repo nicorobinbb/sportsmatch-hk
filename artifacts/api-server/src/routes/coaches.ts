@@ -262,6 +262,8 @@ router.post("/", async (req, res) => {
         qualifications: (body as any).qualifications ?? null,
         qualificationProofUrl: (body as any).qualificationProofUrl ?? null,
         pricingPlans: (body as any).pricingPlans ?? null,
+        teachingAchievements: (body as any).teachingAchievements ?? null,
+        sportsAchievements: (body as any).sportsAchievements ?? null,
       })
       .returning();
 
@@ -497,7 +499,7 @@ router.patch("/:id/edit-request", async (req, res) => {
     if (!coach) return res.status(404).json({ error: "Coach not found" });
     if (coach.userId !== auth.userId) return res.status(403).json({ error: "Forbidden" });
 
-    const allowed = ["name", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl", "coverPhotoUrl", "qualifications", "qualificationProofUrl", "pricingPlans"];
+    const allowed = ["name", "sportsCategory", "location", "bio", "trialPrice", "regularPrice", "packageDetails", "ageGroups", "experienceLevel", "whatsappNumber", "profileImageUrl", "coverPhotoUrl", "qualifications", "qualificationProofUrl", "pricingPlans", "teachingAchievements", "sportsAchievements"];
     const edits: Record<string, unknown> = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) edits[key] = req.body[key];
