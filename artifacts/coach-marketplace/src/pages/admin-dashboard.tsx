@@ -907,15 +907,30 @@ export default function AdminDashboard() {
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
                               <Pencil className="w-3.5 h-3.5 text-orange-500" /> 修改內容
                             </p>
-                            <div className="space-y-2 mb-4 bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3">
-                              {Object.entries(edits).map(([key, val]) => (
-                                <div key={key} className="flex gap-2 text-xs">
-                                  <span className="font-medium text-slate-600 w-28 shrink-0">{fieldLabels[key] || key}</span>
-                                  <div className="text-slate-800 break-all whitespace-pre-wrap flex-1">
-                                    {formatEditValue(key, val)}
+                            <div className="space-y-3 mb-4 bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3">
+                              {Object.entries(edits).map(([key, val]) => {
+                                const oldVal = (coach as unknown as Record<string, unknown>)[key];
+                                const same = JSON.stringify(oldVal ?? null) === JSON.stringify(val ?? null);
+                                return (
+                                  <div key={key} className="text-xs border-b border-slate-200 last:border-0 pb-2 last:pb-0">
+                                    <div className="font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
+                                      {fieldLabels[key] || key}
+                                      {same && <span className="text-[10px] text-muted-foreground font-normal">（無變化）</span>}
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-start">
+                                      <div className="bg-red-50 border border-red-200 rounded-md p-2">
+                                        <div className="text-[10px] uppercase tracking-wide text-red-700 font-semibold mb-1">原本</div>
+                                        <div className="text-slate-800 break-all whitespace-pre-wrap">{formatEditValue(key, oldVal)}</div>
+                                      </div>
+                                      <div className="hidden sm:flex items-center justify-center text-slate-400 pt-6">→</div>
+                                      <div className="bg-green-50 border border-green-200 rounded-md p-2">
+                                        <div className="text-[10px] uppercase tracking-wide text-green-700 font-semibold mb-1">修改後</div>
+                                        <div className="text-slate-800 break-all whitespace-pre-wrap">{formatEditValue(key, val)}</div>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                             <div className="flex gap-2">
                               <button
