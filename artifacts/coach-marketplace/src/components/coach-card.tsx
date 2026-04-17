@@ -1,8 +1,6 @@
 import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, MapPin, CheckCircle2, Crown } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { ShieldCheck, MapPin, Star, Crown } from "lucide-react";
 import type { Coach } from "@workspace/api-client-react";
 
 type PricingRow = { sessionType: "單對單" | "小組課堂"; price: string; minStudents?: string; maxStudents?: string; duration?: string; ageGroup?: string };
@@ -15,107 +13,123 @@ function parsePricingPlans(raw?: string | null): PricingRow[] {
   return [];
 }
 
+function getPriceRange(coach: Coach): { min: number; max: number } | null {
+  const rows = parsePricingPlans(coach.pricingPlans);
+  const prices = rows.map(r => Number(r.price)).filter(n => !isNaN(n) && n > 0);
+  if (prices.length > 0) {
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+  }
+  const trial = Number(coach.trialPrice);
+  const regular = Number(coach.regularPrice);
+  const fallback = [trial, regular].filter(n => !isNaN(n) && n > 0);
+  if (fallback.length === 0) return null;
+  return { min: Math.min(...fallback), max: Math.max(...fallback) };
+}
+
+function stripParens(s: string) {
+  return s.replace(/（[^）]*）/g, "").trim();
+}
+
 export function CoachCard({ coach }: { coach: Coach }) {
+  const priceRange = getPriceRange(coach);
+  const ageGroups = (coach.ageGroups || []) as string[];
+  const coachTypes = (coach.experienceLevel || "")
+    .split(/[、,]/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
   return (
     <Link href={`/coaches/${coach.id}`}>
-      <Card className="group overflow-hidden h-full flex flex-col cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 bg-white">
-        <CardContent className="pt-5 pb-4 flex-1">
-          {/* Top row: avatar + name/location/rating */}
-          <div className="flex items-start gap-3 mb-4">
-            <Avatar className="h-14 w-14 shrink-0 border-2 border-primary/10 shadow-sm bg-white">
-              <AvatarImage src={coach.profileImageUrl || undefined} alt={coach.name} className="object-cover" />
-              <AvatarFallback className="text-lg bg-primary/10 text-primary font-bold">{coach.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-display font-bold text-base leading-tight flex items-center gap-1 min-w-0">
-                  <span className="truncate">{coach.name}</span>
-                  {coach.isApproved && <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />}
-                </h3>
-                <div className="flex items-center bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-md text-amber-600 font-medium text-xs shrink-0">
-                  <Star className="w-3 h-3 fill-current mr-0.5" />
-                  {coach.averageRating ? coach.averageRating.toFixed(1) : "New"}
-                  <span className="text-amber-500/70 ml-0.5">({coach.reviewCount})</span>
-                </div>
-              </div>
-              <div className="flex items-center text-muted-foreground text-xs mt-0.5 gap-1">
-                <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate">{coach.location}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {coach.isFeatured && (
-                  <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-1.5 py-0 h-5 flex items-center gap-0.5">
-                    <Crown className="w-2.5 h-2.5" /> 精選
-                  </Badge>
-                )}
-                <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 bg-primary/10 text-primary border-0">
-                  {coach.sportsCategory}
-                </Badge>
-              </div>
-            </div>
+      <Card className="group h-full flex flex-col cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 bg-white p-5 md:p-6 rounded-2xl">
+        {/* Top: name + verification */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h3 className="font-display font-bold text-xl md:text-2xl leading-tight text-foreground truncate">
+            {coach.name}
+          </h3>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {coach.isFeatured && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-amber-300 text-amber-700 bg-amber-50 text-xs font-semibold">
+                <Crown className="w-3 h-3" />
+                精選
+              </span>
+            )}
+            {coach.isApproved && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-emerald-300 text-emerald-700 bg-emerald-50 text-xs font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                已認證
+              </span>
+            )}
           </div>
+        </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{coach.bio}</p>
-        </CardContent>
+        {/* Coach type badges (e.g. 持牌教練 / 專業運動員) */}
+        {coachTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {coachTypes.map((t, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-semibold"
+              >
+                {t === "專業運動員" ? "🏅 " : t === "持牌教練" ? "📋 " : ""}
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
 
-        <CardFooter className="bg-slate-50 dark:bg-card-foreground/5 border-t p-4 flex flex-col items-start gap-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">明碼實價</div>
-          {(() => {
-            const rows = parsePricingPlans(coach.pricingPlans);
-            if (rows.length > 0) {
-              const visible = rows.slice(0, 3);
-              const extra = rows.length - visible.length;
-              return (
-                <div className="flex flex-wrap gap-1.5 w-full">
-                  {visible.map((row, i) => {
-                    const isGroup = row.sessionType === "小組課堂";
-                    const students = isGroup && row.maxStudents
-                      ? row.minStudents ? `${row.minStudents}-${row.maxStudents}人` : `≤${row.maxStudents}人`
-                      : null;
-                    const dur = row.duration ? row.duration.replace("分鐘", "分") : null;
-                    const ag = row.ageGroup ? row.ageGroup.replace(/（[^）]*）/, "") : null;
-                    return (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-foreground shadow-sm"
-                      >
-                        <span>{isGroup ? "👥" : "👤"}</span>
-                        <span className="font-bold text-primary">${row.price}</span>
-                        {students && <span className="text-muted-foreground">· {students}</span>}
-                        {dur && <span className="text-muted-foreground">· {dur}</span>}
-                        {ag && <span className="text-muted-foreground/80 border-l border-slate-200 pl-1 ml-0.5">· {ag}</span>}
-                      </span>
-                    );
-                  })}
-                  {extra > 0 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-white border border-slate-200 text-xs text-muted-foreground">
-                      +{extra} 更多
-                    </span>
-                  )}
-                </div>
-              );
-            }
-            // Legacy fallback
-            const hasDiscount = Number(coach.trialPrice) < Number(coach.regularPrice);
-            return (
-              <div className="flex items-baseline gap-3 w-full">
-                {hasDiscount && (
-                  <>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground">體驗堂</span>
-                      <span className="font-display font-bold text-primary text-lg">${coach.trialPrice}</span>
-                    </div>
-                    <div className="w-px h-8 bg-border" />
-                  </>
-                )}
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">正課 / 小時</span>
-                  <span className="font-display font-bold text-foreground text-lg">${coach.regularPrice}</span>
-                </div>
-              </div>
-            );
-          })()}
-        </CardFooter>
+        {/* Sport + age group pills (tan/beige) */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-sm font-medium">
+            {coach.sportsCategory}
+          </span>
+          {ageGroups.slice(0, 5).map((ag, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-sm font-medium"
+            >
+              {stripParens(ag)}
+            </span>
+          ))}
+        </div>
+
+        {/* Info row: location + rating */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4 flex-wrap">
+          {coach.location && (
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 shrink-0" />
+              <span className="truncate max-w-[18ch]">{coach.location}</span>
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1.5">
+            <Star className="w-4 h-4 shrink-0 fill-amber-400 text-amber-400" />
+            {coach.averageRating ? (
+              <>
+                <span className="font-semibold text-foreground">{coach.averageRating.toFixed(1)}</span>
+                <span>（{coach.reviewCount} 評價）</span>
+              </>
+            ) : (
+              <span>新教練</span>
+            )}
+          </span>
+        </div>
+
+        {/* Spacer to push price to bottom */}
+        <div className="flex-1" />
+
+        {/* Price */}
+        <div className="pt-3 border-t border-slate-100">
+          {priceRange ? (
+            <div className="flex items-baseline gap-1 font-display font-bold text-primary">
+              <span className="text-xl md:text-2xl">
+                HK${priceRange.min}
+                {priceRange.max > priceRange.min ? ` - $${priceRange.max}` : ""}
+              </span>
+              <span className="text-sm text-muted-foreground font-medium ml-1">/ 堂</span>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">收費請洽教練</div>
+          )}
+        </div>
       </Card>
     </Link>
   );
