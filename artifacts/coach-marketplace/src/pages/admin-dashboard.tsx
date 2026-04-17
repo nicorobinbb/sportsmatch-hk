@@ -544,7 +544,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="pending" className="flex gap-2">
               待審核
               {(() => {
-                const total = (pendingCoaches?.length ?? 0) + (pendingReviews?.length ?? 0) + (pendingPhotos?.length ?? 0);
+                const editsCount = allCoaches.filter(c => c.pendingEdits).length;
+                const total = (pendingCoaches?.length ?? 0) + (pendingReviews?.length ?? 0) + (pendingPhotos?.length ?? 0) + editsCount;
                 return total > 0 ? <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{total}</Badge> : null;
               })()}
             </TabsTrigger>
@@ -591,6 +592,13 @@ export default function AdminDashboard() {
                   {pendingPosts.length > 0 && (
                     <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{pendingPosts.length}</Badge>
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="edits" className="flex gap-2 rounded-md">
+                  <Pencil className="w-3.5 h-3.5" /> 待審核修改
+                  {(() => {
+                    const c = allCoaches.filter(x => x.pendingEdits).length;
+                    return c > 0 ? <Badge variant="destructive" className="px-1.5 min-w-[20px] h-5">{c}</Badge> : null;
+                  })()}
                 </TabsTrigger>
               </TabsList>
 
@@ -767,6 +775,82 @@ export default function AdminDashboard() {
                     })}
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="edits" className="space-y-4 mt-0">
+                {(() => {
+                  const fieldLabels: Record<string, string> = {
+                    name: "姓名", sportsCategory: "運動類別", location: "地點",
+                    bio: "個人簡介", trialPrice: "體驗堂價格", regularPrice: "正課價格",
+                    packageDetails: "套餐詳情", ageGroups: "適合年齡組別",
+                    experienceLevel: "經驗級別", whatsappNumber: "WhatsApp",
+                    profileImageUrl: "頭像", qualifications: "資格證書",
+                    pricingPlans: "收費方案", teachingAchievements: "教學成就或經驗",
+                    sportsAchievements: "運動成就",
+                  };
+                  const editsCoaches = allCoaches.filter(c => c.pendingEdits);
+                  if (editsCoaches.length === 0) {
+                    return (
+                      <div className="text-center py-12 bg-white dark:bg-card rounded-xl border text-muted-foreground">
+                        暫無待審核的修改申請。
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="grid gap-4">
+                      {editsCoaches.map(coach => {
+                        let edits: Record<string, unknown> = {};
+                        try { edits = JSON.parse(coach.pendingEdits as string); } catch { return null; }
+                        return (
+                          <div key={coach.id} className="bg-white dark:bg-card p-6 rounded-xl border shadow-sm">
+                            <div className="flex items-center gap-3 mb-4">
+                              {coach.profileImageUrl ? (
+                                <img src={coach.profileImageUrl} alt={coach.name} className="w-12 h-12 rounded-lg object-cover border" />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-slate-100 border flex items-center justify-center text-slate-400 font-bold">{coach.name.charAt(0)}</div>
+                              )}
+                              <div>
+                                <h3 className="font-bold">{coach.name}</h3>
+                                <p className="text-xs text-muted-foreground">{coach.sportsCategory} · {coach.location}</p>
+                              </div>
+                            </div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                              <Pencil className="w-3.5 h-3.5 text-orange-500" /> 修改內容
+                            </p>
+                            <div className="space-y-2 mb-4 bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3">
+                              {Object.entries(edits).map(([key, val]) => (
+                                <div key={key} className="flex gap-2 text-xs">
+                                  <span className="font-medium text-slate-600 w-28 shrink-0">{fieldLabels[key] || key}</span>
+                                  <span className="text-slate-800 break-all whitespace-pre-wrap">
+                                    {Array.isArray(val) ? (val as string[]).join("、") : typeof val === "object" ? JSON.stringify(val) : String(val)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditsApprove(coach.id)}
+                                disabled={approvingEdits === coach.id}
+                                className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 transition-colors"
+                              >
+                                {approvingEdits === coach.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                批准修改
+                              </button>
+                              <button
+                                onClick={() => handleEditsReject(coach.id)}
+                                disabled={approvingEdits === coach.id}
+                                className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+                              >
+                                {approvingEdits === coach.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                                拒絕修改
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </TabsContent>
             </Tabs>
           </TabsContent>
