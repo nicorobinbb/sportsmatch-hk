@@ -33,7 +33,7 @@ export default function Terms() {
               <li>用戶須提供真實、準確及最新的個人資料。</li>
               <li>
                 <span className="font-medium text-foreground">教練審核：</span>
-                本平台會利用 AI 技術及人工抽查核實教練提供的資歷證明（如證書、SCRC 性罪行定罪紀錄查核）。
+                本平台以人手查核實教練提供的資歷證明（如證書、SCRC 性罪行定罪紀錄查核）。
               </li>
               <li>
                 用戶不得冒用他人身份或提供虛假資歷，一經發現，本平台有權永久封鎖該帳戶。
@@ -42,10 +42,10 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-3">3. 費用說明（針對非抽佣模式）</h2>
+            <h2 className="text-xl font-semibold mb-3">3. 費用說明</h2>
             <ul className="list-disc pl-6 space-y-2 text-muted-foreground leading-relaxed">
               <li>
-                <span className="font-medium text-foreground">學員端：</span>
+                <span className="font-medium text-foreground">學員：</span>
                 學員使用本平台搜尋、配對教練完全免費。
               </li>
               <li>

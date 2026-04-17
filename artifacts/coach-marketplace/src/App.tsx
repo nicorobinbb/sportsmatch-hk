@@ -15,6 +15,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
 import Terms from "@/pages/terms";
+import Disclaimer from "@/pages/disclaimer";
 import { setTokenGetter } from "@/lib/auth-token";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -147,6 +148,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/onboarding" component={Onboarding} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/terms" component={Terms} />
+            <Route path="/disclaimer" component={Disclaimer} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
             <Route component={NotFound} />

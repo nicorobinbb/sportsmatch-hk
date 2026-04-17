@@ -41,6 +41,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     條款及細則
                   </a>
                 </li>
+                <li>
+                  <a href="/disclaimer" className="text-white/85 hover:text-white transition-colors">
+                    免責聲明
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
