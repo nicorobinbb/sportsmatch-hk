@@ -472,12 +472,12 @@ export default function CoachRegister() {
                       name="scrcNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SCRC 編號（選填）</FormLabel>
+                          <FormLabel>性罪行定罪紀錄查核（SCRC）編號（選填）</FormLabel>
                           <FormDescription>
-                            如你已註冊「體育教練註冊計劃」（Sports Coach Registration Card），請填寫你的 SCRC 編號以提高審核可信度。
+                            如你已透過香港警務處完成「性罪行定罪紀錄查核」（Sexual Conviction Record Check），可提供查核編號以提升家長及學員對你的信任。本平台不會公開顯示此編號，僅供管理員審核參考。
                           </FormDescription>
                           <FormControl>
-                            <Input placeholder="例如：SCRC-2024-12345" {...field} />
+                            <Input placeholder="例如：SCRC2024XXXXXX" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -888,7 +888,7 @@ export default function CoachRegister() {
               <div className="rounded-xl border bg-muted/30 p-5">
                 <h3 className="font-bold text-base mb-3">導師合作條款確認</h3>
                 <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed text-foreground">
-                  <li>確保提交之所有身份證明、專業證書及 SCRC 編號均真實無誤，並無虛報。</li>
+                  <li>確保提交之所有身份證明、專業證書及性罪行定罪紀錄查核（SCRC）編號（如適用）均真實無誤，並無虛報。</li>
                   <li>了解 SportsMatch 僅作為資訊配對平台，並不參與任何學員與教練之間的金錢交易及課堂安排。</li>
                   <li>同意對自己在平台提供的教學服務負上全部責任，並理解本平台不承擔任何因教學活動引起的意外或傷亡責任。</li>
                   <li>承諾維持良好的回覆率及專業態度，以確保平台的服務質量。</li>
