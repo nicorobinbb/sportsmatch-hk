@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MessageCircle, X, ChevronRight } from "lucide-react";
@@ -29,6 +29,12 @@ const FAQS = [
 export function SupportWidget() {
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("sportsmatch:open-support", handler);
+    return () => window.removeEventListener("sportsmatch:open-support", handler);
+  }, []);
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
