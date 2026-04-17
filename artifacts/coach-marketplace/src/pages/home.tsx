@@ -3,8 +3,15 @@ import { CoachCard } from "@/components/coach-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, MapPin, Star, Users } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, MapPin, Star, Users, ChevronDown, X } from "lucide-react";
 import { useState, useRef } from "react";
+
+const HK_DISTRICTS = [
+  "中西區", "灣仔", "東區", "南區",
+  "油尖旺", "深水埗", "九龍城", "黃大仙", "觀塘",
+  "葵青", "荃灣", "屯門", "元朗", "北區", "大埔", "沙田", "西貢", "離島",
+];
 
 import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
 import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
@@ -159,15 +166,55 @@ export default function Home() {
                 />
               </div>
               <div className="hidden sm:block w-px bg-border my-2" />
-              <div className="relative flex-1 flex items-center">
-                <MapPin className="absolute left-4 w-5 h-5 text-muted-foreground" />
-                <Input 
-                  placeholder="地區（例如：旺角）" 
-                  className="w-full pl-11 border-0 shadow-none focus-visible:ring-0 text-base h-12"
-                  value={selectedLocation || ""}
-                  onChange={(e) => setSelectedLocation(e.target.value || undefined)}
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="relative flex-1 flex items-center h-12 px-4 text-left rounded-md hover:bg-muted/40 transition-colors min-w-0"
+                  >
+                    <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
+                    <span className={`flex-1 pl-3 text-base truncate ${selectedLocation ? "text-foreground" : "text-muted-foreground"}`}>
+                      {selectedLocation || "選擇授課地區"}
+                    </span>
+                    {selectedLocation ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); setSelectedLocation(undefined); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setSelectedLocation(undefined); } }}
+                        className="ml-2 p-1 rounded-full hover:bg-muted text-muted-foreground shrink-0"
+                        aria-label="清除地區"
+                      >
+                        <X className="w-4 h-4" />
+                      </span>
+                    ) : (
+                      <ChevronDown className="ml-2 w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[min(92vw,420px)] p-3">
+                  <div className="text-xs text-muted-foreground mb-2 px-1">選擇地區</div>
+                  <div className="flex flex-wrap gap-2">
+                    {HK_DISTRICTS.map(d => {
+                      const active = selectedLocation === d;
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setSelectedLocation(active ? undefined : d)}
+                          className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "bg-white text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button type="submit" size="lg" className="rounded-xl h-12 px-8 font-bold text-base shadow-md">
                 搜尋
               </Button>
