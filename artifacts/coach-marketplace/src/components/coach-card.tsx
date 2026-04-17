@@ -74,20 +74,28 @@ export function CoachCard({ coach }: { coach: Coach }) {
             </div>
           </div>
 
-          {/* Sport + age group pills */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          {/* Sport row (orange/amber) */}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0">運動</span>
             <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-sm font-medium">
               {coach.sportsCategory}
             </span>
-            {ageGroups.slice(0, 5).map((ag, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-sm font-medium"
-              >
-                {stripParens(ag)}
-              </span>
-            ))}
           </div>
+
+          {/* Age group row (rose/pink) */}
+          {ageGroups.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="text-xs font-semibold text-muted-foreground shrink-0">年齡層</span>
+              {ageGroups.slice(0, 5).map((ag, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium"
+                >
+                  {stripParens(ag)}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Info row: location + rating */}
           <div className="flex items-center gap-4 text-sm text-muted-foreground mb-1 flex-wrap">
