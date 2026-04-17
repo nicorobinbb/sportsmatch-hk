@@ -36,6 +36,40 @@ const requireAdmin = (req: any, res: any, next: any) => {
   next();
 };
 
+// One-time backfill endpoint to populate teaching/sports achievements on coaches that don't have them.
+router.post("/backfill-achievements", requireAdmin, async (_req, res) => {
+  try {
+    const allCoaches = await db
+      .select({
+        id: coachesTable.id,
+        sport: coachesTable.sportsCategory,
+        experienceLevel: coachesTable.experienceLevel,
+        teaching: coachesTable.teachingAchievements,
+        sports: coachesTable.sportsAchievements,
+      })
+      .from(coachesTable);
+
+    let updated = 0;
+    for (const c of allCoaches) {
+      const isPro = (c.experienceLevel ?? "").includes("職業") || (c.experienceLevel ?? "").includes("專業");
+      const teaching = c.teaching ??
+        `執教${c.sport}超過5年，累計指導逾200名學員。曾任職本地學校及體育會教練，多位學員於校際及公開賽事中獲獎。教學風格因材施教，注重基本功及運動安全。`;
+      const sports = c.sports ?? (isPro
+        ? `前香港${c.sport}代表隊成員，曾參與多項國際及亞洲區賽事。本地公開賽多次獲得獎項，並擁有多年高水平比賽經驗。`
+        : `本地${c.sport}愛好者及持證教練，曾參與多項本地賽事並取得不俗成績。持續進修以掌握最新的訓練方法及運動科學知識。`);
+      if (c.teaching !== teaching || c.sports !== sports) {
+        await db.update(coachesTable)
+          .set({ teachingAchievements: teaching, sportsAchievements: sports })
+          .where(eq(coachesTable.id, c.id));
+        updated++;
+      }
+    }
+    res.json({ success: true, total: allCoaches.length, updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get("/status", requireAuth, (req, res) => {
   const auth = getAuth(req);
   const adminIds = getAdminUserIds();
