@@ -6,6 +6,11 @@ export default function About() {
     <Layout>
       <div className="container max-w-5xl mx-auto px-4 md:px-6 py-12 md:py-16">
         <div className="text-center mb-12">
+          <img
+            src={`${import.meta.env.BASE_URL}logo-icon.png`}
+            alt="運對 SportsMatch HK"
+            className="h-20 md:h-24 w-auto mx-auto mb-6"
+          />
           <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 font-display">關於我們</h1>
           <p className="text-lg text-muted-foreground">香港最透明、最值得信賴的運動教練審核與搜尋平台</p>
         </div>
