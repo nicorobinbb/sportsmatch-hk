@@ -43,13 +43,16 @@ router.post("/backfill-achievements", requireAdmin, async (_req, res) => {
       .select({
         id: coachesTable.id,
         sport: coachesTable.sportsCategory,
+        bio: coachesTable.bio,
         experienceLevel: coachesTable.experienceLevel,
         teaching: coachesTable.teachingAchievements,
         sports: coachesTable.sportsAchievements,
+        teachingFocus: coachesTable.teachingFocus,
       })
       .from(coachesTable);
 
     let updated = 0;
+    const competitiveRe = /競技|比賽|賽事|代表隊|甲組|港隊|冠軍|錦標|聯賽|備戰/;
     for (const c of allCoaches) {
       const isPro = (c.experienceLevel ?? "").includes("職業") || (c.experienceLevel ?? "").includes("專業");
       const teaching = c.teaching ??
@@ -57,9 +60,15 @@ router.post("/backfill-achievements", requireAdmin, async (_req, res) => {
       const sports = c.sports ?? (isPro
         ? `前香港${c.sport}代表隊成員，曾參與多項國際及亞洲區賽事。本地公開賽多次獲得獎項，並擁有多年高水平比賽經驗。`
         : `本地${c.sport}愛好者及持證教練，曾參與多項本地賽事並取得不俗成績。持續進修以掌握最新的訓練方法及運動科學知識。`);
-      if (c.teaching !== teaching || c.sports !== sports) {
+
+      const needsFocus = !c.teachingFocus || c.teachingFocus.length === 0;
+      const focus = needsFocus
+        ? (isPro || competitiveRe.test(c.bio ?? "") ? ["競賽", "興趣"] : ["興趣"])
+        : c.teachingFocus;
+
+      if (c.teaching !== teaching || c.sports !== sports || needsFocus) {
         await db.update(coachesTable)
-          .set({ teachingAchievements: teaching, sportsAchievements: sports })
+          .set({ teachingAchievements: teaching, sportsAchievements: sports, teachingFocus: focus })
           .where(eq(coachesTable.id, c.id));
         updated++;
       }
