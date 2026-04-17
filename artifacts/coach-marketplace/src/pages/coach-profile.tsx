@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus, Facebook, Instagram } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus, Facebook, Instagram, Share2, Copy, Mail } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,112 @@ import { useToast } from "@/hooks/use-toast";
 import { Show, useUser } from "@clerk/react";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
+
+function ShareCoachButton({ coach }: { coach: any }) {
+  const { toast } = useToast();
+  const url = typeof window !== "undefined" ? window.location.href : "";
+  const text = `推薦你「${coach.name}」教練（${coach.sportsCategory} · ${coach.location}），透過 SportsMatch 運對睇佢嘅資料：`;
+  const shareText = `${text} ${url}`;
+
+  const openShare = (href: string) => {
+    window.open(href, "_blank", "noopener,noreferrer,width=600,height=700");
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      toast({ title: "已複製連結", description: "可以貼到任何地方分享。" });
+    } catch {
+      toast({ title: "複製失敗", description: "請手動選取連結複製。", variant: "destructive" });
+    }
+  };
+
+  const tryNativeShare = async (e: React.MouseEvent) => {
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      e.preventDefault();
+      try {
+        await (navigator as any).share({ title: `${coach.name} | SportsMatch 運對`, text, url });
+      } catch {
+        /* user cancelled */
+      }
+    }
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          onClick={tryNativeShare}
+          className="flex-shrink-0 p-2 rounded-full border-2 border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all"
+          title="分享教練"
+        >
+          <Share2 className="w-5 h-5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-2">
+        <div className="text-xs text-muted-foreground px-2 py-1.5 font-medium">分享此教練</div>
+        <div className="grid grid-cols-1 gap-1">
+          <button
+            type="button"
+            onClick={() => openShare(`https://wa.me/?text=${encodeURIComponent(shareText)}`)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted text-sm text-left"
+          >
+            <span className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center text-base">💬</span>
+            <span className="font-medium">WhatsApp</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted text-sm text-left"
+          >
+            <span className="w-8 h-8 rounded-full bg-[#1877F2] text-white flex items-center justify-center">
+              <Facebook className="w-4 h-4" />
+            </span>
+            <span className="font-medium">Facebook</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openShare(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted text-sm text-left"
+          >
+            <span className="w-8 h-8 rounded-full bg-[#229ED9] text-white flex items-center justify-center">
+              <Send className="w-4 h-4" />
+            </span>
+            <span className="font-medium">Telegram</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted text-sm text-left"
+          >
+            <span className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-sm font-bold">𝕏</span>
+            <span className="font-medium">X (Twitter)</span>
+          </button>
+          <a
+            href={`mailto:?subject=${encodeURIComponent(`推薦運動教練：${coach.name}`)}&body=${encodeURIComponent(shareText)}`}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted text-sm text-left"
+          >
+            <span className="w-8 h-8 rounded-full bg-slate-600 text-white flex items-center justify-center">
+              <Mail className="w-4 h-4" />
+            </span>
+            <span className="font-medium">電郵</span>
+          </a>
+          <div className="border-t my-1" />
+          <button
+            type="button"
+            onClick={copyLink}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted text-sm text-left"
+          >
+            <span className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center">
+              <Copy className="w-4 h-4" />
+            </span>
+            <span className="font-medium">複製連結</span>
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function CoachProfile() {
   const params = useParams();
@@ -383,6 +490,7 @@ export default function CoachProfile() {
                         <Heart className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
                       </button>
                     </Show>
+                    <ShareCoachButton coach={coach} />
                   </div>
 
                   <div className="inline-flex items-center px-4 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xl md:text-2xl font-display font-bold">
