@@ -365,6 +365,8 @@ router.get("/:id", async (req, res) => {
         profileImageUrl: coachesTable.profileImageUrl,
         coverPhotoUrl: coachesTable.coverPhotoUrl,
         qualifications: coachesTable.qualifications,
+        teachingAchievements: coachesTable.teachingAchievements,
+        sportsAchievements: coachesTable.sportsAchievements,
         pricingPlans: coachesTable.pricingPlans,
         whatsappNumber: coachesTable.whatsappNumber,
         youtubeUrl: coachesTable.youtubeUrl,
