@@ -2,18 +2,59 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { userProfilesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 
 const router = Router();
+
+async function fetchClerkUserMeta(userId: string) {
+  try {
+    const u = await clerkClient.users.getUser(userId);
+    const email = u.primaryEmailAddress?.emailAddress
+      ?? u.emailAddresses?.[0]?.emailAddress
+      ?? null;
+    return {
+      email,
+      imageUrl: u.imageUrl ?? null,
+      firstName: u.firstName ?? null,
+      lastName: u.lastName ?? null,
+    };
+  } catch {
+    return { email: null, imageUrl: null, firstName: null, lastName: null };
+  }
+}
 
 router.get("/", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const [profile] = await db.select().from(userProfilesTable)
+  let [profile] = await db.select().from(userProfilesTable)
     .where(eq(userProfilesTable.userId, userId));
 
-  if (!profile) return res.json({ profile: null });
+  if (!profile) {
+    const meta = await fetchClerkUserMeta(userId);
+    [profile] = await db.insert(userProfilesTable).values({
+      userId,
+      email: meta.email,
+      imageUrl: meta.imageUrl,
+      firstName: meta.firstName,
+      lastName: meta.lastName,
+      displayName: [meta.firstName, meta.lastName].filter(Boolean).join(" ").trim() || null,
+      onboardingCompleted: false,
+    }).returning();
+    req.log?.info({ userId, email: meta.email }, "Auto-created stub user profile on first sign-in");
+  } else if (!profile.email || !profile.imageUrl) {
+    const meta = await fetchClerkUserMeta(userId);
+    if (meta.email || meta.imageUrl) {
+      [profile] = await db.update(userProfilesTable)
+        .set({
+          email: profile.email ?? meta.email,
+          imageUrl: profile.imageUrl ?? meta.imageUrl,
+        })
+        .where(eq(userProfilesTable.userId, userId))
+        .returning();
+    }
+  }
+
   res.json({ profile });
 });
 

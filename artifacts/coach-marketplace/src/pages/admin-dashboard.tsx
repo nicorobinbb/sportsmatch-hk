@@ -149,6 +149,8 @@ export default function AdminDashboard() {
 
   type UserProfileRow = {
     id: number; userId: string; displayName?: string | null;
+    email?: string | null; imageUrl?: string | null;
+    firstName?: string | null; lastName?: string | null;
     goals: string[]; availability: string[]; preferredDistricts: string[]; preferredSports: string[];
     onboardingCompleted: boolean; createdAt: string;
   };
@@ -1669,15 +1671,34 @@ export default function AdminDashboard() {
                       <div className="grid gap-3">
                         {filteredProfiles.map(profile => (
                           <div key={profile.id} className="bg-white dark:bg-card rounded-xl border shadow-sm p-5">
-                            <div className="flex flex-wrap items-center gap-2 mb-3">
-                              <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono text-muted-foreground">
-                                {profile.userId.slice(0, 20)}…
-                              </code>
-                              <Badge variant={profile.onboardingCompleted ? "default" : "outline"}
-                                className={`text-xs ${profile.onboardingCompleted ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500"}`}>
-                                {profile.onboardingCompleted ? "已完成問卷" : "未完成"}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground ml-auto">
+                            <div className="flex items-start gap-3 mb-3">
+                              {profile.imageUrl ? (
+                                <img src={profile.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                                  {(profile.displayName || profile.email || profile.userId)?.charAt(0)?.toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-semibold text-sm">
+                                    {profile.displayName || [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "未命名用戶"}
+                                  </span>
+                                  <Badge variant={profile.onboardingCompleted ? "default" : "outline"}
+                                    className={`text-xs ${profile.onboardingCompleted ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-500"}`}>
+                                    {profile.onboardingCompleted ? "已完成問卷" : "未完成"}
+                                  </Badge>
+                                </div>
+                                {profile.email && (
+                                  <a href={`mailto:${profile.email}`} className="text-xs text-primary hover:underline block truncate">
+                                    {profile.email}
+                                  </a>
+                                )}
+                                <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground inline-block mt-0.5">
+                                  {profile.userId.slice(0, 24)}…
+                                </code>
+                              </div>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {new Date(profile.createdAt).toLocaleDateString("zh-HK")}
                               </span>
                             </div>
