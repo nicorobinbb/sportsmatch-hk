@@ -1,67 +1,44 @@
 import { Layout } from "@/components/layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { HelpCircle, Users, Trophy, MessageCircle, Sparkles } from "lucide-react";
+import { HelpCircle, Sparkles, MessageCircle } from "lucide-react";
 
 type FaqItem = { q: string; a: string };
 
-const STUDENT_FAQS: FaqItem[] = [
+const FAQS: FaqItem[] = [
   {
-    q: "使用 SportsMatch 搵教練需要向平台支付費用嗎？",
-    a: "完全免費！學員搜尋教練、查看評價及直接聯絡教練都不需要向平台支付任何費用。",
+    q: "SportsMatch 運對是什麼？",
+    a: "SportsMatch 係全港首個資訊最透明嘅運動教練配對平台。我哋唔抽佣、唔收中介費，旨在等學員可以直接搵到最適合嘅教練，同時為教練提供一個公平嘅曝光機會。",
   },
   {
-    q: "如何知道教練是否可靠？",
-    a: "平台要求教練提供專業證書及 SCRC（性罪行查核）。通過審核的教練會有「已認證」標章，你亦可以參考真實評分。",
+    q: "教練的資歷是否經過核實？",
+    a: "係！我哋會要求教練提供專業證書及 SCRC（性罪行定罪紀錄）編號。通過審核嘅教練會有「已認證」標章。用戶亦可以參考其他學員嘅真實評分。",
   },
   {
-    q: "如果有糾紛，平台會處理嗎？",
-    a: "SportsMatch 係資訊配對平台，不參與交易。建議雙方先傾好退款安排，如有違規請即時「舉報」。",
+    q: "如果我覺得教練唔適合，可以換人嗎？",
+    a: "當然可以！由於你係直接同教練聯絡及上堂，你可以隨時喺平台搵另一個教練。我哋亦鼓勵你喺平台上「舉報」任何唔專業嘅行為，以維持社區質素。",
+  },
+  {
+    q: "如何支付學費？",
+    a: "SportsMatch 唔會經手任何學費交易。你可以同教練直接協議支付方式（如 FPS、轉帳或現金）。咁樣教練可以收到足額學費，而你亦唔使俾額外行政費。",
+  },
+  {
+    q: "課堂可以改期或取消嗎？",
+    a: "課堂安排由教練同你直接傾好。我哋建議雙方喺確認第一堂前，先溝通清楚相關守則，以保障雙方利益。",
+  },
+  {
+    q: "使用 SportsMatch 要俾行政費嗎？",
+    a: "學員係完全免費嘅！由於我哋唔行抽佣制度，你直接同教練交易即可。我哋只會向需要額外推廣位嘅教練收取廣告費用。",
+  },
+  {
+    q: "如何成為 SportsMatch 的教練？",
+    a: "點擊「成為教練」並註冊帳戶，上傳資歷證明。經過我哋行政人員審核後，你嘅檔案就會正式公開。",
+  },
+  {
+    q: "教練與平台是什麼關係？",
+    a: "SportsMatch 僅為資訊配對平台。教練與本平台之間唔構成僱傭關係。教練可以自主決定收費及教學內容，並對其教學品質負全責。",
   },
 ];
-
-const COACH_FAQS: FaqItem[] = [
-  {
-    q: "喺 SportsMatch 上架需要付費嗎？",
-    a: "完全免費！我們歡迎所有教練免費註冊及建立個人檔案。",
-  },
-  {
-    q: "既然唔抽佣，平台靠咩營運？",
-    a: "我哋向需要額外曝光嘅教練提供「置頂推廣」服務，教練可自由選擇是否購買。",
-  },
-  {
-    q: "如何可以令我個個人檔案排名更高？",
-    a: "除了廣告，你嘅回覆速度、學員評分、資歷完整度都會影響排名。",
-  },
-];
-
-function FaqList({ items }: { items: FaqItem[] }) {
-  return (
-    <Accordion type="single" collapsible className="w-full space-y-3">
-      {items.map((item, i) => (
-        <AccordionItem
-          key={i}
-          value={`item-${i}`}
-          className="border rounded-2xl bg-white px-5 shadow-sm hover:shadow-md transition-shadow data-[state=open]:border-primary/40 data-[state=open]:shadow-md"
-        >
-          <AccordionTrigger className="text-left py-4 hover:no-underline gap-4">
-            <div className="flex items-start gap-3 flex-1">
-              <span className="shrink-0 mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs">
-                Q
-              </span>
-              <span className="font-semibold text-base text-foreground">{item.q}</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="pb-5 pl-10 pr-2 text-muted-foreground leading-relaxed text-[15px]">
-            {item.a}
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
-  );
-}
 
 export default function Faq() {
   const openSupport = () => {
@@ -70,62 +47,54 @@ export default function Faq() {
 
   return (
     <Layout>
-      {/* Header section */}
-      <section className="bg-primary/5 border-b">
-        <div className="container max-w-4xl mx-auto px-4 md:px-6 py-12 md:py-16 text-center">
+      <div className="bg-[#f8f9fa] min-h-screen">
+        {/* Header */}
+        <section className="container max-w-3xl mx-auto px-4 md:px-6 pt-12 md:pt-16 pb-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             <Sparkles className="w-4 h-4" />
             常見問題
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-3 font-display">
             有問題？我哋幫你解答
           </h1>
-          <p className="text-muted-foreground text-base md:text-lg">
-            揀返你嘅身份，搵啱你想知嘅答案 ✨
+          <p className="text-gray-600 text-base md:text-lg">
+            關於 SportsMatch 運對你想知嘅一切
           </p>
-        </div>
-      </section>
+        </section>
 
-      {/* Tabs section */}
-      <section className="container max-w-3xl mx-auto px-4 md:px-6 py-10 md:py-12">
-        <Tabs defaultValue="student" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-auto p-1.5 rounded-2xl bg-muted/60 mb-8">
-            <TabsTrigger
-              value="student"
-              className="rounded-xl py-3 px-4 text-sm md:text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md flex items-center gap-2"
-            >
-              <Users className="w-4 h-4" />
-              學員 / 家長
-            </TabsTrigger>
-            <TabsTrigger
-              value="coach"
-              className="rounded-xl py-3 px-4 text-sm md:text-base font-semibold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md flex items-center gap-2"
-            >
-              <Trophy className="w-4 h-4" />
-              運動教練
-            </TabsTrigger>
-          </TabsList>
+        {/* Accordion list */}
+        <section className="container max-w-3xl mx-auto px-4 md:px-6 pb-10">
+          <Accordion type="single" collapsible className="w-full space-y-3">
+            {FAQS.map((item, i) => (
+              <AccordionItem
+                key={i}
+                value={`item-${i}`}
+                className="border border-gray-200 rounded-xl bg-white px-5 md:px-6 shadow-sm hover:shadow-md transition-shadow data-[state=open]:shadow-md"
+              >
+                <AccordionTrigger className="text-left py-5 hover:no-underline gap-4 [&[data-state=open]>svg]:text-primary">
+                  <span className="font-semibold text-base md:text-lg text-gray-900 flex-1">
+                    {item.q}
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="pb-5 text-gray-700 leading-relaxed text-[15px] md:text-base">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </section>
 
-          <TabsContent value="student" className="mt-0 focus-visible:outline-none">
-            <FaqList items={STUDENT_FAQS} />
-          </TabsContent>
-
-          <TabsContent value="coach" className="mt-0 focus-visible:outline-none">
-            <FaqList items={COACH_FAQS} />
-          </TabsContent>
-        </Tabs>
-
-        {/* Contact support card */}
-        <Card className="mt-12 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl">
-          <CardContent className="p-6 md:p-8 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground mb-4 shadow-md">
+        {/* Contact footer */}
+        <section className="container max-w-3xl mx-auto px-4 md:px-6 pb-16">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 md:p-10 text-center shadow-sm">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4">
               <HelpCircle className="w-7 h-7" />
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
               仲有疑問？
             </h2>
-            <p className="text-muted-foreground mb-6 text-sm md:text-base">
-              我哋嘅 AI 客服 24 小時為你解答 — 即時、貼心、唔洗等。
+            <p className="text-gray-600 mb-6 text-sm md:text-base">
+              我哋嘅支援團隊隨時為你解答。
             </p>
             <Button
               size="lg"
@@ -133,11 +102,11 @@ export default function Faq() {
               className="rounded-full px-8 font-bold shadow-md"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
-              聯絡支援
+              聯絡我們
             </Button>
-          </CardContent>
-        </Card>
-      </section>
+          </div>
+        </section>
+      </div>
     </Layout>
   );
 }
