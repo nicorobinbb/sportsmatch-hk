@@ -356,19 +356,8 @@ export default function CoachProfile() {
 
   return (
     <Layout>
-      <div className="bg-slate-50 dark:bg-background pb-12 flex-1">
-        {/* Header Cover */}
-        <div className="h-48 md:h-64 w-full relative overflow-hidden bg-gradient-to-r from-primary to-primary/60">
-          <div className="absolute inset-0 bg-black/10" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex items-center gap-3 opacity-25">
-              <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center font-bold text-2xl text-primary">運</div>
-              <span className="text-4xl font-bold text-white">運對</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="container px-4 md:px-6 -mt-20 relative z-10">
+      <div className="bg-slate-50 dark:bg-background pb-12 pt-8 md:pt-10 flex-1">
+        <div className="container px-4 md:px-6 relative z-10">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
             
             {/* Left Column: Profile Info */}
