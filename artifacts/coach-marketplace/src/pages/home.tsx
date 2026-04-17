@@ -145,12 +145,15 @@ export default function Home() {
     <Layout>
       {/* Hero Section */}
       <section className="bg-primary/5 border-b relative overflow-hidden">
-        {/* Full-bleed banner */}
-        <img
-          src={`${import.meta.env.BASE_URL}hero-banner.jpg`}
-          alt="SportsMatch 運對 — 香港最透明、最值得信賴的運動教練審核與搜尋平台"
-          className="w-full object-cover block"
-        />
+        {/* Full-bleed banner (mobile + desktop variants) */}
+        <picture>
+          <source media="(min-width: 768px)" srcSet={`${import.meta.env.BASE_URL}hero-banner.jpg`} />
+          <img
+            src={`${import.meta.env.BASE_URL}hero-banner-mobile.jpg`}
+            alt="SportsMatch 運對 — 香港最透明、最值得信賴的運動教練審核與搜尋平台"
+            className="w-full object-cover block"
+          />
+        </picture>
 
         <div className="container max-w-screen-2xl px-4 md:px-10 py-6 md:py-8 relative">
           <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-5">
