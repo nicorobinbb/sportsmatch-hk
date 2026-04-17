@@ -505,10 +505,35 @@ export default function CoachProfile() {
                 </Avatar>
                 
                 <div className="flex-1 space-y-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="text-3xl md:text-4xl font-display font-bold">
                       {coach.name}
                     </h1>
+                    {(coach as any).facebookUrl && (
+                      <a
+                        href={(coach as any).facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Facebook"
+                        title="Facebook"
+                        className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#1877F2] hover:bg-[#0e63cf] text-white transition-colors"
+                      >
+                        <Facebook className="w-4 h-4" />
+                      </a>
+                    )}
+                    {(coach as any).instagramUrl && (
+                      <a
+                        href={(coach as any).instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Instagram"
+                        title="Instagram"
+                        className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full text-white transition-opacity hover:opacity-90"
+                        style={{ background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" }}
+                      >
+                        <Instagram className="w-4 h-4" />
+                      </a>
+                    )}
                     <Show when="signed-in">
                       <button
                         onClick={toggleWishlist}
