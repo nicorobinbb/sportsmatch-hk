@@ -37,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="text-sm font-semibold text-white mb-4">法律條款</h4>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="/legal" className="text-white/85 hover:text-white transition-colors">
+                  <a href="/terms" className="text-white/85 hover:text-white transition-colors">
                     條款及細則
                   </a>
                 </li>
