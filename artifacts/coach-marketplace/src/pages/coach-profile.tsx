@@ -24,8 +24,18 @@ function ShareCoachButton({ coach }: { coach: any }) {
   const rating = typeof coach.averageRating === "number" && coach.reviewCount > 0
     ? `⭐ ${coach.averageRating.toFixed(1)}／5（${coach.reviewCount} 個評價）`
     : null;
-  const trial = coach.trialPrice ? `🎯 試堂價：HK$${coach.trialPrice}／堂` : null;
-  const regular = coach.regularPrice ? `💰 正價：HK$${coach.regularPrice}／堂` : null;
+  let pricingLine: string | null = null;
+  try {
+    const raw = (coach as any).pricingPlans;
+    const plans = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (Array.isArray(plans) && plans.length > 0) {
+      const first = plans[0];
+      const price = first?.price ?? first?.amount;
+      const label = first?.name ?? first?.label ?? "收費";
+      if (price) pricingLine = `💰 收費：${label} HK$${price}`;
+    }
+  } catch {}
+
   const lines = [
     `🏅 我喺 SportsMatch 運對搵到一位${coach.sportsCategory}教練 —「${coach.name}」，分享俾你睇下！`,
     "",
@@ -33,8 +43,7 @@ function ShareCoachButton({ coach }: { coach: any }) {
     `📍 授課地區：${coach.location}`,
     coach.experienceLevel ? `🎖️ 教練資歷：${coach.experienceLevel}` : null,
     rating,
-    trial,
-    regular,
+    pricingLine,
     "",
     `👉 即睇詳細介紹、相片同學員評價：`,
     url,
