@@ -30,29 +30,15 @@ const SPORTS = [
 const AGE_GROUPS = [
   { id: "兒童", emoji: "🧒", desc: "12歲以下" },
   { id: "青少年", emoji: "🧑", desc: "12–17歲" },
-  { id: "成人", emoji: "👨", desc: "18歲以上" },
-  { id: "長者", emoji: "👴", desc: "60歲以上" },
+  { id: "成人", desc: "18歲以上" },
+  { id: "長者", desc: "60歲以上" },
 ];
 
 const HK_DISTRICTS = [
-  { name: "中西區", emoji: "🏙️" },
-  { name: "灣仔", emoji: "🌃" },
-  { name: "東區", emoji: "🌅" },
-  { name: "南區", emoji: "⛵" },
-  { name: "油尖旺", emoji: "🛍️" },
-  { name: "深水埗", emoji: "🏘️" },
-  { name: "九龍城", emoji: "🏯" },
-  { name: "黃大仙", emoji: "🛕" },
-  { name: "觀塘", emoji: "🏭" },
-  { name: "葵青", emoji: "🌿" },
-  { name: "荃灣", emoji: "🌊" },
-  { name: "屯門", emoji: "⛩️" },
-  { name: "元朗", emoji: "🌾" },
-  { name: "北區", emoji: "🏔️" },
-  { name: "大埔", emoji: "🌲" },
-  { name: "沙田", emoji: "🏇" },
-  { name: "西貢", emoji: "🐟" },
-  { name: "離島", emoji: "🏝️" },
+  { name: "中西區" }, { name: "灣仔" }, { name: "東區" }, { name: "南區" },
+  { name: "油尖旺" }, { name: "深水埗" }, { name: "九龍城" }, { name: "黃大仙" }, { name: "觀塘" },
+  { name: "葵青" }, { name: "荃灣" }, { name: "屯門" }, { name: "元朗" },
+  { name: "北區" }, { name: "大埔" }, { name: "沙田" }, { name: "西貢" }, { name: "離島" },
 ];
 
 const STEPS = [
@@ -252,8 +238,7 @@ export default function Onboarding() {
                     {selected && (
                       <CheckCircle2 className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-primary-foreground/80" />
                     )}
-                    <span className="text-3xl leading-none">{ag.emoji}</span>
-                    <span className="font-bold">{ag.id}</span>
+                    <span className="font-bold text-base">{ag.id}</span>
                     <span className={`text-xs ${selected ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{ag.desc}</span>
                   </button>
                 );
@@ -280,8 +265,7 @@ export default function Onboarding() {
                     {selected && (
                       <CheckCircle2 className="absolute top-1.5 right-1.5 w-3 h-3 text-primary-foreground/80" />
                     )}
-                    <span className="text-xl leading-none">{d.emoji}</span>
-                    <span className="text-xs text-center leading-tight">{d.name}</span>
+                    <span className="text-sm text-center leading-tight">{d.name}</span>
                   </button>
                 );
               })}
