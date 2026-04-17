@@ -83,7 +83,19 @@ export async function seedIfEmpty() {
     }
 
     logger.info("Database is empty — seeding sample coaches...");
-    const inserted = await db.insert(coachesTable).values(coaches).returning({ id: coachesTable.id });
+    const coachesWithAchievements = coaches.map(c => {
+      const isPro = c.experienceLevel?.includes("職業") || c.experienceLevel?.includes("專業運動員");
+      const sport = c.sportsCategory;
+      return {
+        ...c,
+        teachingAchievements: c.teachingAchievements ??
+          `執教${sport}超過5年，累計指導逾200名學員。曾任職本地學校及體育會教練，多位學員於校際及公開賽事中獲獎。教學風格因材施教，注重基本功及運動安全。`,
+        sportsAchievements: c.sportsAchievements ?? (isPro
+          ? `前香港${sport}代表隊成員，曾參與多項國際及亞洲區賽事。本地公開賽多次獲得獎項，並擁有多年高水平比賽經驗。`
+          : `本地${sport}愛好者及持證教練，曾參與多項本地賽事並取得不俗成績。持續進修以掌握最新的訓練方法及運動科學知識。`),
+      };
+    });
+    const inserted = await db.insert(coachesTable).values(coachesWithAchievements).returning({ id: coachesTable.id });
     logger.info({ count: inserted.length }, "Coaches seeded successfully");
 
     const reviewsWithRealIds = reviews.map(r => ({
