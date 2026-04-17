@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Dumbbell, DollarSign, User, MapPin, Upload, X, Plus, Trash2 } from "lucide-react";
 import { Show } from "@clerk/react";
 import { useState, useRef } from "react";
@@ -125,6 +126,13 @@ export default function CoachRegister() {
   const [coachTypes, setCoachTypes] = useState<string[]>([]);
   const [coachTypeError, setCoachTypeError] = useState("");
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<CoachFormValues | null>(null);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreeConduct, setAgreeConduct] = useState(false);
+  const allAgreed = agreeTerms && agreePrivacy && agreeConduct;
+
   const compressImage = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const img = new Image();
@@ -174,6 +182,14 @@ export default function CoachRegister() {
     const invalidRow = pricingRows.some(r => !r.price || isNaN(Number(r.price)) || Number(r.price) < 0);
     if (invalidRow) { setPricingError("請填寫所有收費金額"); return; }
     setPricingError("");
+
+    setPendingFormData(data);
+    setConfirmOpen(true);
+  };
+
+  const submitToServer = () => {
+    const data = pendingFormData;
+    if (!data) return;
 
     const prices = pricingRows.map(r => Number(r.price));
     const minPrice = Math.min(...prices);
@@ -829,7 +845,7 @@ export default function CoachRegister() {
 
                   <div className="flex justify-end pt-4">
                     <Button type="submit" size="lg" className="w-full md:w-auto px-10 h-12 text-base" disabled={createCoach.isPending}>
-                      {createCoach.isPending ? "提交中…" : "提交申請"}
+                      {createCoach.isPending ? "提交中…" : "繼續至確認提交"}
                     </Button>
                   </div>
                 </form>
@@ -837,6 +853,101 @@ export default function CoachRegister() {
             </div>
           </Show>
         </div>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold font-display">成為 SportsMatch 教練</DialogTitle>
+              <DialogDescription className="text-base">
+                加入全港最透明配對平台，開始建立您的運動社群。
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-2">
+              <div className="rounded-xl border bg-muted/30 p-5">
+                <h3 className="font-bold text-base mb-3">導師合作條款確認</h3>
+                <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed text-foreground">
+                  <li>確保提交之所有身份證明、專業證書及 SCRC 編號均真實無誤，並無虛報。</li>
+                  <li>了解 SportsMatch 僅作為資訊配對平台，並不參與任何學員與教練之間的金錢交易及課堂安排。</li>
+                  <li>同意對自己在平台提供的教學服務負上全部責任，並理解本平台不承擔任何因教學活動引起的意外或傷亡責任。</li>
+                  <li>承諾維持良好的回覆率及專業態度，以確保平台的服務質量。</li>
+                  <li>了解平台設有檢舉機制。如被證實存在虛假資歷、不當行為或嚴重投訴，本平台有權永久刪除教練檔案且不作預先通知。</li>
+                  <li>同意本平台對用戶評價及教練排名算法擁有最終決定權。</li>
+                  <li>了解可隨時透過後台或聯絡客服申請取消／下架教練檔案。</li>
+                </ol>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={agreeTerms}
+                    onCheckedChange={(v) => setAgreeTerms(Boolean(v))}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm leading-relaxed">
+                    我已閱讀並同意上述「導師合作條款」及「
+                    <a href="/terms" target="_blank" className="text-primary underline">服務條款及細則</a>
+                    」
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={agreePrivacy}
+                    onCheckedChange={(v) => setAgreePrivacy(Boolean(v))}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm leading-relaxed">
+                    我已閱讀並同意「
+                    <a href="/privacy" target="_blank" className="text-primary underline">隱私權政策</a>
+                    」
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={agreeConduct}
+                    onCheckedChange={(v) => setAgreeConduct(Boolean(v))}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm leading-relaxed">
+                    我承諾遵守專業操守，確保教學環境安全
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+                disabled={createCoach.isPending}
+              >
+                上一步
+              </Button>
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    toast({ title: "草稿功能即將推出", description: "目前資料仍會保留在表單中。" });
+                  }}
+                  disabled={createCoach.isPending}
+                >
+                  儲存草稿
+                </Button>
+                <Button
+                  type="button"
+                  onClick={submitToServer}
+                  disabled={!allAgreed || createCoach.isPending}
+                  className="px-8"
+                >
+                  {createCoach.isPending ? "提交中…" : "提交申請"}
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
