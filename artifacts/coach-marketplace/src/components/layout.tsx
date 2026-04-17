@@ -13,9 +13,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
             <div className="md:col-span-5">
               <img
-                src={`${import.meta.env.BASE_URL}logo-banner.png`}
-                alt="SportsMatch 運對"
-                className="h-10 w-auto mb-4 brightness-0 invert"
+                src={`${import.meta.env.BASE_URL}logo-footer.png`}
+                alt="SportsMatch 運對 — 香港運動教練配對平台"
+                className="h-16 w-auto mb-4"
               />
               <p className="text-sm text-white/85 leading-relaxed max-w-sm">
                 香港最透明、最值得信賴的運動教練審核與搜尋平台。
