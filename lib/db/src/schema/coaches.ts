@@ -6,6 +6,8 @@ export const coachesTable = pgTable("coaches", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
+  nameZh: text("name_zh"),
+  nameEn: text("name_en"),
   sportsCategory: text("sports_category").notNull(),
   location: text("location").notNull(),
   bio: text("bio").notNull(),

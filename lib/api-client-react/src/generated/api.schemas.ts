@@ -12,6 +12,10 @@ export interface HealthStatus {
 export interface Coach {
   id: number;
   name: string;
+  /** @nullable */
+  nameZh?: string | null;
+  /** @nullable */
+  nameEn?: string | null;
   sportsCategory: string;
   location: string;
   bio: string;
@@ -59,6 +63,10 @@ export interface Photo {
 export interface CoachDetail {
   id: number;
   name: string;
+  /** @nullable */
+  nameZh?: string | null;
+  /** @nullable */
+  nameEn?: string | null;
   sportsCategory: string;
   location: string;
   bio: string;
@@ -98,6 +106,8 @@ export interface CoachListResponse {
 
 export interface CreateCoachBody {
   name: string;
+  nameZh?: string;
+  nameEn?: string;
   sportsCategory: string;
   location: string;
   bio: string;

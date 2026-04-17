@@ -467,6 +467,10 @@ components:
           type: integer
         name:
           type: string
+        nameZh:
+          type: ["string", "null"]
+        nameEn:
+          type: ["string", "null"]
         sportsCategory:
           type: string
         location:
@@ -527,6 +531,10 @@ components:
           type: integer
         name:
           type: string
+        nameZh:
+          type: ["string", "null"]
+        nameEn:
+          type: ["string", "null"]
         sportsCategory:
           type: string
         location:
@@ -613,6 +621,10 @@ components:
       type: object
       properties:
         name:
+          type: string
+        nameZh:
+          type: string
+        nameEn:
           type: string
         sportsCategory:
           type: string

@@ -9,6 +9,10 @@
 export interface Coach {
   id: number;
   name: string;
+  /** @nullable */
+  nameZh?: string | null;
+  /** @nullable */
+  nameEn?: string | null;
   sportsCategory: string;
   location: string;
   bio: string;

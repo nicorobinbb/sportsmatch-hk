@@ -33,6 +33,8 @@ export const ListCoachesResponse = zod.object({
     zod.object({
       id: zod.number(),
       name: zod.string(),
+      nameZh: zod.string().nullish(),
+      nameEn: zod.string().nullish(),
       sportsCategory: zod.string(),
       location: zod.string(),
       bio: zod.string(),
@@ -61,6 +63,8 @@ export const ListCoachesResponse = zod.object({
  */
 export const CreateCoachBody = zod.object({
   name: zod.string(),
+  nameZh: zod.string().optional(),
+  nameEn: zod.string().optional(),
   sportsCategory: zod.string(),
   location: zod.string(),
   bio: zod.string(),
@@ -82,6 +86,8 @@ export const GetCoachParams = zod.object({
 export const GetCoachResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
+  nameZh: zod.string().nullish(),
+  nameEn: zod.string().nullish(),
   sportsCategory: zod.string(),
   location: zod.string(),
   bio: zod.string(),
@@ -208,6 +214,8 @@ export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem);
 export const ListFeaturedCoachesResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
+  nameZh: zod.string().nullish(),
+  nameEn: zod.string().nullish(),
   sportsCategory: zod.string(),
   location: zod.string(),
   bio: zod.string(),
@@ -266,6 +274,8 @@ export const TrackCategoryClickResponse = zod.object({
 export const AdminListPendingCoachesResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
+  nameZh: zod.string().nullish(),
+  nameEn: zod.string().nullish(),
   sportsCategory: zod.string(),
   location: zod.string(),
   bio: zod.string(),
@@ -298,6 +308,8 @@ export const AdminApproveCoachParams = zod.object({
 export const AdminApproveCoachResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
+  nameZh: zod.string().nullish(),
+  nameEn: zod.string().nullish(),
   sportsCategory: zod.string(),
   location: zod.string(),
   bio: zod.string(),
@@ -327,6 +339,8 @@ export const AdminRejectCoachParams = zod.object({
 export const AdminRejectCoachResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
+  nameZh: zod.string().nullish(),
+  nameEn: zod.string().nullish(),
   sportsCategory: zod.string(),
   location: zod.string(),
   bio: zod.string(),

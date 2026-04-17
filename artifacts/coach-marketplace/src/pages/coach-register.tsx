@@ -29,7 +29,9 @@ const COUNTRY_CODES = [
 ];
 
 const coachSchema = z.object({
-  name: z.string().min(2, "姓名至少需要2個字元"),
+  nameZh: z.string().min(1, "請填寫中文姓名"),
+  nameEn: z.string().min(1, "請填寫英文姓名"),
+  name: z.string().min(2, "請填寫網頁顯示姓名（至少2個字元）"),
   sportsCategory: z.string().min(1, "請選擇運動類別"),
   location: z.string().min(1, "請至少選擇一個授課地區"),
   bio: z.string().min(20, "個人簡介至少需要20個字元以吸引學員"),
@@ -65,6 +67,8 @@ export default function CoachRegister() {
   const form = useForm<CoachFormValues>({
     resolver: zodResolver(coachSchema),
     defaultValues: {
+      nameZh: "",
+      nameEn: "",
       name: "",
       sportsCategory: "",
       location: "",
@@ -178,6 +182,8 @@ export default function CoachRegister() {
     createCoach.mutate({
       data: {
         name: data.name,
+        nameZh: data.nameZh,
+        nameEn: data.nameEn,
         sportsCategory: data.sportsCategory,
         location: data.location,
         bio: data.bio,
@@ -248,12 +254,40 @@ export default function CoachRegister() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="name"
+                        name="nameZh"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>全名 / 教練名稱</FormLabel>
+                            <FormLabel>中文姓名 <span className="text-xs text-muted-foreground font-normal">（不會在網頁顯示，僅供平台核實身份）</span></FormLabel>
                             <FormControl>
-                              <Input placeholder="例如：David 教練" {...field} />
+                              <Input placeholder="例如：陳大文" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="nameEn"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>英文姓名 <span className="text-xs text-muted-foreground font-normal">（不會在網頁顯示，僅供平台核實身份）</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="例如：Tai Man Chan" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>網頁顯示姓名 <span className="text-xs text-primary font-normal">（學員會看到此名稱）</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="例如：David 教練 / Coach Chan" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

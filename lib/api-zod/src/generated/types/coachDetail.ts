@@ -11,6 +11,10 @@ import type { Review } from "./review";
 export interface CoachDetail {
   id: number;
   name: string;
+  /** @nullable */
+  nameZh?: string | null;
+  /** @nullable */
+  nameEn?: string | null;
   sportsCategory: string;
   location: string;
   bio: string;

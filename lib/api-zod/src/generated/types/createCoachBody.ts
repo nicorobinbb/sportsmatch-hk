@@ -8,6 +8,8 @@
 
 export interface CreateCoachBody {
   name: string;
+  nameZh?: string;
+  nameEn?: string;
   sportsCategory: string;
   location: string;
   bio: string;
