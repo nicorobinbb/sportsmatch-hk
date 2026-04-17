@@ -879,49 +879,40 @@ export default function CoachProfile() {
                     try { if ((coach as any).pricingPlans) plans = JSON.parse((coach as any).pricingPlans); } catch {}
 
                     if (plans && plans.length > 0) {
-                      const hasAgeGroups = plans.some(r => r.ageGroup);
                       return (
-                        <div className="overflow-hidden rounded-xl border">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="bg-muted/60 text-muted-foreground text-xs uppercase tracking-wide">
-                                <th className="px-3 py-2 text-left font-semibold">堂型</th>
-                                <th className="px-3 py-2 text-center font-semibold">人數</th>
-                                <th className="px-3 py-2 text-center font-semibold">時長</th>
-                                {hasAgeGroups && <th className="px-3 py-2 text-center font-semibold">年齡</th>}
-                                <th className="px-3 py-2 text-right font-semibold">每堂收費</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {plans.map((row, i) => (
-                                <tr key={i} className={`border-t ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
-                                  <td className="px-3 py-2.5 font-medium">
-                                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold ${row.sessionType === "單對單" ? "bg-primary/10 text-primary" : "bg-amber-50 text-amber-700"}`}>
-                                      {row.sessionType === "單對單" ? "👤" : "👥"} {row.sessionType}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2.5 text-center text-muted-foreground">
-                                    {row.sessionType === "單對單"
-                                      ? "1"
-                                      : row.minStudents && row.maxStudents
-                                        ? `${row.minStudents}–${row.maxStudents}`
-                                        : row.maxStudents
-                                          ? `最多 ${row.maxStudents}`
-                                          : "—"}
-                                  </td>
-                                  <td className="px-3 py-2.5 text-center text-muted-foreground">{row.duration}</td>
-                                  {hasAgeGroups && (
-                                    <td className="px-3 py-2.5 text-center">
-                                      {row.ageGroup
-                                        ? <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">{row.ageGroup.replace(/（[^）]*）/, "")}</span>
-                                        : <span className="text-muted-foreground text-xs">所有</span>}
-                                    </td>
-                                  )}
-                                  <td className="px-3 py-2.5 text-right font-display font-bold text-primary text-base">${row.price}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        <div className="space-y-2">
+                          {plans.map((row, i) => {
+                            const isSolo = row.sessionType === "單對單";
+                            const headcount = isSolo
+                              ? "1 人"
+                              : row.minStudents && row.maxStudents
+                                ? `${row.minStudents}–${row.maxStudents} 人`
+                                : row.maxStudents
+                                  ? `最多 ${row.maxStudents} 人`
+                                  : "小組";
+                            const ageLabel = row.ageGroup ? row.ageGroup.replace(/（[^）]*）/, "") : "所有年齡";
+                            return (
+                              <div
+                                key={i}
+                                className={`rounded-xl border p-3 ${isSolo ? "bg-primary/5 border-primary/20" : "bg-amber-50/60 border-amber-200"}`}
+                              >
+                                <div className="flex items-center justify-between gap-3 mb-2">
+                                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold ${isSolo ? "bg-primary/10 text-primary" : "bg-amber-100 text-amber-800"}`}>
+                                    {isSolo ? "👤" : "👥"} {row.sessionType}
+                                  </span>
+                                  <span className="font-display font-bold text-primary text-xl whitespace-nowrap">
+                                    ${row.price}
+                                    <span className="text-xs font-normal text-muted-foreground ml-1">/堂</span>
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                  <span>👥 {headcount}</span>
+                                  {row.duration && <span>⏱ {row.duration}</span>}
+                                  <span>🎯 {ageLabel}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     }
