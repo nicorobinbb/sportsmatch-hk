@@ -38,7 +38,6 @@ const coachSchema = z.object({
   packageDetails: z.string().optional(),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
-  coverPhotoUrl: z.string().optional().or(z.literal('')),
   whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的本地號碼（數字，不含+號或空格）").optional().or(z.literal('')),
 });
 
@@ -60,8 +59,6 @@ export default function CoachRegister() {
   const [whatsappCC, setWhatsappCC] = useState("852");
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [coverPreview, setCoverPreview] = useState<string>("");
-  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CoachFormValues>({
     resolver: zodResolver(coachSchema),
@@ -75,7 +72,6 @@ export default function CoachRegister() {
       packageDetails: "",
       ageGroups: [],
       profileImageUrl: "",
-      coverPhotoUrl: "",
       whatsappLocalNumber: "",
     },
   });
@@ -160,28 +156,6 @@ export default function CoachRegister() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "檔案太大", description: "請上傳 5MB 以內的圖片。", variant: "destructive" });
-      return;
-    }
-    try {
-      const dataUrl = await compressImage(file);
-      setCoverPreview(dataUrl);
-      form.setValue("coverPhotoUrl", dataUrl);
-    } catch {
-      toast({ title: "無法讀取圖片", variant: "destructive" });
-    }
-  };
-
-  const removeCover = () => {
-    setCoverPreview("");
-    form.setValue("coverPhotoUrl", "");
-    if (coverInputRef.current) coverInputRef.current.value = "";
-  };
-
   const onSubmit = (data: CoachFormValues) => {
     setCoachTypeError("");
 
@@ -208,7 +182,6 @@ export default function CoachRegister() {
         experienceLevel: coachTypes.join("、"),
         ageGroups: data.ageGroups,
         profileImageUrl: data.profileImageUrl || undefined,
-        coverPhotoUrl: data.coverPhotoUrl || undefined,
         packageDetails: data.packageDetails || undefined,
         whatsappNumber,
         qualifications: JSON.stringify(qualList.filter(q => q.text.trim()).map(({ id: _id, ...rest }) => rest)) || undefined,
@@ -344,46 +317,6 @@ export default function CoachRegister() {
                           </FormItem>
                         );
                       }}
-                    />
-
-                    {/* Cover photo upload */}
-                    <FormField
-                      control={form.control}
-                      name="coverPhotoUrl"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>封面照片（選填）</FormLabel>
-                          <FormDescription>上傳一張橫幅封面圖片，會顯示在你的教練卡片和個人頁面頂部。建議使用 16:9 比例，最大 5MB。</FormDescription>
-                          <FormControl>
-                            <div>
-                              {coverPreview ? (
-                                <div className="relative w-full max-w-md">
-                                  <img src={coverPreview} alt="封面預覽" className="w-full h-32 object-cover rounded-xl border shadow-sm" />
-                                  <button
-                                    type="button"
-                                    onClick={removeCover}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 transition-colors"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => coverInputRef.current?.click()}
-                                  className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-colors cursor-pointer gap-2"
-                                >
-                                  <Upload className="w-6 h-6 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">點擊上傳封面圖片</span>
-                                  <span className="text-xs text-muted-foreground/70">JPG、PNG、WEBP，最大 5MB</span>
-                                </button>
-                              )}
-                              <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleCoverChange} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
                     />
 
                     {/* Profile photo upload */}
