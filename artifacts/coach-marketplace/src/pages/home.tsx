@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Search, MapPin, Star, Users, ChevronDown, X } from "lucide-react";
+import { Search, MapPin, Star, Users, ChevronDown, X, Trophy } from "lucide-react";
 import { useState, useRef } from "react";
 
 const HK_DISTRICTS = [
@@ -179,6 +179,57 @@ export default function Home() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
+              <div className="hidden sm:block w-px bg-border my-2" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="relative flex-1 flex items-center h-12 px-4 text-left rounded-md hover:bg-muted/40 transition-colors min-w-0"
+                  >
+                    <Trophy className="w-5 h-5 text-muted-foreground shrink-0" />
+                    <span className={`flex-1 pl-3 text-base truncate ${selectedSport ? "text-foreground" : "text-muted-foreground"}`}>
+                      {selectedSport ? `${sportEmojiMap[selectedSport] ?? "🏅"} ${selectedSport}` : "選擇運動項目"}
+                    </span>
+                    {selectedSport ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); setSelectedSport(undefined); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setSelectedSport(undefined); } }}
+                        className="ml-2 p-1 rounded-full hover:bg-muted text-muted-foreground shrink-0"
+                        aria-label="清除運動"
+                      >
+                        <X className="w-4 h-4" />
+                      </span>
+                    ) : (
+                      <ChevronDown className="ml-2 w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[min(92vw,420px)] p-3">
+                  <div className="text-xs text-muted-foreground mb-2 px-1">選擇運動項目</div>
+                  <div className="flex flex-wrap gap-2 max-h-72 overflow-y-auto">
+                    {(categories ?? []).map(cat => {
+                      const active = selectedSport === cat.name;
+                      return (
+                        <button
+                          key={cat.name}
+                          type="button"
+                          onClick={() => setSelectedSport(active ? undefined : cat.name)}
+                          className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-all flex items-center gap-1.5 ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "bg-white text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                          }`}
+                        >
+                          <span>{sportEmojiMap[cat.name] ?? "🏅"}</span>
+                          <span>{cat.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <div className="hidden sm:block w-px bg-border my-2" />
               <Popover>
                 <PopoverTrigger asChild>
