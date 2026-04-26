@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { photosTable } from "@workspace/db";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, and } from "drizzle-orm";
-import { UploadCoachPhotoBody } from "@workspace/api-zod";
 
 const router = Router();
 const MAX_IMAGE_DATA_URL_LENGTH = 2_500_000; // roughly <= 1.8MB image payload after base64
@@ -56,7 +55,10 @@ router.post("/coach/:id", async (req, res) => {
       return res.status(429).json({ error: "Too many uploads. Please try again in 1 minute." });
     }
 
-    const body = UploadCoachPhotoBody.parse(req.body);
+    const body = req.body as { imageUrl?: string };
+    if (!body?.imageUrl || typeof body.imageUrl !== "string") {
+      return res.status(400).json({ error: "imageUrl is required" });
+    }
     if (!isLikelyImageDataUrl(body.imageUrl)) {
       return res.status(400).json({ error: "Invalid image format. Please upload an image file." });
     }

@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { coachesTable, reviewsTable, photosTable, coachStatsTable, coachAnalyticsTable, wishlistsTable } from "@workspace/db";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, and, desc, sql, ilike, or, inArray, gte } from "drizzle-orm";
-import { CreateCoachBody, ListCoachesQueryParams, CreateReviewBody, UploadCoachPhotoBody } from "@workspace/api-zod";
 
 const EN_TO_ZH: Record<string, string[]> = {
   swimming: ["游泳"],
@@ -145,8 +144,10 @@ const router = Router();
 
 router.get("/", async (req, res) => {
   try {
-    const query = ListCoachesQueryParams.parse(req.query);
+    const query = req.query as Record<string, string | undefined>;
     const { sport, location, search, coachType, teachingFocus, limit = 50, offset = 0 } = query;
+    const parsedLimit = Number(limit) || 50;
+    const parsedOffset = Number(offset) || 0;
 
     const conditions: ReturnType<typeof eq>[] = [eq(coachesTable.isApproved, true)];
 
@@ -219,8 +220,8 @@ router.get("/", async (req, res) => {
       .where(and(...conditions))
       .groupBy(coachesTable.id)
       .orderBy(desc(coachesTable.isFeatured), desc(coachesTable.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .limit(parsedLimit)
+      .offset(parsedOffset);
 
     const total = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -257,7 +258,10 @@ router.post("/", async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    const body = CreateCoachBody.parse(req.body);
+    const body = req.body as any;
+    if (!body?.name || !body?.sportsCategory || !body?.location || !body?.bio) {
+      return res.status(400).json({ error: "Missing required coach fields" });
+    }
 
     const [coach] = await db
       .insert(coachesTable)
@@ -273,12 +277,12 @@ router.post("/", async (req, res) => {
         sportsCategory: body.sportsCategory,
         location: body.location,
         bio: body.bio,
-        trialPrice: String(body.trialPrice),
-        regularPrice: String(body.regularPrice),
+        trialPrice: String(body.trialPrice ?? 0),
+        regularPrice: String(body.regularPrice ?? 0),
         packageDetails: body.packageDetails ?? null,
-        ageGroups: body.ageGroups,
+        ageGroups: Array.isArray(body.ageGroups) ? body.ageGroups : [],
         teachingFocus: (body as any).teachingFocus ?? [],
-        experienceLevel: body.experienceLevel,
+        experienceLevel: String(body.experienceLevel ?? ""),
         isProfessionalAthleteVerified: false,
         isLicensedCoachVerified: false,
         profileImageUrl: body.profileImageUrl ?? null,
@@ -580,7 +584,10 @@ router.post("/:id/photos", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
-    const body = UploadCoachPhotoBody.parse(req.body);
+    const body = req.body as { imageUrl?: string };
+    if (!body?.imageUrl || typeof body.imageUrl !== "string") {
+      return res.status(400).json({ error: "imageUrl is required" });
+    }
 
     const [photo] = await db
       .insert(photosTable)

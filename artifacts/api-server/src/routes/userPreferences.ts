@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { userCategoryClicksTable } from "@workspace/db";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, and, desc } from "drizzle-orm";
-import { TrackCategoryClickBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -46,8 +45,10 @@ router.post("/preferences", async (req, res) => {
       return res.json({ preferredCategories: [], clickHistory: {} });
     }
 
-    const body = TrackCategoryClickBody.parse(req.body);
-    const { category } = body;
+    const category = typeof req.body?.category === "string" ? req.body.category.trim() : "";
+    if (!category) {
+      return res.status(400).json({ error: "category is required" });
+    }
 
     const existing = await db
       .select()

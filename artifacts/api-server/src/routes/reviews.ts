@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { reviewsTable, coachesTable } from "@workspace/db";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, and, desc } from "drizzle-orm";
-import { CreateReviewBody } from "@workspace/api-zod";
 
 const router = Router();
 const MAX_REVIEW_LENGTH = 1200;
@@ -70,7 +69,10 @@ router.post("/", async (req, res) => {
     const userId = auth?.userId;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const body = CreateReviewBody.parse(req.body);
+    const body = req.body as { coachId?: number; rating?: number; comment?: string; userName?: string | null };
+    if (!body?.coachId || typeof body.comment !== "string" || typeof body.rating !== "number") {
+      return res.status(400).json({ error: "Invalid review payload" });
+    }
     if (!checkReviewCreateRateLimit(userId)) {
       return res.status(429).json({ error: "Too many review attempts. Please try again in 1 minute." });
     }
