@@ -1,33 +1,25 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import * as pinoHttpModule from "pino-http";
 import { supabaseAuthMiddleware } from "./middlewares/supabaseAuthMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
-const pinoHttp = (pinoHttpModule as any).default ?? (pinoHttpModule as any);
-
-app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req: IncomingMessage & { id?: string }) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  res.on("finish", () => {
+    logger.info(
+      {
+        method: req.method,
+        url: req.originalUrl?.split("?")[0],
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt,
       },
-      res(res: ServerResponse) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
+      "http_request",
+    );
+  });
+  next();
+});
 
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json({ limit: "5mb" }));
