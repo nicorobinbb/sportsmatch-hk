@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, MapPin, Star, Users, ChevronDown, X, Trophy } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const HK_DISTRICTS = [
   "中西區", "灣仔", "東區", "南區",
@@ -13,9 +13,10 @@ const HK_DISTRICTS = [
   "葵青", "荃灣", "屯門", "元朗", "北區", "大埔", "沙田", "西貢", "離島",
 ];
 
-import { useListCoaches, useListCategories, useListFeaturedCoaches, useGetCoachStats, useTrackCategoryClick, useGetUserPreferences } from "@workspace/api-client-react";
+import { useGetUserPreferences } from "@workspace/api-client-react";
 import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { getBaseUrl } from "@/lib/api";
 
 const AGE_GROUPS = [
   { label: "幼童", sub: "8歲以下", emoji: "👶", prefix: "幼童" },
@@ -75,21 +76,65 @@ export default function Home() {
       return next;
     });
 
-  const { data: stats } = useGetCoachStats();
-  const { data: categoriesData } = useListCategories();
-  const categories = Array.isArray(categoriesData) ? categoriesData : [];
-  const { data: featuredCoaches, isLoading: isFeaturedLoading } = useListFeaturedCoaches();
+  const [stats, setStats] = useState<{ totalCoaches: number; totalReviews: number; totalCategories: number } | null>(null);
+  const [categories, setCategories] = useState<Array<{ name: string; coachCount: number }>>([]);
+  const [featuredCoaches, setFeaturedCoaches] = useState<any[]>([]);
+  const [isFeaturedLoading, setIsFeaturedLoading] = useState(true);
+  const [coachesData, setCoachesData] = useState<{ coaches: any[]; total: number } | null>(null);
+  const [isCoachesLoading, setIsCoachesLoading] = useState(true);
   const { data: userPreferences } = useGetUserPreferences();
   const { profile: userProfile } = useUserProfile();
-  
-  const { data: coachesData, isLoading: isCoachesLoading } = useListCoaches({
-    search: debouncedSearch || undefined,
-    sport: selectedSport,
-    location: selectedLocation,
-    coachType: appliedCoachTypes.size > 0 ? [...appliedCoachTypes].join(",") : undefined,
-    teachingFocus: appliedTeachingFocus.size > 0 ? [...appliedTeachingFocus].join(",") : undefined,
-    limit: 100
-  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [statsRes, categoriesRes, featuredRes] = await Promise.all([
+          fetch(`${getBaseUrl()}/api/coaches/stats/summary`),
+          fetch(`${getBaseUrl()}/api/categories`),
+          fetch(`${getBaseUrl()}/api/featured`),
+        ]);
+        if (!cancelled) {
+          if (statsRes.ok) setStats(await statsRes.json());
+          if (categoriesRes.ok) setCategories(await categoriesRes.json());
+          if (featuredRes.ok) setFeaturedCoaches(await featuredRes.json());
+        }
+      } finally {
+        if (!cancelled) setIsFeaturedLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (selectedSport) params.set("sport", selectedSport);
+    if (selectedLocation) params.set("location", selectedLocation);
+    if (appliedCoachTypes.size > 0) params.set("coachType", [...appliedCoachTypes].join(","));
+    if (appliedTeachingFocus.size > 0) params.set("teachingFocus", [...appliedTeachingFocus].join(","));
+    params.set("limit", "100");
+
+    setIsCoachesLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(`${getBaseUrl()}/api/coaches?${params.toString()}`);
+        if (!res.ok) throw new Error("Failed to fetch coaches");
+        const data = await res.json();
+        if (!cancelled) setCoachesData(data);
+      } catch {
+        if (!cancelled) setCoachesData({ coaches: [], total: 0 });
+      } finally {
+        if (!cancelled) setIsCoachesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, selectedSport, selectedLocation, appliedCoachTypes, appliedTeachingFocus]);
 
   const preferredSports: string[] = [
     ...(userProfile?.preferredSports ?? []),
@@ -135,8 +180,6 @@ export default function Home() {
   const featuredIds = new Set(featuredCoachesArray.map(c => c.id));
   const showingFeatured = !debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0;
 
-  const trackClick = useTrackCategoryClick();
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setDebouncedSearch(search);
@@ -152,7 +195,6 @@ export default function Home() {
       setSelectedSport(undefined);
     } else {
       setSelectedSport(categoryName);
-      trackClick.mutate({ data: { category: categoryName } });
     }
   };
 
