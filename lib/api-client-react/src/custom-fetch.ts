@@ -19,13 +19,20 @@ let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 
 /** Fallback when the SPA is hosted separately from the API (Vercel split projects). */
-const DEFAULT_PUBLIC_API_BASE = "https://sportsmatch-hk-api-server-7fd9ym67j-nicorobinbbs-projects.vercel.app";
+const DEFAULT_PUBLIC_API_BASE = "https://sportsmatch-hk-api-server-git-main-nicorobinbbs-projects.vercel.app";
+
+function normalizeApiBaseUrl(url: string): string {
+  return url.replace(
+    /sportsmatch-hk-api-server-[a-z0-9]+-nicorobinbbs-projects\.vercel\.app/i,
+    "sportsmatch-hk-api-server-git-main-nicorobinbbs-projects.vercel.app",
+  );
+}
 
 function readBundledViteApiBase(): string | null {
   try {
     const env = (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env;
     const v = env?.VITE_API_BASE_URL?.trim();
-    return v ? v.replace(/\/+$/, "") : null;
+    return v ? normalizeApiBaseUrl(v.replace(/\/+$/, "")) : null;
   } catch {
     return null;
   }

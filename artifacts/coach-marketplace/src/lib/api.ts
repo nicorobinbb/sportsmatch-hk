@@ -1,6 +1,16 @@
 const basePath = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
-const defaultProdApiBaseUrl = "https://sportsmatch-hk-api-server-7fd9ym67j-nicorobinbbs-projects.vercel.app";
+const defaultProdApiBaseUrl = "https://sportsmatch-hk-api-server-git-main-nicorobinbbs-projects.vercel.app";
+
+function normalizeApiBaseUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  const normalized = url.replace(/\/$/, "");
+  return normalized.replace(
+    /sportsmatch-hk-api-server-[a-z0-9]+-nicorobinbbs-projects\.vercel\.app/i,
+    "sportsmatch-hk-api-server-git-main-nicorobinbbs-projects.vercel.app"
+  );
+}
+
+const envApiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 export function getBaseUrl(): string {
   // Production/staging override for external API host.
