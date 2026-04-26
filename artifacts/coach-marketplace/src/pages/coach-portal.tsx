@@ -88,8 +88,6 @@ interface MyCoach {
   pendingEdits: string | null;
   profileImageUrl?: string | null;
   coverPhotoUrl?: string | null;
-  trialPrice: number;
-  regularPrice: number;
   createdAt: string;
   experienceLevel?: string;
   ageGroups?: string[];

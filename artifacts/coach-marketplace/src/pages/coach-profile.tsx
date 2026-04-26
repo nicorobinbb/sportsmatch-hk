@@ -1314,28 +1314,10 @@ export default function CoachProfile() {
                       );
                     }
 
-                    const hasDiscount = Number(coach.trialPrice) < Number(coach.regularPrice);
                     return (
-                      <>
-                        {hasDiscount && (
-                          <>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
-                                <span>體驗堂</span>
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">首次優惠</Badge>
-                              </div>
-                              <div className="text-4xl font-display font-bold text-foreground">${coach.trialPrice}</div>
-                            </div>
-                            <div className="w-full h-px bg-border" />
-                          </>
-                        )}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
-                            <span>正課</span><span>每小時</span>
-                          </div>
-                          <div className="text-3xl font-display font-bold text-foreground">${coach.regularPrice}</div>
-                        </div>
-                      </>
+                      <div className="text-sm text-muted-foreground">
+                        尚未提供標準收費表，請直接聯絡教練查詢最新堂費。
+                      </div>
                     );
                   })()}
 

@@ -202,8 +202,9 @@ router.get("/coaches", async (req, res) => {
     if (error) throw error;
 
     let coaches = (data ?? []).map((c: any) => {
-      const trialPrice = toNumber(c.trial_price);
-      const regularPrice = toNumber(c.regular_price);
+      const derivedPrices = derivePriceRange(c.pricing_plans);
+      const trialPrice = derivedPrices.trialPrice;
+      const regularPrice = derivedPrices.regularPrice;
       const experienceLevel = c.experience_level ?? "";
       const hasProfessionalAthleteTag =
         !!c.is_professional_athlete_verified ||
@@ -278,7 +279,6 @@ router.post("/coaches", async (req, res) => {
       return res.status(400).json({ error: "Missing required coach fields" });
     }
 
-    const derivedPrices = derivePriceRange(b.pricingPlans);
     // Insert the guaranteed columns first to avoid schema mismatch 500s.
     const basePayload: Record<string, unknown> = {
       user_id: userId,
@@ -286,8 +286,6 @@ router.post("/coaches", async (req, res) => {
       sports_category: sportsCategory,
       location,
       bio,
-      trial_price: String(derivedPrices.trialPrice),
-      regular_price: String(derivedPrices.regularPrice),
       is_approved: false,
       is_rejected: false,
       is_featured: false,
@@ -372,8 +370,9 @@ router.get("/coaches/:id", async (req, res) => {
     const { data: reviews } = await supabaseAdmin.from("reviews").select("*").eq("coach_id", id).eq("is_approved", true).order("created_at", { ascending: false });
     const { data: photos } = await supabaseAdmin.from("photos").select("*").eq("coach_id", id).eq("is_approved", true).order("created_at", { ascending: false });
 
-    const trialPrice = toNumber((coach as any).trial_price);
-    const regularPrice = toNumber((coach as any).regular_price);
+    const derivedPrices = derivePriceRange((coach as any).pricing_plans);
+    const trialPrice = derivedPrices.trialPrice;
+    const regularPrice = derivedPrices.regularPrice;
 
     res.json({
       id: (coach as any).id,
@@ -479,8 +478,9 @@ router.get("/featured", async (req, res) => {
       .limit(6);
     if (error) throw error;
     const featured = (data ?? []).map((c: any) => {
-      const trialPrice = toNumber(c.trial_price);
-      const regularPrice = toNumber(c.regular_price);
+      const derivedPrices = derivePriceRange(c.pricing_plans);
+      const trialPrice = derivedPrices.trialPrice;
+      const regularPrice = derivedPrices.regularPrice;
       return {
         id: c.id,
         userId: c.user_id,
@@ -688,8 +688,8 @@ router.get("/wishlist", async (req, res) => {
         sportsCategory: c.sports_category,
         location: c.location,
         bio: c.bio,
-        trialPrice: toNumber(c.trial_price),
-        regularPrice: toNumber(c.regular_price),
+        trialPrice: derivePriceRange(c.pricing_plans).trialPrice,
+        regularPrice: derivePriceRange(c.pricing_plans).regularPrice,
         packageDetails: c.package_details,
         ageGroups: c.age_groups ?? [],
         teachingFocus: c.teaching_focus ?? [],

@@ -159,25 +159,7 @@ export function CoachCard({ coach }: { coach: Coach }) {
                 </div>
               );
             }
-            // Legacy fallback
-            const hasDiscount = Number(coach.trialPrice) < Number(coach.regularPrice);
-            return (
-              <div className="flex items-baseline gap-3 w-full">
-                {hasDiscount && (
-                  <>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground">體驗堂</span>
-                      <span className="font-display font-bold text-primary text-lg">${coach.trialPrice}</span>
-                    </div>
-                    <div className="w-px h-8 bg-border" />
-                  </>
-                )}
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">正課 / 小時</span>
-                  <span className="font-display font-bold text-foreground text-lg">${coach.regularPrice}</span>
-                </div>
-              </div>
-            );
+            return <div className="text-sm text-muted-foreground">收費詳情請查看教練頁面</div>;
           })()}
         </div>
       </Card>

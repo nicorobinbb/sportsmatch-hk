@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type SavedCoach = {
   id: number; name: string; sportsCategory: string; location: string;
-  bio: string; trialPrice: number; regularPrice: number; profileImageUrl?: string | null;
+  bio: string; profileImageUrl?: string | null;
   pricingPlans?: string | null; experienceLevel: string; averageRating?: number | null;
   reviewCount: number; whatsappNumber?: string | null; savedAt?: string;
 };
@@ -72,7 +72,7 @@ const AGE_GROUP_PRICING_OPTIONS = ["幼童（8歲以下）", "兒童（8至12歲
 
 type MyCoach = {
   id: number; name: string; sportsCategory: string; location: string; bio: string;
-  trialPrice: number; regularPrice: number; packageDetails?: string | null;
+  packageDetails?: string | null;
   pricingPlans?: string | null; qualifications?: string | null;
   ageGroups: string[]; experienceLevel: string; isApproved: boolean; isFeatured: boolean;
   profileImageUrl?: string | null; whatsappNumber?: string | null;
@@ -170,18 +170,7 @@ export default function Dashboard() {
       pricingRows = Array.isArray(parsed) ? parsed.map((r: Omit<PricingRow, "id">) => ({ ...r, id: crypto.randomUUID() })) : [];
     } catch {}
     if (pricingRows.length === 0) {
-      const trial = Number(coach.trialPrice);
-      const regular = Number(coach.regularPrice);
-      if (trial > 0 && trial !== regular) {
-        pricingRows = [
-          { id: crypto.randomUUID(), sessionType: "單對單", price: String(trial), minStudents: "", maxStudents: "", duration: "", ageGroup: "" },
-          { id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "", ageGroup: "" },
-        ];
-      } else if (regular > 0) {
-        pricingRows = [{ id: crypto.randomUUID(), sessionType: "單對單", price: String(regular), minStudents: "", maxStudents: "", duration: "", ageGroup: "" }];
-      } else {
-        pricingRows = [newPricingRow()];
-      }
+      pricingRows = [newPricingRow()];
     }
 
     let qualList: QualEntry[] = [];
@@ -519,9 +508,7 @@ export default function Dashboard() {
                                     <Star className="h-4 w-4 fill-current" /> {coach.averageRating.toFixed(1)}
                                   </span>
                                 )}
-                                <span className="text-sm text-muted-foreground">
-                                  試堂 ${coach.trialPrice} · 正價 ${coach.regularPrice}/小時
-                                </span>
+                                <span className="text-sm text-muted-foreground">收費詳情請查看教練頁面</span>
                               </div>
                             </div>
                           </div>
