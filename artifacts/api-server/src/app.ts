@@ -28,6 +28,22 @@ app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 // Supabase auth middleware (replaces Clerk)
 app.use(supabaseAuthMiddleware);
 
+app.get("/", (_req, res) => {
+  res.json({
+    ok: true,
+    message: "SportsMatch API is running",
+    health: "/api/healthz",
+  });
+});
+
+app.get("/babysit", (_req, res) => {
+  res.json({
+    ok: true,
+    message: "API is running",
+    health: "/api/healthz",
+  });
+});
+
 app.use("/api", router);
 
 app.use((err: any, _req: any, res: any, next: any) => {
