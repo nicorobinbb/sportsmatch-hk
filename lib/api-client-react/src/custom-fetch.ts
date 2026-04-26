@@ -18,6 +18,33 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 
+/** Fallback when the SPA is hosted separately from the API (Vercel split projects). */
+const DEFAULT_PUBLIC_API_BASE = "https://sportsmatch-hk-api-server.vercel.app";
+
+function readBundledViteApiBase(): string | null {
+  try {
+    const env = (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env;
+    const v = env?.VITE_API_BASE_URL?.trim();
+    return v ? v.replace(/\/+$/, "") : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * When `setBaseUrl` was never called (or was dropped by the bundler), still
+ * resolve `/api/...` against a real API host in the browser. Otherwise
+ * relative requests hit the static frontend origin and return 404 → empty UI.
+ */
+function effectiveBaseUrl(): string | null {
+  if (_baseUrl) return _baseUrl;
+  const fromVite = readBundledViteApiBase();
+  if (fromVite) return fromVite;
+  if (typeof window === "undefined") return null;
+  if (window.location.hostname === "localhost") return "http://localhost:3000";
+  return DEFAULT_PUBLIC_API_BASE;
+}
+
 /**
  * Set a base URL that is prepended to every relative request URL
  * (i.e. paths that start with `/`).
@@ -61,12 +88,13 @@ function isUrl(input: RequestInfo | URL): input is URL {
 }
 
 function applyBaseUrl(input: RequestInfo | URL): RequestInfo | URL {
-  if (!_baseUrl) return input;
+  const base = effectiveBaseUrl();
+  if (!base) return input;
   const url = resolveUrl(input);
   // Only prepend to relative paths (starting with /)
   if (!url.startsWith("/")) return input;
 
-  const absolute = `${_baseUrl}${url}`;
+  const absolute = `${base}${url}`;
   if (typeof input === "string") return absolute;
   if (isUrl(input)) return new URL(absolute);
   return new Request(absolute, input as Request);
