@@ -22,6 +22,34 @@ function buildPricingPlans(pricingPlans: string | null | undefined, trialPrice: 
   return JSON.stringify([]);
 }
 
+const SEARCH_SYNONYM_MAP: Record<string, string[]> = {
+  "游水": ["游泳"],
+  "學游水": ["游泳"],
+  "swim": ["游泳"],
+  "swimming": ["游泳"],
+  "gym": ["健身"],
+  "健身房": ["健身"],
+  "pt": ["健身"],
+  "workout": ["健身"],
+  "田徑": ["田徑", "跑步"],
+  "athletics": ["田徑"],
+  "running": ["跑步", "田徑"],
+};
+
+function expandSearchTerms(raw: string): string[] {
+  const base = raw
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  const out = new Set<string>(base);
+  for (const token of base) {
+    const extra = SEARCH_SYNONYM_MAP[token] ?? [];
+    extra.forEach((v) => out.add(v));
+  }
+  return Array.from(out);
+}
+
 function getAdminUserIdSet(): Set<string> {
   const raw = process.env.ADMIN_USER_IDS ?? "";
   return new Set(
@@ -128,14 +156,17 @@ router.get("/coaches", async (req, res) => {
     if (sport) query = query.eq("sports_category", sport);
     if (location) query = query.ilike("location", `%${location}%`);
     if (search) {
+      const terms = expandSearchTerms(search);
       query = query.or(
-        [
-          `name.ilike.%${search}%`,
-          `sports_category.ilike.%${search}%`,
-          `location.ilike.%${search}%`,
-          `bio.ilike.%${search}%`,
-          `experience_level.ilike.%${search}%`,
-        ].join(",")
+        terms
+          .flatMap((t) => [
+            `name.ilike.%${t}%`,
+            `sports_category.ilike.%${t}%`,
+            `location.ilike.%${t}%`,
+            `bio.ilike.%${t}%`,
+            `experience_level.ilike.%${t}%`,
+          ])
+          .join(",")
       );
     }
 
@@ -216,11 +247,10 @@ router.post("/coaches", async (req, res) => {
       return res.status(400).json({ error: "Missing required coach fields" });
     }
 
+    // Keep payload minimal to avoid column mismatch across environments.
     const payload: Record<string, unknown> = {
       user_id: userId,
       name,
-      name_zh: b.nameZh ?? null,
-      name_en: b.nameEn ?? null,
       sports_category: sportsCategory,
       location,
       bio,
@@ -234,12 +264,6 @@ router.post("/coaches", async (req, res) => {
       whatsapp_number: b.whatsappNumber ?? null,
       qualifications: b.qualifications ?? null,
       pricing_plans: b.pricingPlans ?? null,
-      teaching_achievements: b.teachingAchievements ?? null,
-      sports_achievements: b.sportsAchievements ?? null,
-      facebook_url: b.facebookUrl ?? null,
-      instagram_url: b.instagramUrl ?? null,
-      website_url: b.websiteUrl ?? null,
-      scrc_number: b.scrcNumber ?? null,
       is_approved: false,
       is_rejected: false,
       is_featured: false,
@@ -870,6 +894,24 @@ router.post("/admin/reviews/:id/remove", async (req, res) => {
   const { error } = await supabaseAdmin
     .from("reviews")
     .update({ is_removed: true, removed_reason: removedReason, removed_at: new Date().toISOString(), removed_by: req.user?.id ?? null })
+    .eq("id", id);
+  if (error) return res.status(500).json({ error: "Internal server error" });
+  res.json({ ok: true });
+});
+
+router.post("/admin/reviews/:id/keep", async (req, res) => {
+  if (!isAdminRequest(req)) return res.status(403).json({ error: "Forbidden" });
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid ID" });
+  const { error } = await supabaseAdmin
+    .from("reviews")
+    .update({
+      is_removed: false,
+      // use removed_reason as lightweight reviewed marker for current schema
+      removed_reason: "reviewed_keep",
+      removed_at: null,
+      removed_by: req.user?.id ?? null,
+    })
     .eq("id", id);
   if (error) return res.status(500).json({ error: "Internal server error" });
   res.json({ ok: true });

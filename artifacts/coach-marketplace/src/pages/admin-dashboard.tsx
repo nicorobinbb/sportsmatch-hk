@@ -155,9 +155,18 @@ export default function AdminDashboard() {
     const all = pendingReviews ?? [];
     if (reviewStatusFilter === "all") return all;
     if (reviewStatusFilter === "reviewed") {
-      return all.filter((r) => !!r.isRemoved || r.comment.toLowerCase().startsWith("removed by admin due to"));
+      return all.filter((r) =>
+        !!r.isRemoved ||
+        r.comment.toLowerCase().startsWith("removed by admin due to") ||
+        r.removedReason === "reviewed_keep"
+      );
     }
-    return all.filter((r) => !r.isRemoved && !r.comment.toLowerCase().startsWith("removed by admin due to"));
+    return all.filter(
+      (r) =>
+        !r.isRemoved &&
+        !r.comment.toLowerCase().startsWith("removed by admin due to") &&
+        r.removedReason !== "reviewed_keep"
+    );
   }, [pendingReviews, reviewStatusFilter]);
 
   const { data: pendingPhotos, refetch: refetchPhotos, isLoading: isLoadingPhotos } = useQuery<PendingPhoto[]>({
@@ -444,6 +453,26 @@ export default function AdminDashboard() {
                     </div>
                   ) : null}
                   <div className="flex flex-wrap gap-2 mt-3 items-center">
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={busyAction === `review-keep-${review.id}` || isRemoved || review.removedReason === "reviewed_keep"}
+                      onClick={() =>
+                        runAction(
+                          `review-keep-${review.id}`,
+                          () =>
+                            fetch(`${getBaseUrl()}/api/admin/reviews/${review.id}/keep`, {
+                              method: "POST",
+                              headers: authHeaders,
+                            }),
+                          async () => {
+                            await refetchReviews();
+                          },
+                        )
+                      }
+                    >
+                      {review.removedReason === "reviewed_keep" ? "已標記保留" : "已閱讀，保留"}
+                    </Button>
                     <select
                       className="h-8 rounded border px-2 text-xs bg-background"
                       value={selectedReason}
