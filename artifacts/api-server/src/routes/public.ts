@@ -22,6 +22,23 @@ function buildPricingPlans(pricingPlans: string | null | undefined, trialPrice: 
   return JSON.stringify([]);
 }
 
+function getAdminUserIdSet(): Set<string> {
+  const raw = process.env.ADMIN_USER_IDS ?? "";
+  return new Set(
+    raw
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+  );
+}
+
+router.get("/admin/status", (req, res) => {
+  const userId = req.user?.id ?? null;
+  const adminSet = getAdminUserIdSet();
+  const isAdmin = !!userId && adminSet.has(userId);
+  res.json({ isAdmin, userId });
+});
+
 router.get("/coaches", async (req, res) => {
   try {
     const sport = typeof req.query.sport === "string" ? req.query.sport : undefined;
