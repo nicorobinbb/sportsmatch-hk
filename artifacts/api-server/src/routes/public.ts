@@ -247,13 +247,24 @@ router.post("/coaches", async (req, res) => {
       return res.status(400).json({ error: "Missing required coach fields" });
     }
 
-    // Keep payload minimal to avoid column mismatch across environments.
-    const payload: Record<string, unknown> = {
+    // Insert the guaranteed columns first to avoid schema mismatch 500s.
+    const basePayload: Record<string, unknown> = {
       user_id: userId,
       name,
       sports_category: sportsCategory,
       location,
       bio,
+      is_approved: false,
+      is_rejected: false,
+      is_featured: false,
+    };
+
+    const { data, error } = await supabaseAdmin.from("coaches").insert(basePayload).select("*").maybeSingle();
+    if (error) throw error;
+    if (!data?.id) return res.status(201).json(data ?? { ok: true });
+
+    // Best-effort optional columns; ignore failures from older/newer schemas.
+    const optionalPatch: Record<string, unknown> = {
       trial_price: String(toNumber(b.trialPrice, 0)),
       regular_price: String(toNumber(b.regularPrice, 0)),
       package_details: b.packageDetails ?? null,
@@ -264,19 +275,19 @@ router.post("/coaches", async (req, res) => {
       whatsapp_number: b.whatsappNumber ?? null,
       qualifications: b.qualifications ?? null,
       pricing_plans: b.pricingPlans ?? null,
-      is_approved: false,
-      is_rejected: false,
-      is_featured: false,
       is_professional_athlete_verified: false,
       is_licensed_coach_verified: false,
     };
+    const patchAttempts = Object.entries(optionalPatch).map(async ([key, value]) =>
+      supabaseAdmin.from("coaches").update({ [key]: value }).eq("id", data.id)
+    );
+    await Promise.allSettled(patchAttempts);
 
-    const { data, error } = await supabaseAdmin.from("coaches").insert(payload).select("*").maybeSingle();
-    if (error) throw error;
-    return res.status(201).json(data ?? { ok: true });
+    const { data: latest } = await supabaseAdmin.from("coaches").select("*").eq("id", data.id).maybeSingle();
+    return res.status(201).json(latest ?? data);
   } catch (err) {
     req.log.error({ err }, "public create coach error");
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: err instanceof Error ? err.message : "Internal server error" });
   }
 });
 

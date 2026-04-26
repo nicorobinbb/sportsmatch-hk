@@ -14,7 +14,7 @@ interface AdminStatus {
 }
 
 type TabKey = "reports" | "allCoaches" | "reviews";
-type ReviewStatusFilter = "all" | "unreviewed" | "reviewed";
+type ReviewStatusFilter = "all" | "unreviewed" | "kept" | "removed";
 
 type PendingCoach = {
   id: number;
@@ -153,20 +153,13 @@ export default function AdminDashboard() {
 
   const filteredReviews = useMemo(() => {
     const all = pendingReviews ?? [];
+    const isRemovedReview = (r: PendingReview) =>
+      !!r.isRemoved || r.comment.toLowerCase().startsWith("removed by admin due to");
+    const isKeptReview = (r: PendingReview) => r.removedReason === "reviewed_keep";
     if (reviewStatusFilter === "all") return all;
-    if (reviewStatusFilter === "reviewed") {
-      return all.filter((r) =>
-        !!r.isRemoved ||
-        r.comment.toLowerCase().startsWith("removed by admin due to") ||
-        r.removedReason === "reviewed_keep"
-      );
-    }
-    return all.filter(
-      (r) =>
-        !r.isRemoved &&
-        !r.comment.toLowerCase().startsWith("removed by admin due to") &&
-        r.removedReason !== "reviewed_keep"
-    );
+    if (reviewStatusFilter === "removed") return all.filter(isRemovedReview);
+    if (reviewStatusFilter === "kept") return all.filter(isKeptReview);
+    return all.filter((r) => !isRemovedReview(r) && !isKeptReview(r));
   }, [pendingReviews, reviewStatusFilter]);
 
   const { data: pendingPhotos, refetch: refetchPhotos, isLoading: isLoadingPhotos } = useQuery<PendingPhoto[]>({
@@ -434,7 +427,8 @@ export default function AdminDashboard() {
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant={reviewStatusFilter === "all" ? "default" : "outline"} onClick={() => setReviewStatusFilter("all")}>全部</Button>
               <Button size="sm" variant={reviewStatusFilter === "unreviewed" ? "default" : "outline"} onClick={() => setReviewStatusFilter("unreviewed")}>未審核</Button>
-              <Button size="sm" variant={reviewStatusFilter === "reviewed" ? "default" : "outline"} onClick={() => setReviewStatusFilter("reviewed")}>已審核</Button>
+              <Button size="sm" variant={reviewStatusFilter === "kept" ? "default" : "outline"} onClick={() => setReviewStatusFilter("kept")}>已閱讀，保留</Button>
+              <Button size="sm" variant={reviewStatusFilter === "removed" ? "default" : "outline"} onClick={() => setReviewStatusFilter("removed")}>已移除</Button>
             </div>
             {isLoadingReviews ? <p>載入中...</p> : null}
             {filteredReviews.length ? filteredReviews.map((review) => {
@@ -491,9 +485,9 @@ export default function AdminDashboard() {
                         runAction(
                           `review-remove-${review.id}`,
                           () => fetch(`${getBaseUrl()}/api/admin/reviews/${review.id}/remove`, {
-                            method: "PATCH",
+                            method: "POST",
                             headers: { ...authHeaders, "Content-Type": "application/json" },
-                            body: JSON.stringify({ reason: selectedReason }),
+                            body: JSON.stringify({ removedReason: selectedReason }),
                           }),
                           async () => { await refetchReviews(); },
                         )

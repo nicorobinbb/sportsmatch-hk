@@ -538,7 +538,7 @@ export default function Home() {
               )}
               {isFiltered && (
                 <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                  Clear filter
+                  清除篩選
                 </Button>
               )}
             </div>
