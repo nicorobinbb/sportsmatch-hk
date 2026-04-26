@@ -66,6 +66,7 @@ export default function Home() {
     setStagedCoachTypes(prev => {
       const next = new Set(prev);
       next.has(type) ? next.delete(type) : next.add(type);
+      setAppliedCoachTypes(new Set(next));
       return next;
     });
 
@@ -73,6 +74,7 @@ export default function Home() {
     setStagedTeachingFocus(prev => {
       const next = new Set(prev);
       next.has(focus) ? next.delete(focus) : next.add(focus);
+      setAppliedTeachingFocus(new Set(next));
       return next;
     });
 

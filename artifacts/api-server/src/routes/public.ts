@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../lib/supabaseAdmin.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -174,13 +175,6 @@ router.get("/coaches", async (req, res) => {
       .split(",")
       .map((v) => v.trim())
       .filter(Boolean);
-    if (selectedTypes.length === 1 && selectedTypes[0] === "專業運動員") {
-      query = query.eq("is_professional_athlete_verified", true);
-    } else if (selectedTypes.length === 1 && selectedTypes[0] === "持牌教練") {
-      query = query.eq("is_licensed_coach_verified", true);
-    } else if (selectedTypes.length > 1) {
-      query = query.or("is_professional_athlete_verified.eq.true,is_licensed_coach_verified.eq.true");
-    }
 
     const { data, error } = await query.order("is_featured", { ascending: false }).order("created_at", { ascending: false }).limit(safeLimit);
     if (error) throw error;
@@ -188,6 +182,13 @@ router.get("/coaches", async (req, res) => {
     let coaches = (data ?? []).map((c: any) => {
       const trialPrice = toNumber(c.trial_price);
       const regularPrice = toNumber(c.regular_price);
+      const experienceLevel = c.experience_level ?? "";
+      const hasProfessionalAthleteTag =
+        !!c.is_professional_athlete_verified ||
+        /專業運動員|職業運動員/.test(String(experienceLevel));
+      const hasLicensedCoachTag =
+        !!c.is_licensed_coach_verified ||
+        /持牌教練/.test(String(experienceLevel));
       return {
         id: c.id,
         userId: c.user_id,
@@ -200,9 +201,9 @@ router.get("/coaches", async (req, res) => {
         packageDetails: c.package_details,
         ageGroups: c.age_groups ?? [],
         teachingFocus: c.teaching_focus ?? [],
-        experienceLevel: c.experience_level ?? "",
-        isProfessionalAthleteVerified: !!c.is_professional_athlete_verified,
-        isLicensedCoachVerified: !!c.is_licensed_coach_verified,
+        experienceLevel,
+        isProfessionalAthleteVerified: hasProfessionalAthleteTag,
+        isLicensedCoachVerified: hasLicensedCoachTag,
         isFeatured: !!c.is_featured,
         isApproved: !!c.is_approved,
         profileImageUrl: c.profile_image_url,
@@ -215,6 +216,14 @@ router.get("/coaches", async (req, res) => {
         wishlistSaves: 0,
       };
     });
+
+    if (selectedTypes.length === 1 && selectedTypes[0] === "專業運動員") {
+      coaches = coaches.filter((c: any) => !!c.isProfessionalAthleteVerified);
+    } else if (selectedTypes.length === 1 && selectedTypes[0] === "持牌教練") {
+      coaches = coaches.filter((c: any) => !!c.isLicensedCoachVerified);
+    } else if (selectedTypes.length > 1) {
+      coaches = coaches.filter((c: any) => !!c.isProfessionalAthleteVerified || !!c.isLicensedCoachVerified);
+    }
 
     const focusFilters = teachingFocus
       .split(",")
@@ -286,8 +295,12 @@ router.post("/coaches", async (req, res) => {
     const { data: latest } = await supabaseAdmin.from("coaches").select("*").eq("id", data.id).maybeSingle();
     return res.status(201).json(latest ?? data);
   } catch (err) {
-    req.log.error({ err }, "public create coach error");
-    return res.status(500).json({ error: err instanceof Error ? err.message : "Internal server error" });
+    logger.error({ err }, "public create coach error");
+    const message = err && typeof err === "object" && "message" in err ? String((err as { message?: unknown }).message) : "Internal server error";
+    if (/duplicate key value/i.test(message) || /unique constraint/i.test(message)) {
+      return res.status(409).json({ error: "你已提交過教練申請，請到『我的主頁』編輯現有資料。" });
+    }
+    return res.status(500).json({ error: message });
   }
 });
 

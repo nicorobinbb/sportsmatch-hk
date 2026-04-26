@@ -434,10 +434,15 @@ export default function AdminDashboard() {
             {filteredReviews.length ? filteredReviews.map((review) => {
               const selectedReason = reviewRemoveReasonById[review.id] ?? "unrelated content";
               const isRemoved = !!review.isRemoved || review.comment.toLowerCase().startsWith("removed by admin due to");
+              const isKept = review.removedReason === "reviewed_keep";
+              const reviewStatusText = isRemoved ? "已移除" : isKept ? "已閱讀，保留" : "未審核";
               return (
                 <div key={review.id} className="rounded-lg border p-4">
                   <div className="font-semibold">
                     #{review.id} | Coach #{review.coachId ?? "-"} | {review.userName || "匿名"} | {review.rating}/5
+                  </div>
+                  <div className={`text-xs mt-1 ${isRemoved ? "text-red-700" : isKept ? "text-green-700" : "text-muted-foreground"}`}>
+                    狀態：{reviewStatusText}
                   </div>
                   <div className={`text-sm mt-1 ${isRemoved ? "text-red-700" : ""}`}>{review.comment}</div>
                   <div className="text-xs text-muted-foreground mt-1">{new Date(review.createdAt).toLocaleString()}</div>
