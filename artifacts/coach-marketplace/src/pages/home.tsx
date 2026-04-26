@@ -198,6 +198,18 @@ export default function Home() {
     }
   };
 
+  const clearAllFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelectedSport(undefined);
+    setSelectedLocation(undefined);
+    setStagedCoachTypes(new Set());
+    setAppliedCoachTypes(new Set());
+    setStagedTeachingFocus(new Set());
+    setAppliedTeachingFocus(new Set());
+    setSelectedAgeGroup(undefined);
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -524,6 +536,11 @@ export default function Home() {
                   顯示 {showingFeatured ? sortedCoaches.filter(c => !featuredIds.has(c.id)).length : sortedCoaches.length} / {coachesData.total} 個結果
                 </span>
               )}
+              {isFiltered && (
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                  Clear filter
+                </Button>
+              )}
             </div>
 
             {isCoachesLoading ? (
@@ -550,15 +567,7 @@ export default function Home() {
                   <EmptyDescription>請嘗試調整搜尋條件或瀏覽其他類別。</EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button variant="outline" onClick={() => {
-                    setSearch("");
-                    setDebouncedSearch("");
-                    setSelectedSport(undefined);
-                    setSelectedLocation(undefined);
-                    setStagedCoachTypes(new Set());
-                    setAppliedCoachTypes(new Set());
-                    setSelectedAgeGroup(undefined);
-                  }}>
+                  <Button variant="outline" onClick={clearAllFilters}>
                     清除篩選
                   </Button>
                 </EmptyContent>

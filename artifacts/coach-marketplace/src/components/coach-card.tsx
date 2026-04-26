@@ -24,6 +24,11 @@ export function CoachCard({ coach }: { coach: Coach }) {
     (coach as any).isProfessionalAthleteVerified ? "專業運動員" : null,
     (coach as any).isLicensedCoachVerified ? "持牌教練" : null,
   ].filter(Boolean) as string[];
+  const experienceLevelText = String((coach as any).experienceLevel || "");
+  if (verifiedCoachTypes.length === 0) {
+    if (experienceLevelText.includes("專業運動員")) verifiedCoachTypes.push("專業運動員");
+    if (experienceLevelText.includes("持牌教練")) verifiedCoachTypes.push("持牌教練");
+  }
   const pricingRows = parsePricingPlans(coach.pricingPlans);
 
   return (

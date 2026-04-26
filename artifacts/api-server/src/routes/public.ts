@@ -891,10 +891,18 @@ router.post("/admin/reviews/:id/remove", async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid ID" });
   const removedReason = typeof req.body?.removedReason === "string" ? req.body.removedReason : "其他原因";
-  const { error } = await supabaseAdmin
+  let { error } = await supabaseAdmin
     .from("reviews")
     .update({ is_removed: true, removed_reason: removedReason, removed_at: new Date().toISOString(), removed_by: req.user?.id ?? null })
     .eq("id", id);
+  if (error) {
+    // Backward-compat fallback for environments missing soft-moderation columns.
+    const fallback = await supabaseAdmin
+      .from("reviews")
+      .update({ comment: `removed by admin due to ${removedReason}` })
+      .eq("id", id);
+    error = fallback.error;
+  }
   if (error) return res.status(500).json({ error: "Internal server error" });
   res.json({ ok: true });
 });
@@ -903,7 +911,7 @@ router.post("/admin/reviews/:id/keep", async (req, res) => {
   if (!isAdminRequest(req)) return res.status(403).json({ error: "Forbidden" });
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid ID" });
-  const { error } = await supabaseAdmin
+  let { error } = await supabaseAdmin
     .from("reviews")
     .update({
       is_removed: false,
@@ -913,6 +921,14 @@ router.post("/admin/reviews/:id/keep", async (req, res) => {
       removed_by: req.user?.id ?? null,
     })
     .eq("id", id);
+  if (error) {
+    // Backward-compat fallback for environments missing soft-moderation columns.
+    const fallback = await supabaseAdmin
+      .from("reviews")
+      .update({ is_approved: true })
+      .eq("id", id);
+    error = fallback.error;
+  }
   if (error) return res.status(500).json({ error: "Internal server error" });
   res.json({ ok: true });
 });

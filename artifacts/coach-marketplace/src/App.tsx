@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { Layout } from '@/components/layout';
 import { useEffect, useRef, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
-import { setBaseUrl } from "@workspace/api-client-react";
+import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { getBaseUrl } from "@/lib/api";
 import { AuthContext } from "@/lib/auth-context";
 
@@ -61,7 +61,10 @@ function SupabaseQueryClientCacheInvalidator({ userId }: { userId: string | null
 }
 
 function SupabaseAuthTokenSetup({ session }: { session: Session | null }) {
-  // This component is now handled by the useEffect in SupabaseProviderWithRoutes
+  useEffect(() => {
+    setAuthTokenGetter(() => session?.access_token ?? null);
+    return () => setAuthTokenGetter(null);
+  }, [session?.access_token]);
   return null;
 }
 

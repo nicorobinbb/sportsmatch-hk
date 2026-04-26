@@ -267,10 +267,14 @@ export default function CoachRegister() {
         });
         setLocation("/");
       },
-      onError: () => {
+      onError: (error: any) => {
+        const detail =
+          error?.data?.error ||
+          error?.message ||
+          "請檢查輸入內容後再試。";
         toast({
           title: "提交失敗",
-          description: "請檢查輸入內容後再試。",
+          description: detail,
           variant: "destructive",
         });
       }
