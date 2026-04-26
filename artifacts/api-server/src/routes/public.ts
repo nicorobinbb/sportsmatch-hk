@@ -263,6 +263,8 @@ router.post("/coaches", async (req, res) => {
       sports_category: sportsCategory,
       location,
       bio,
+      trial_price: String(toNumber(b.trialPrice, 0)),
+      regular_price: String(toNumber(b.regularPrice, 0)),
       is_approved: false,
       is_rejected: false,
       is_featured: false,
@@ -274,8 +276,6 @@ router.post("/coaches", async (req, res) => {
 
     // Best-effort optional columns; ignore failures from older/newer schemas.
     const optionalPatch: Record<string, unknown> = {
-      trial_price: String(toNumber(b.trialPrice, 0)),
-      regular_price: String(toNumber(b.regularPrice, 0)),
       package_details: b.packageDetails ?? null,
       age_groups: Array.isArray(b.ageGroups) ? b.ageGroups : [],
       teaching_focus: Array.isArray(b.teachingFocus) ? b.teachingFocus : [],
