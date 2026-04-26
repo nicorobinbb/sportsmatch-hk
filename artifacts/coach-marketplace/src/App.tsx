@@ -8,11 +8,12 @@ import { Layout } from '@/components/layout';
 import { useEffect, useRef, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { setBaseUrl } from "@workspace/api-client-react";
+import { getBaseUrl } from "@/lib/api";
 import { AuthContext } from "@/lib/auth-context";
 
-// Set API base URL for development
-if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-  setBaseUrl("http://localhost:3000");
+// Set API base URL for all environments
+if (typeof window !== "undefined") {
+  setBaseUrl(getBaseUrl());
 }
 
 import NotFound from "@/pages/not-found";
