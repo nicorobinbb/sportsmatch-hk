@@ -39,8 +39,6 @@ const coachSchema = z.object({
   bio: z.string().min(20, "個人簡介至少需要20個字元以吸引學員"),
   teachingAchievements: z.string().optional(),
   sportsAchievements: z.string().optional(),
-  trialPrice: z.coerce.number().min(0, "收費不能為負數"),
-  regularPrice: z.coerce.number().min(0, "收費不能為負數"),
   packageDetails: z.string().optional(),
   ageGroups: z.array(z.string()).min(1, "請至少選擇一個年齡組別"),
   profileImageUrl: z.string().optional().or(z.literal('')),
@@ -86,8 +84,6 @@ export default function CoachRegister() {
       bio: "",
       teachingAchievements: "",
       sportsAchievements: "",
-      trialPrice: 0,
-      regularPrice: 0,
       packageDetails: "",
       ageGroups: [],
       profileImageUrl: "",
@@ -216,10 +212,6 @@ export default function CoachRegister() {
     const data = pendingFormData;
     if (!data) return;
 
-    const prices = pricingRows.map(r => Number(r.price));
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-
     const whatsappNumber = data.whatsappLocalNumber
       ? (whatsappCC + data.whatsappLocalNumber).replace(/\D/g, "")
       : undefined;
@@ -242,8 +234,6 @@ export default function CoachRegister() {
         sportsCategory: data.sportsCategory,
         location: data.location,
         bio: data.bio,
-        trialPrice: minPrice,
-        regularPrice: maxPrice,
         experienceLevel: coachTypes.join("、"),
         ageGroups: data.ageGroups,
         profileImageUrl: data.profileImageUrl || undefined,

@@ -23,6 +23,28 @@ function buildPricingPlans(pricingPlans: string | null | undefined, trialPrice: 
   return JSON.stringify([]);
 }
 
+function derivePriceRange(pricingPlans: unknown): { trialPrice: number; regularPrice: number } {
+  if (typeof pricingPlans === "string" && pricingPlans.trim()) {
+    try {
+      const rows = JSON.parse(pricingPlans);
+      if (Array.isArray(rows)) {
+        const prices = rows
+          .map((r: any) => Number(r?.price))
+          .filter((n) => Number.isFinite(n) && n >= 0);
+        if (prices.length > 0) {
+          return {
+            trialPrice: Math.min(...prices),
+            regularPrice: Math.max(...prices),
+          };
+        }
+      }
+    } catch {
+      // keep fallback below
+    }
+  }
+  return { trialPrice: 0, regularPrice: 0 };
+}
+
 const SEARCH_SYNONYM_MAP: Record<string, string[]> = {
   "游水": ["游泳"],
   "學游水": ["游泳"],
@@ -256,6 +278,7 @@ router.post("/coaches", async (req, res) => {
       return res.status(400).json({ error: "Missing required coach fields" });
     }
 
+    const derivedPrices = derivePriceRange(b.pricingPlans);
     // Insert the guaranteed columns first to avoid schema mismatch 500s.
     const basePayload: Record<string, unknown> = {
       user_id: userId,
@@ -263,8 +286,8 @@ router.post("/coaches", async (req, res) => {
       sports_category: sportsCategory,
       location,
       bio,
-      trial_price: String(toNumber(b.trialPrice, 0)),
-      regular_price: String(toNumber(b.regularPrice, 0)),
+      trial_price: String(derivedPrices.trialPrice),
+      regular_price: String(derivedPrices.regularPrice),
       is_approved: false,
       is_rejected: false,
       is_featured: false,
