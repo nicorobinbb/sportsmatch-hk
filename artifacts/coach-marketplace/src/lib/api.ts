@@ -1,6 +1,6 @@
 const basePath = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
-const defaultProdApiBaseUrl = "https://sportsmatch-hk-api-server.vercel.app";
+const defaultProdApiBaseUrl = "https://sportsmatch-hk-api-server-7fd9ym67j-nicorobinbbs-projects.vercel.app";
 
 export function getBaseUrl(): string {
   // Production/staging override for external API host.

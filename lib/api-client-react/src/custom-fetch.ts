@@ -19,7 +19,7 @@ let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 
 /** Fallback when the SPA is hosted separately from the API (Vercel split projects). */
-const DEFAULT_PUBLIC_API_BASE = "https://sportsmatch-hk-api-server.vercel.app";
+const DEFAULT_PUBLIC_API_BASE = "https://sportsmatch-hk-api-server-7fd9ym67j-nicorobinbbs-projects.vercel.app";
 
 function readBundledViteApiBase(): string | null {
   try {
