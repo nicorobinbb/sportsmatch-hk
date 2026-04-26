@@ -118,15 +118,43 @@ router.get("/coaches", async (req, res) => {
   try {
     const sport = typeof req.query.sport === "string" ? req.query.sport : undefined;
     const location = typeof req.query.location === "string" ? req.query.location : undefined;
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const coachType = typeof req.query.coachType === "string" ? req.query.coachType : "";
+    const teachingFocus = typeof req.query.teachingFocus === "string" ? req.query.teachingFocus : "";
+    const limit = Number(req.query.limit);
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 200) : 100;
 
     let query = supabaseAdmin.from("coaches").select("*").eq("is_approved", true);
     if (sport) query = query.eq("sports_category", sport);
     if (location) query = query.ilike("location", `%${location}%`);
+    if (search) {
+      query = query.or(
+        [
+          `name.ilike.%${search}%`,
+          `sports_category.ilike.%${search}%`,
+          `location.ilike.%${search}%`,
+          `bio.ilike.%${search}%`,
+          `experience_level.ilike.%${search}%`,
+        ].join(",")
+      );
+    }
 
-    const { data, error } = await query.order("is_featured", { ascending: false }).order("created_at", { ascending: false }).limit(100);
+    const selectedTypes = coachType
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    if (selectedTypes.length === 1 && selectedTypes[0] === "專業運動員") {
+      query = query.eq("is_professional_athlete_verified", true);
+    } else if (selectedTypes.length === 1 && selectedTypes[0] === "持牌教練") {
+      query = query.eq("is_licensed_coach_verified", true);
+    } else if (selectedTypes.length > 1) {
+      query = query.or("is_professional_athlete_verified.eq.true,is_licensed_coach_verified.eq.true");
+    }
+
+    const { data, error } = await query.order("is_featured", { ascending: false }).order("created_at", { ascending: false }).limit(safeLimit);
     if (error) throw error;
 
-    const coaches = (data ?? []).map((c: any) => {
+    let coaches = (data ?? []).map((c: any) => {
       const trialPrice = toNumber(c.trial_price);
       const regularPrice = toNumber(c.regular_price);
       return {
@@ -157,10 +185,74 @@ router.get("/coaches", async (req, res) => {
       };
     });
 
+    const focusFilters = teachingFocus
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    if (focusFilters.length) {
+      coaches = coaches.filter((c: any) => {
+        const arr = Array.isArray(c.teachingFocus) ? c.teachingFocus : [];
+        return arr.some((v: string) => focusFilters.includes(v));
+      });
+    }
+
     res.json({ coaches, total: coaches.length });
   } catch (err) {
     req.log.error({ err }, "public list coaches error");
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/coaches", async (req, res) => {
+  try {
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+    const b = req.body ?? {};
+    const name = String(b.name ?? "").trim();
+    const sportsCategory = String(b.sportsCategory ?? "").trim();
+    const location = String(b.location ?? "").trim();
+    const bio = String(b.bio ?? "").trim();
+    if (!name || !sportsCategory || !location || !bio) {
+      return res.status(400).json({ error: "Missing required coach fields" });
+    }
+
+    const payload: Record<string, unknown> = {
+      user_id: userId,
+      name,
+      name_zh: b.nameZh ?? null,
+      name_en: b.nameEn ?? null,
+      sports_category: sportsCategory,
+      location,
+      bio,
+      trial_price: String(toNumber(b.trialPrice, 0)),
+      regular_price: String(toNumber(b.regularPrice, 0)),
+      package_details: b.packageDetails ?? null,
+      age_groups: Array.isArray(b.ageGroups) ? b.ageGroups : [],
+      teaching_focus: Array.isArray(b.teachingFocus) ? b.teachingFocus : [],
+      experience_level: b.experienceLevel ?? "",
+      profile_image_url: b.profileImageUrl ?? null,
+      whatsapp_number: b.whatsappNumber ?? null,
+      qualifications: b.qualifications ?? null,
+      pricing_plans: b.pricingPlans ?? null,
+      teaching_achievements: b.teachingAchievements ?? null,
+      sports_achievements: b.sportsAchievements ?? null,
+      facebook_url: b.facebookUrl ?? null,
+      instagram_url: b.instagramUrl ?? null,
+      website_url: b.websiteUrl ?? null,
+      scrc_number: b.scrcNumber ?? null,
+      is_approved: false,
+      is_rejected: false,
+      is_featured: false,
+      is_professional_athlete_verified: false,
+      is_licensed_coach_verified: false,
+    };
+
+    const { data, error } = await supabaseAdmin.from("coaches").insert(payload).select("*").maybeSingle();
+    if (error) throw error;
+    return res.status(201).json(data ?? { ok: true });
+  } catch (err) {
+    req.log.error({ err }, "public create coach error");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -480,7 +572,17 @@ router.put("/user/profile", async (req, res) => {
     };
     const { error } = await supabaseAdmin.from("user_profiles").upsert(payload, { onConflict: "user_id" });
     if (error) throw error;
-    res.json({ ok: true });
+    res.json({
+      profile: {
+        firstName: payload.first_name,
+        lastName: payload.last_name,
+        preferredSports: payload.preferred_sports,
+        preferredDistricts: payload.preferred_districts,
+        preferredAgeGroups: payload.preferred_age_groups,
+        goals: payload.goals,
+        onboardingCompleted: payload.onboarding_completed,
+      },
+    });
   } catch (err) {
     req.log.error({ err }, "public update user profile error");
     res.status(500).json({ error: "Internal server error" });
@@ -493,13 +595,21 @@ router.get("/wishlist", async (req, res) => {
     if (!userId) return;
     const { data, error } = await supabaseAdmin
       .from("wishlists")
-      .select("id,coach_id,coaches(*)")
+      .select("coach_id")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    const coaches = (data ?? [])
-      .map((w: any) => w.coaches)
-      .filter(Boolean)
+    const coachIds = Array.from(new Set((data ?? []).map((w: any) => Number(w.coach_id)).filter((v: number) => Number.isFinite(v))));
+    if (coachIds.length === 0) return res.json({ coaches: [] });
+    const { data: coachesData, error: coachesErr } = await supabaseAdmin
+      .from("coaches")
+      .select("*")
+      .in("id", coachIds);
+    if (coachesErr) throw coachesErr;
+    const orderMap = new Map<number, number>();
+    coachIds.forEach((id, i) => orderMap.set(id, i));
+    const coaches = (coachesData ?? [])
+      .sort((a: any, b: any) => (orderMap.get(a.id) ?? 9999) - (orderMap.get(b.id) ?? 9999))
       .map((c: any) => ({
         id: c.id,
         userId: c.user_id,

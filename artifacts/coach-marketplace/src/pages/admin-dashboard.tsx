@@ -14,6 +14,7 @@ interface AdminStatus {
 }
 
 type TabKey = "reports" | "allCoaches" | "reviews";
+type ReviewStatusFilter = "all" | "unreviewed" | "reviewed";
 
 type PendingCoach = {
   id: number;
@@ -104,6 +105,7 @@ export default function AdminDashboard() {
   const [coachSearch, setCoachSearch] = useState("");
   const [coachStatusFilter, setCoachStatusFilter] = useState<CoachStatusFilter>("all");
   const [reviewRemoveReasonById, setReviewRemoveReasonById] = useState<Record<number, string>>({});
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<ReviewStatusFilter>("all");
   
   const { data: adminStatus, isLoading: isAdminLoading, error } = useQuery<AdminStatus>({
     queryKey: ["admin-status"],
@@ -148,6 +150,15 @@ export default function AdminDashboard() {
     },
     enabled: !!adminStatus?.isAdmin,
   });
+
+  const filteredReviews = useMemo(() => {
+    const all = pendingReviews ?? [];
+    if (reviewStatusFilter === "all") return all;
+    if (reviewStatusFilter === "reviewed") {
+      return all.filter((r) => !!r.isRemoved || r.comment.toLowerCase().startsWith("removed by admin due to"));
+    }
+    return all.filter((r) => !r.isRemoved && !r.comment.toLowerCase().startsWith("removed by admin due to"));
+  }, [pendingReviews, reviewStatusFilter]);
 
   const { data: pendingPhotos, refetch: refetchPhotos, isLoading: isLoadingPhotos } = useQuery<PendingPhoto[]>({
     queryKey: ["admin-pending-photos"],
@@ -409,10 +420,15 @@ export default function AdminDashboard() {
         {activeTab === "reviews" && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              評價會自動公開；如出現離題、暴力、性別歧視或廣告內容，可在此移除並留下原因。
+              評價會自動公開；如出現離題、暴力、性別歧視或廣告內容，可在此移除並留下原因。沒有操作即代表保留。
             </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant={reviewStatusFilter === "all" ? "default" : "outline"} onClick={() => setReviewStatusFilter("all")}>全部</Button>
+              <Button size="sm" variant={reviewStatusFilter === "unreviewed" ? "default" : "outline"} onClick={() => setReviewStatusFilter("unreviewed")}>未審核</Button>
+              <Button size="sm" variant={reviewStatusFilter === "reviewed" ? "default" : "outline"} onClick={() => setReviewStatusFilter("reviewed")}>已審核</Button>
+            </div>
             {isLoadingReviews ? <p>載入中...</p> : null}
-            {pendingReviews?.length ? pendingReviews.map((review) => {
+            {filteredReviews.length ? filteredReviews.map((review) => {
               const selectedReason = reviewRemoveReasonById[review.id] ?? "unrelated content";
               const isRemoved = !!review.isRemoved || review.comment.toLowerCase().startsWith("removed by admin due to");
               return (
