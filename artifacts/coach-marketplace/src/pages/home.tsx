@@ -34,6 +34,7 @@ const sportEmojiMap: Record<string, string> = {
   "普拉提": "🤸",
   "足球": "⚽",
   "羽毛球": "🏸",
+  "健身": "💪",
   "跑步": "🏃",
   "舞蹈": "💃",
   "高爾夫球": "⛳",
@@ -75,7 +76,8 @@ export default function Home() {
     });
 
   const { data: stats } = useGetCoachStats();
-  const { data: categories } = useListCategories();
+  const { data: categoriesData } = useListCategories();
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
   const { data: featuredCoaches, isLoading: isFeaturedLoading } = useListFeaturedCoaches();
   const { data: userPreferences } = useGetUserPreferences();
   const { profile: userProfile } = useUserProfile();
@@ -124,11 +126,13 @@ export default function Home() {
     return [...ageFiltered].sort((a, b) => score(b) - score(a));
   })();
 
+  const featuredCoachesArray = Array.isArray(featuredCoaches) ? featuredCoaches : [];
+  
   const filteredFeatured = selectedAgeGroup
-    ? (featuredCoaches ?? []).filter(c => coachMatchesAgeGroup(c, selectedAgeGroup))
-    : featuredCoaches ?? [];
+    ? featuredCoachesArray.filter(c => coachMatchesAgeGroup(c, selectedAgeGroup))
+    : featuredCoachesArray;
 
-  const featuredIds = new Set((featuredCoaches ?? []).map(c => c.id));
+  const featuredIds = new Set(featuredCoachesArray.map(c => c.id));
   const showingFeatured = !debouncedSearch && !selectedSport && !selectedLocation && filteredFeatured.length > 0;
 
   const trackClick = useTrackCategoryClick();

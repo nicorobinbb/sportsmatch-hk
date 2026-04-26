@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout";
-import { useUser, useAuth } from "@clerk/react";
+import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Star, MapPin, MessageCircle, Zap, Trophy, Target, Pencil, ExternalLink, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User } from "lucide-react";
+import { Heart, Star, MapPin, MessageCircle, Zap, Target, Pencil, Clock, CheckCircle2, AlertCircle, Loader2, Trash2, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getBaseUrl } from "@/lib/api";
@@ -98,16 +98,13 @@ type EditForm = {
 };
 
 export default function Dashboard() {
-  const { user } = useUser();
-  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useAuth();
+  const { isLoading: isAuthLoading, isSignedIn } = useAuth();
   const { toast } = useToast();
   const [savedCoaches, setSavedCoaches] = useState<SavedCoach[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recommendedCoaches, setRecommendedCoaches] = useState<SavedCoach[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [myCoaches, setMyCoaches] = useState<MyCoach[]>([]);
-  const [loadingMyCoaches, setLoadingMyCoaches] = useState(true);
 
   const [editingCoach, setEditingCoach] = useState<MyCoach | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
@@ -116,41 +113,37 @@ export default function Dashboard() {
 
   // Profile edit state
   const [profileEditOpen, setProfileEditOpen] = useState(false);
-  const [profileEditFirstName, setProfileEditFirstName] = useState("");
-  const [profileEditLastName, setProfileEditLastName] = useState("");
+  const [profileEditFullName, setProfileEditFullName] = useState("");
   const [profileEditSports, setProfileEditSports] = useState<string[]>([]);
-  const [profileEditGoals, setProfileEditGoals] = useState<string[]>([]);
   const [profileEditAgeGroups, setProfileEditAgeGroups] = useState<string[]>([]);
   const [profileEditDistricts, setProfileEditDistricts] = useState<string[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
+  
+  // Sidebar navigation state
+  const [sidebarActive, setSidebarActive] = useState<'profile' | 'saved'>('profile');
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (isAuthLoading) return;
     if (!isSignedIn) {
       setLoading(false);
-      setLoadingMyCoaches(false);
       return;
     }
     async function load() {
       const token = await getAuthToken();
       if (!token) {
         setLoading(false);
-        setLoadingMyCoaches(false);
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
       try {
-        const [wishRes, profileRes, coachRes] = await Promise.all([
+        const [wishRes, profileRes] = await Promise.all([
           fetch(`${getBaseUrl()}/api/wishlist`, { headers }),
           fetch(`${getBaseUrl()}/api/user/profile`, { headers }),
-          fetch(`${getBaseUrl()}/api/coaches/me`, { headers }),
         ]);
         const wishData = await wishRes.json();
         const profileData = await profileRes.json();
-        const coachData = await coachRes.json();
         setSavedCoaches(wishData.coaches || []);
         setProfile(profileData.profile);
-        setMyCoaches(coachData.coaches || []);
 
         if (profileData.profile?.preferredSports?.length > 0) {
           const sport = profileData.profile.preferredSports[0];
@@ -164,10 +157,9 @@ export default function Dashboard() {
         }
       } catch {}
       setLoading(false);
-      setLoadingMyCoaches(false);
     }
     load();
-  }, [isLoaded, isSignedIn]);
+  }, [isAuthLoading, isSignedIn]);
 
   function openEdit(coach: MyCoach) {
     setEditingCoach(coach);
@@ -269,10 +261,12 @@ export default function Dashboard() {
   }
 
   function openProfileEdit() {
-    setProfileEditFirstName(profile?.firstName || "");
-    setProfileEditLastName(profile?.lastName || "");
+    // Combine lastName + firstName into fullName for editing
+    const fullName = profile?.lastName && profile?.firstName 
+      ? `${profile.lastName}${profile.firstName}`
+      : profile?.lastName || profile?.firstName || "";
+    setProfileEditFullName(fullName);
     setProfileEditSports(profile?.preferredSports || []);
-    setProfileEditGoals(profile?.goals || []);
     setProfileEditAgeGroups(profile?.preferredAgeGroups || []);
     setProfileEditDistricts(profile?.preferredDistricts || []);
     setProfileEditOpen(true);
@@ -281,15 +275,26 @@ export default function Dashboard() {
   async function saveProfileEdit() {
     setSavingProfile(true);
     try {
+      // Split full name into lastName and firstName
+      // First character is lastName, rest is firstName
+      const trimmedName = profileEditFullName.trim();
+      let lastName = "";
+      let firstName = "";
+      if (trimmedName.length === 1) {
+        firstName = trimmedName;
+      } else if (trimmedName.length > 1) {
+        lastName = trimmedName[0];
+        firstName = trimmedName.slice(1);
+      }
+      
       const token = await getAuthToken();
       const res = await fetch(`${getBaseUrl()}/api/user/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          firstName: profileEditFirstName.trim() || null,
-          lastName: profileEditLastName.trim() || null,
+          firstName: firstName || null,
+          lastName: lastName || null,
           preferredSports: profileEditSports,
-          goals: profileEditGoals,
           preferredAgeGroups: profileEditAgeGroups,
           preferredDistricts: profileEditDistricts,
           onboardingCompleted: true,
@@ -311,10 +316,6 @@ export default function Dashboard() {
     setProfileEditSports(prev => prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]);
   }
 
-  function toggleProfileGoal(goal: string) {
-    setProfileEditGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal]);
-  }
-
   function toggleProfileAgeGroup(ag: string) {
     setProfileEditAgeGroups(prev => prev.includes(ag) ? prev.filter(a => a !== ag) : [...prev, ag]);
   }
@@ -330,355 +331,210 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="container px-4 md:px-6 py-8 max-w-5xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-              {user?.firstName?.[0] || "用"}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">你好，{user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "用戶"} 👋</h1>
-            </div>
+      <div className="container px-4 md:px-6 py-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* 左邊 Sidebar (1/3) */}
+          <div className="md:col-span-1">
+            {/* 個人資料卡片 */}
+            <Card className="mb-4">
+              <CardContent className="p-6 text-center">
+                <Avatar className="h-20 w-20 mx-auto mb-4 border-4 border-primary/10">
+                  <AvatarImage 
+                    src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture || undefined} 
+                    alt={(profile?.firstName || user?.user_metadata?.first_name) || "用戶"}
+                  />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                    {profile?.lastName?.[0] || (user?.user_metadata?.first_name)?.[0] || "用"}
+                  </AvatarFallback>
+                </Avatar>
+                
+                {(profile?.firstName || profile?.lastName) ? (
+                  <h2 className="text-lg font-bold mb-1">{profile.lastName}{profile.firstName}</h2>
+                ) : (
+                  <h2 className="text-lg font-bold text-muted-foreground mb-1">尚未設定姓名</h2>
+                )}
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              </CardContent>
+            </Card>
+
+            {/* 導航選單 */}
+            <Card>
+              <CardContent className="p-2">
+                <nav className="flex flex-col gap-1">
+                  <button
+                    onClick={() => setSidebarActive('profile')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      sidebarActive === 'profile' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">個人資料及喜好</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setSidebarActive('saved')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      sidebarActive === 'saved' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <Heart className="h-4 w-4" />
+                    <span className="font-medium">已儲存教練</span>
+                    <Badge variant={sidebarActive === 'saved' ? "secondary" : "outline"} className="ml-auto text-xs">
+                      {savedCoaches.length}
+                    </Badge>
+                  </button>
+                  
+                </nav>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 右邊主內容 (2/3) */}
+          <div className="md:col-span-2">
+
+            {/* 個人資料及喜好內容 */}
+            {sidebarActive === 'profile' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">個人資料及喜好</h2>
+                  <Button variant="outline" size="sm" className="gap-1" onClick={openProfileEdit}>
+                    <Pencil className="w-4 h-4" /> 編輯資料
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* 姓名 */}
+                  <Card>
+                    <CardContent className="p-5">
+                      <h3 className="font-semibold mb-3">姓名</h3>
+                      {(profile?.firstName || profile?.lastName) ? (
+                        <p className="text-lg">{profile.lastName}{profile.firstName}</p>
+                      ) : (
+                        <p className="text-muted-foreground italic">尚未設定</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* 喜愛運動 */}
+                  <Card>
+                    <CardContent className="p-5">
+                      <h3 className="font-semibold mb-3">喜愛運動</h3>
+                      {profile?.preferredSports?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.preferredSports.map(sport => (
+                            <Badge key={sport} variant="secondary">{sport}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground italic">尚未選擇</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* 訓練對象年齡 */}
+                  <Card>
+                    <CardContent className="p-5">
+                      <h3 className="font-semibold mb-3">訓練對象年齡</h3>
+                      {profile?.preferredAgeGroups?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.preferredAgeGroups.map(age => (
+                            <Badge key={age} variant="secondary">{age}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground italic">尚未選擇</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* 偏好上課地區 */}
+                  <Card>
+                    <CardContent className="p-5">
+                      <h3 className="font-semibold mb-3">偏好上課地區</h3>
+                      {profile?.preferredDistricts?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.preferredDistricts.map(district => (
+                            <Badge key={district} variant="secondary">{district}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground italic">尚未選擇</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+            
+            {/* 已儲存教練內容 */}
+            {sidebarActive === 'saved' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">已儲存教練</h2>
+                  <Link href="/">
+                    <Button variant="outline" size="sm">瀏覽更多教練</Button>
+                  </Link>
+                </div>
+
+                {loading ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {[1, 2].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+                  </div>
+                ) : savedCoaches.length === 0 ? (
+                  <Card className="p-12 text-center border-dashed">
+                    <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">你仲未儲存任何教練</p>
+                    <Link href="/">
+                      <Button>瀏覽教練</Button>
+                    </Link>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {savedCoaches.map(coach => (
+                      <Card key={coach.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex gap-4">
+                            <Avatar className="h-14 w-14 flex-shrink-0">
+                              <AvatarImage src={coach.profileImageUrl || undefined} />
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">{coach.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-lg truncate">{coach.name}</p>
+                                  <p className="text-sm text-muted-foreground">{coach.sportsCategory} · {coach.location}</p>
+                                </div>
+                                <button onClick={() => removeFromWishlist(coach.id)} className="text-red-400 hover:text-red-600 flex-shrink-0 p-1">
+                                  <Heart className="h-5 w-5 fill-current" />
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-4 mt-3">
+                                {coach.averageRating && (
+                                  <span className="flex items-center gap-1 text-sm text-amber-600">
+                                    <Star className="h-4 w-4 fill-current" /> {coach.averageRating.toFixed(1)}
+                                  </span>
+                                )}
+                                <span className="text-sm text-muted-foreground">
+                                  試堂 ${coach.trialPrice} · 正價 ${coach.regularPrice}/小時
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
-
-        {/* My Coach Profiles section */}
-        {loadingMyCoaches ? (
-          <Skeleton className="h-36 rounded-2xl mb-8" />
-        ) : myCoaches.length > 0 ? (
-          <section className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold">我的教練檔案</h2>
-                <Badge variant="secondary">{myCoaches.length}</Badge>
-              </div>
-              <Link href="/coach/register">
-                <Button size="sm" variant="outline" className="gap-1.5">
-                  <Plus className="w-4 h-4" /> 新增運動項目
-                </Button>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {myCoaches.map(coach => {
-                const pending = getEffectivePending(coach);
-                return (
-                  <Card key={coach.id} className="overflow-hidden border-primary/20 shadow-sm">
-                    <div className="bg-primary/5 px-4 py-2 border-b flex items-center justify-between gap-2">
-                      <Badge variant="secondary" className="text-xs font-medium">{coach.sportsCategory}</Badge>
-                      <div className="flex items-center gap-1.5">
-                        {coach.isApproved ? (
-                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                            <CheckCircle2 className="w-3 h-3 mr-1" /> 已批准
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                            <Clock className="w-3 h-3 mr-1" /> 待審核
-                          </Badge>
-                        )}
-                        {pending && (
-                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                            <AlertCircle className="w-3 h-3 mr-1" /> 修改待審
-                          </Badge>
-                        )}
-                        {coach.isFeatured && (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-primary/10">
-                          <AvatarImage src={coach.profileImageUrl || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-bold">{coach.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">{coach.name}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3" /> {coach.location}
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {(() => {
-                              let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string; ageGroup?: string }> = [];
-                              try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
-                              if (rows.length > 0) {
-                                return rows.slice(0, 3).map((r, i) => {
-                                  const ag = r.ageGroup ? r.ageGroup.replace(/（[^）]*）/, "") : null;
-                                  return (
-                                    <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                                      {r.sessionType === "小組課堂" ? "👥" : "👤"}
-                                      ${r.price}{r.duration ? `·${r.duration.replace("分鐘","分")}` : ""}{r.sessionType === "小組課堂" && r.minStudents ? `·${r.minStudents}${r.maxStudents ? `-${r.maxStudents}` : ""}人` : ""}{ag ? ` · ${ag}` : ""}
-                                    </span>
-                                  );
-                                });
-                              }
-                              return (
-                                <span className="text-xs text-muted-foreground">
-                                  體驗堂 <span className="font-semibold text-foreground">${coach.trialPrice}</span>
-                                  <span className="mx-1">·</span>
-                                  正課 <span className="font-semibold text-foreground">${coach.regularPrice}</span>/小時
-                                </span>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-
-                      {pending && (
-                        <div className="mt-3 p-2.5 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
-                          <Clock className="w-3.5 h-3.5 text-orange-500 mt-0.5 shrink-0" />
-                          <p className="text-xs text-orange-700">修改申請正等候審核，通常於 1-2 個工作天內完成。</p>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 mt-3">
-                        <Link href={`/coaches/${coach.id}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full gap-1 text-xs">
-                            <ExternalLink className="w-3 h-3" /> 查看檔案
-                          </Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          className="flex-1 gap-1 text-xs"
-                          onClick={() => openEdit(coach)}
-                          disabled={!!pending}
-                          title={pending ? "修改申請審核中，請等候完成後再提交" : undefined}
-                        >
-                          <Pencil className="w-3 h-3" />
-                          {pending ? "審核中…" : "編輯"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
-        ) : !loadingMyCoaches ? (
-          <Card className="mb-8 border-dashed border-primary/30 bg-primary/5">
-            <CardContent className="p-6 text-center">
-              <Trophy className="h-8 w-8 text-primary/40 mx-auto mb-3" />
-              <p className="font-semibold mb-1">成為運對認證教練</p>
-              <p className="text-sm text-muted-foreground mb-4">提交你的教練資料，接觸更多有需要的學員。</p>
-              <Link href="/coach/register">
-                <Button size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> 登記成為教練</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {/* Profile & Preferences Card — always visible */}
-        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-primary/5 border-primary/30">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">個人資料與喜好</span>
-              </div>
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openProfileEdit}>
-                <Pencil className="w-3 h-3" /> 編輯
-              </Button>
-            </div>
-
-            {/* Name row */}
-            <div className="flex items-center gap-2 mb-3">
-              <Avatar className="h-9 w-9 border border-primary/20">
-                <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-                  {profile?.lastName?.[0] || user?.firstName?.[0] || "用"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                {(profile?.firstName || profile?.lastName) ? (
-                  <p className="font-semibold text-sm">{profile.lastName}{profile.firstName}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">尚未設定姓名</p>
-                )}
-                <p className="text-xs text-muted-foreground">{user?.emailAddresses?.[0]?.emailAddress}</p>
-              </div>
-            </div>
-
-            {/* Sports */}
-            <div className="mb-2.5">
-              <p className="text-xs text-muted-foreground mb-1.5 font-medium">喜愛運動</p>
-              {profile?.preferredSports?.length ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.preferredSports.map(s => (
-                    <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                  ))}
-                </div>
-              ) : (
-                <button onClick={openProfileEdit} className="text-xs text-primary underline">＋ 新增喜愛運動</button>
-              )}
-            </div>
-
-            {/* Goals */}
-            {profile?.goals?.length ? (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1.5 font-medium">訓練目標</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.goals.map(g => (
-                    <Badge key={g} className="text-xs bg-primary/10 text-primary border-primary/20">{goalLabels[g] || g}</Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <Heart className="h-5 w-5 text-red-500" />
-            <h2 className="text-xl font-bold">已儲存教練</h2>
-            <Badge variant="secondary">{savedCoaches.length}</Badge>
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[1, 2].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
-            </div>
-          ) : savedCoaches.length === 0 ? (
-            <Card className="p-8 text-center border-dashed">
-              <Heart className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">你仲未儲存任何教練</p>
-              <Link href="/">
-                <Button variant="outline" size="sm">瀏覽教練</Button>
-              </Link>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {savedCoaches.map(coach => (
-                <Card key={coach.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex gap-3">
-                      <Avatar className="h-12 w-12 flex-shrink-0">
-                        <AvatarImage src={coach.profileImageUrl || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-bold">{coach.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-semibold truncate">{coach.name}</p>
-                            <p className="text-xs text-muted-foreground">{coach.sportsCategory} · {coach.location}</p>
-                          </div>
-                          <button onClick={() => removeFromWishlist(coach.id)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                            <Heart className="h-4 w-4 fill-current" />
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-3 mt-2">
-                          {coach.averageRating && (
-                            <span className="flex items-center gap-1 text-xs text-amber-600">
-                              <Star className="h-3 w-3 fill-current" /> {coach.averageRating.toFixed(1)}
-                            </span>
-                          )}
-                          {(() => {
-                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string; ageGroup?: string }> = [];
-                            try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
-                            if (rows.length > 0) {
-                              return rows.slice(0, 2).map((r, i) => {
-                                const ag = r.ageGroup ? r.ageGroup.replace(/（[^）]*）/, "") : null;
-                                return (
-                                  <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                                    {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration.replace("分鐘","分")}` : ""}{ag ? ` · ${ag}` : ""}
-                                  </span>
-                                );
-                              });
-                            }
-                            return <span className="text-xs font-semibold text-primary">體驗堂 ${coach.trialPrice}</span>;
-                          })()}
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <Link href={`/coaches/${coach.id}`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full text-xs">查看檔案</Button>
-                          </Link>
-                          {coach.whatsappNumber && (
-                            <a href={`https://wa.me/${coach.whatsappNumber}`} target="_blank" rel="noopener noreferrer">
-                              <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white text-xs px-2">
-                                <MessageCircle className="h-3 w-3" />
-                              </Button>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold">為你推介</h2>
-            {profile?.preferredSports?.[0] && (
-              <Badge className="bg-primary/10 text-primary-foreground border-primary/20 text-xs">{profile.preferredSports[0]}</Badge>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {[1,2,3].map(i => <Skeleton key={i} className="h-40 rounded-2xl" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {recommendedCoaches.map(coach => (
-                <Link key={coach.id} href={`/coaches/${coach.id}`}>
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer group h-full">
-                    <CardContent className="p-4">
-                      <div className="flex gap-3">
-                        <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarImage src={coach.profileImageUrl || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">{coach.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{coach.name}</p>
-                          <p className="text-xs text-muted-foreground">{coach.sportsCategory}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <MapPin className="h-2.5 w-2.5" />{coach.location}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex flex-wrap gap-1">
-                          {(() => {
-                            let rows: Array<{ sessionType: string; price: string; duration: string; minStudents?: string; maxStudents?: string; ageGroup?: string }> = [];
-                            try { rows = coach.pricingPlans ? JSON.parse(coach.pricingPlans) : []; } catch {}
-                            if (rows.length > 0) {
-                              return rows.slice(0, 2).map((r, i) => {
-                                const ag = r.ageGroup ? r.ageGroup.replace(/（[^）]*）/, "") : null;
-                                return (
-                                  <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-primary/8 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                                    {r.sessionType === "小組課堂" ? "👥" : "👤"} ${r.price}{r.duration ? `·${r.duration.replace("分鐘","分")}` : ""}{ag ? ` · ${ag}` : ""}
-                                  </span>
-                                );
-                              });
-                            }
-                            return <span className="text-sm font-bold text-primary">體驗堂 ${coach.trialPrice}</span>;
-                          })()}
-                        </div>
-                        {coach.averageRating && (
-                          <span className="flex items-center gap-1 text-xs text-amber-600">
-                            <Star className="h-3 w-3 fill-current" /> {coach.averageRating.toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <Link href="/">
-              <Button variant="outline">探索更多教練</Button>
-            </Link>
-          </div>
-        </section>
       </div>
 
       {/* User Profile & Preferences Edit Dialog */}
@@ -691,21 +547,17 @@ export default function Dashboard() {
           </DialogHeader>
 
           <div className="space-y-5 py-2">
-            {/* Name */}
+            {/* 姓名 */}
             <div>
-              <p className="text-sm font-semibold mb-3">姓名</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="pe-lastName">姓氏</Label>
-                  <Input id="pe-lastName" placeholder="例：陳" value={profileEditLastName}
-                    onChange={e => setProfileEditLastName(e.target.value)} className="h-10" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="pe-firstName">名字</Label>
-                  <Input id="pe-firstName" placeholder="例：大文" value={profileEditFirstName}
-                    onChange={e => setProfileEditFirstName(e.target.value)} className="h-10" />
-                </div>
-              </div>
+              <Label htmlFor="pe-fullName" className="text-sm font-semibold mb-2 block">姓名</Label>
+              <Input 
+                id="pe-fullName" 
+                placeholder="例：陳大文" 
+                value={profileEditFullName}
+                onChange={e => setProfileEditFullName(e.target.value)} 
+                className="h-10" 
+              />
+              <p className="text-xs text-muted-foreground mt-1">請輸入你的全名</p>
             </div>
 
             {/* Sports */}
@@ -720,29 +572,6 @@ export default function Dashboard() {
                         active ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border hover:border-primary/50"
                       }`}>
                       {sport.emoji} {sport.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Goals */}
-            <div>
-              <p className="text-sm font-semibold mb-2">訓練目標 <span className="text-muted-foreground font-normal text-xs">（可多選）</span></p>
-              <div className="grid grid-cols-1 gap-2">
-                {PROFILE_GOALS.map(g => {
-                  const active = profileEditGoals.includes(g.id);
-                  return (
-                    <button key={g.id} type="button" onClick={() => toggleProfileGoal(g.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                        active ? "bg-primary border-primary shadow-sm" : "bg-white border-border hover:border-primary/40"
-                      }`}>
-                      <span className="text-lg shrink-0">{g.emoji}</span>
-                      <div className="flex-1">
-                        <span className={`font-medium text-sm ${active ? "text-primary-foreground" : ""}`}>{g.label}</span>
-                        <span className={`text-xs ml-2 ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{g.desc}</span>
-                      </div>
-                      {active && <CheckCircle2 className="w-4 h-4 text-primary-foreground/80 shrink-0" />}
                     </button>
                   );
                 })}
@@ -780,12 +609,11 @@ export default function Dashboard() {
                   const active = profileEditDistricts.includes(d.name);
                   return (
                     <button key={d.name} type="button" onClick={() => toggleProfileDistrict(d.name)}
-                      className={`relative flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border text-sm font-medium transition-all ${
-                        active ? "bg-primary border-primary text-primary-foreground shadow-sm" : "bg-white border-border hover:border-primary/50"
+                      className={`relative flex items-center justify-center gap-1 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
+                        active ? "bg-secondary border-secondary text-secondary-foreground shadow-sm" : "bg-white border-border hover:border-secondary"
                       }`}>
-                      {active && <CheckCircle2 className="absolute top-1.5 right-1.5 w-3 h-3 text-primary-foreground/80" />}
-                      <span className="text-lg leading-none">{d.emoji}</span>
-                      <span className="text-xs">{d.name}</span>
+                      {active && <CheckCircle2 className="w-3 h-3 text-secondary-foreground/80 mr-1" />}
+                      <span>{d.name}</span>
                     </button>
                   );
                 })}

@@ -1,22 +1,25 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth, useClerk } from "@clerk/react";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, ShieldCheck, LayoutDashboard, Heart, Menu, X, LogOut } from "lucide-react";
+import { ShieldCheck, Home, LayoutDashboard, Menu, X, LogOut, Trophy } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-admin-status";
-import { useWishlistCount } from "@/hooks/use-wishlist-count";
+import { useCoachStatus } from "@/hooks/use-coach-status";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase";
 
 export function Navbar() {
-  const { signOut } = useClerk();
   const { isSignedIn } = useAuth();
   const { data: adminStatus } = useAdminStatus();
-  const { data: wishlistCount } = useWishlistCount();
+  const { data: coachStatus } = useCoachStatus();
+  const isAdmin = adminStatus?.isAdmin ?? false;
+  const isCoach = coachStatus?.isCoach ?? false;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [, navigate] = useLocation();
 
-  function handleSignOut() {
+  async function handleSignOut() {
     setMobileOpen(false);
-    signOut();
+    await supabase.auth.signOut();
+    navigate("/");
   }
 
   function handleNavigate(path: string) {
@@ -43,15 +46,10 @@ export function Navbar() {
             </Link>
           </>)}
           {isSignedIn && (<>
-            {/* Wishlist badge */}
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="relative">
-                <Heart className="h-4 w-4" />
-                {!!wishlistCount && wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
-                    {wishlistCount > 99 ? "99+" : wishlistCount}
-                  </span>
-                )}
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <Home className="mr-2 h-4 w-4" />
+                主頁
               </Button>
             </Link>
             <Link href="/dashboard">
@@ -60,113 +58,75 @@ export function Navbar() {
                 我的主頁
               </Button>
             </Link>
-            <Link href="/coach/register">
-              <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">
-                <Dumbbell className="mr-2 h-4 w-4" />
-                我是教練
+            <Link href={isCoach ? "/coach-portal" : "/coach/register"}>
+              <Button variant="ghost" size="sm" className="text-primary">
+                <Trophy className="mr-2 h-4 w-4" />
+                {isCoach ? "我是教練" : "成為教練"}
               </Button>
             </Link>
-            {adminStatus?.isAdmin && (
-              <Link href="/admin">
-                <Button variant="ghost" size="sm">
-                  <ShieldCheck className="mr-2 h-4 w-4" />
-                  管理後台
-                </Button>
-              </Link>
+            {isAdmin && (
+              <Button variant="ghost" size="sm" onClick={() => handleNavigate("/admin")}>
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                管理員
+              </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={() => signOut()}>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               登出
             </Button>
           </>)}
         </nav>
 
-        {/* Mobile right side */}
-        <div className="flex sm:hidden items-center gap-2">
-          {isSignedIn && (<>
-            <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
-              <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
-                <Heart className="h-5 w-5 text-foreground" />
-                {!!wishlistCount && wishlistCount > 0 && (
-                  <span className="absolute top-0 right-0 h-4 min-w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
-                    {wishlistCount > 99 ? "99+" : wishlistCount}
-                  </span>
-                )}
-              </button>
-            </Link>
-          </>)}
-          {!isSignedIn && (
-            <Link href="/sign-in">
-              <Button variant="ghost" size="sm">登入</Button>
-            </Link>
-          )}
-          <button
-            onClick={() => setMobileOpen(v => !v)}
-            className="p-2 rounded-md hover:bg-muted transition-colors"
-            aria-label="選單"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+        {/* Mobile menu button */}
+        <button
+          className="sm:hidden p-2"
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile nav */}
       {mobileOpen && (
-        <div className="sm:hidden border-t bg-background shadow-lg animate-in slide-in-from-top-2 fade-in">
-          <div className="container px-4 py-3 flex flex-col gap-1">
+        <div className="sm:hidden border-t bg-background">
+          <nav className="flex flex-col p-4 gap-2">
             {!isSignedIn && (<>
-              <button
-                onClick={() => handleNavigate("/sign-in")}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium transition-colors"
-              >
-                登入
-              </button>
-              <button
-                onClick={() => handleNavigate("/sign-up")}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-left text-sm font-medium"
-              >
-                註冊
-              </button>
+              <Link href="/sign-in" onClick={() => setMobileOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">登入</Button>
+              </Link>
+              <Link href="/sign-up" onClick={() => setMobileOpen(false)}>
+                <Button className="w-full justify-start">註冊</Button>
+              </Link>
             </>)}
             {isSignedIn && (<>
-              <button
-                onClick={() => handleNavigate("/dashboard")}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium transition-colors"
-              >
-                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+              <Button variant="ghost" className="w-full justify-start" onClick={() => handleNavigate("/")}>
+                <Home className="mr-2 h-4 w-4" />
+                主頁
+              </Button>
+              <Button variant="ghost" className="w-full justify-start" onClick={() => handleNavigate("/dashboard")}>
+                <LayoutDashboard className="mr-2 h-4 w-4" />
                 我的主頁
-                {!!wishlistCount && wishlistCount > 0 && (
-                  <span className="ml-auto text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-semibold">
-                    {wishlistCount} 個收藏
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => handleNavigate("/coach/register")}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium transition-colors"
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-primary"
+                onClick={() => handleNavigate(isCoach ? "/coach-portal" : "/coach/register")}
               >
-                <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                成為教練
-              </button>
-              {adminStatus?.isAdmin && (
-                <button
-                  onClick={() => handleNavigate("/admin")}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium transition-colors"
-                >
-                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                  管理後台
-                </button>
+                <Trophy className="mr-2 h-4 w-4" />
+                {isCoach ? "我是教練" : "成為教練"}
+              </Button>
+              {isAdmin && (
+                <Button variant="ghost" className="w-full justify-start" onClick={() => handleNavigate("/admin")}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  管理員
+                </Button>
               )}
-              <div className="h-px bg-border my-1" />
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left text-sm font-medium text-muted-foreground transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
+              <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
                 登出
-              </button>
+              </Button>
             </>)}
-          </div>
+          </nav>
         </div>
       )}
     </header>

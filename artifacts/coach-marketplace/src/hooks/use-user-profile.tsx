@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/react";
+import { useAuth } from "./use-auth";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 
@@ -14,7 +14,7 @@ export interface UserProfileData {
 }
 
 export function useUserProfile() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAuth();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(false);
 

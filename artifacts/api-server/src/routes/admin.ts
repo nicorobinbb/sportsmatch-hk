@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { coachesTable, reviewsTable, photosTable, reportsTable, userProfilesTable, wishlistsTable, coachPostsTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, sql, desc, count, ilike, or, and } from "drizzle-orm";
 
 const router = Router();
@@ -164,6 +164,8 @@ router.get("/coaches/pending", requireAdmin, async (req, res) => {
         packageDetails: coachesTable.packageDetails,
         ageGroups: coachesTable.ageGroups,
         experienceLevel: coachesTable.experienceLevel,
+        isProfessionalAthleteVerified: coachesTable.isProfessionalAthleteVerified,
+        isLicensedCoachVerified: coachesTable.isLicensedCoachVerified,
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
@@ -252,6 +254,57 @@ router.get("/reviews/pending", requireAdmin, async (req, res) => {
     res.json(reviews.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })));
   } catch (err) {
     req.log.error({ err }, "adminListPendingReviews error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/reviews/all", requireAdmin, async (req, res) => {
+  try {
+    const reviews = await db
+      .select()
+      .from(reviewsTable)
+      .orderBy(desc(reviewsTable.createdAt));
+
+    res.json(
+      reviews.map((r) => ({
+        ...r,
+        comment: r.isRemoved ? `removed by admin due to ${r.removedReason ?? "policy violation"}` : r.comment,
+        createdAt: r.createdAt.toISOString(),
+      }))
+    );
+  } catch (err) {
+    req.log.error({ err }, "adminListAllReviews error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/reviews/:id/remove", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const reasonInput = typeof req.body?.reason === "string" ? req.body.reason.trim() : "";
+    if (!reasonInput) return res.status(400).json({ error: "reason is required" });
+
+    const [updated] = await db
+      .update(reviewsTable)
+      .set({
+        isRemoved: true,
+        removedReason: reasonInput,
+        removedAt: new Date(),
+        removedBy: (req as any).userId,
+        isApproved: true,
+      })
+      .where(eq(reviewsTable.id, id))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    res.json({
+      ...updated,
+      comment: `removed by admin due to ${updated.removedReason ?? "policy violation"}`,
+      createdAt: updated.createdAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "adminRemoveReview error");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -361,6 +414,8 @@ router.get("/coaches/all", requireAdmin, async (req, res) => {
         trialPrice: coachesTable.trialPrice,
         regularPrice: coachesTable.regularPrice,
         experienceLevel: coachesTable.experienceLevel,
+        isProfessionalAthleteVerified: coachesTable.isProfessionalAthleteVerified,
+        isLicensedCoachVerified: coachesTable.isLicensedCoachVerified,
         whatsappNumber: coachesTable.whatsappNumber,
         profileImageUrl: coachesTable.profileImageUrl,
         youtubeUrl: coachesTable.youtubeUrl,
@@ -556,6 +611,7 @@ router.patch("/coaches/:id", requireAdmin, async (req, res) => {
     const {
       name, sportsCategory, location, bio,
       trialPrice, regularPrice, experienceLevel,
+      isProfessionalAthleteVerified, isLicensedCoachVerified,
       whatsappNumber, packageDetails, ageGroups,
       pricingPlans, qualifications,
     } = req.body;
@@ -568,6 +624,8 @@ router.patch("/coaches/:id", requireAdmin, async (req, res) => {
     if (trialPrice !== undefined) updates.trialPrice = parseFloat(trialPrice);
     if (regularPrice !== undefined) updates.regularPrice = parseFloat(regularPrice);
     if (experienceLevel !== undefined) updates.experienceLevel = String(experienceLevel).trim();
+    if (isProfessionalAthleteVerified !== undefined) updates.isProfessionalAthleteVerified = !!isProfessionalAthleteVerified;
+    if (isLicensedCoachVerified !== undefined) updates.isLicensedCoachVerified = !!isLicensedCoachVerified;
     if (whatsappNumber !== undefined) updates.whatsappNumber = String(whatsappNumber).trim();
     if (packageDetails !== undefined) updates.packageDetails = String(packageDetails).trim();
     if (ageGroups !== undefined) updates.ageGroups = ageGroups;

@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/clean-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env --watch src/index.mjs",
+    "start": "node --env-file=.env src/index.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "postgres": "^3.4.7"
+  }
+}

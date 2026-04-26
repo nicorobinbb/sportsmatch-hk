@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { coachesTable, reviewsTable, photosTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
-import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
+import { coachesTable, reviewsTable, photosTable, coachStatsTable, coachAnalyticsTable, wishlistsTable } from "@workspace/db";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
+import { eq, and, desc, sql, ilike, or, inArray, gte } from "drizzle-orm";
 import { CreateCoachBody, ListCoachesQueryParams, CreateReviewBody, UploadCoachPhotoBody } from "@workspace/api-zod";
 
 const EN_TO_ZH: Record<string, string[]> = {
@@ -158,10 +158,13 @@ router.get("/", async (req, res) => {
     }
     if (coachType) {
       const types = coachType.split(",").map(t => t.trim()).filter(Boolean);
-      if (types.length === 1) {
-        conditions.push(ilike(coachesTable.experienceLevel, `%${types[0]}%`));
-      } else if (types.length > 1) {
-        conditions.push(or(...types.map(t => ilike(coachesTable.experienceLevel, `%${t}%`))) as ReturnType<typeof eq>);
+      const categoryClauses: ReturnType<typeof eq>[] = [];
+      if (types.includes("專業運動員")) categoryClauses.push(eq(coachesTable.isProfessionalAthleteVerified, true));
+      if (types.includes("持牌教練")) categoryClauses.push(eq(coachesTable.isLicensedCoachVerified, true));
+      if (categoryClauses.length === 1) {
+        conditions.push(categoryClauses[0]);
+      } else if (categoryClauses.length > 1) {
+        conditions.push(or(...categoryClauses) as ReturnType<typeof eq>);
       }
     }
     if (teachingFocus) {
@@ -195,6 +198,8 @@ router.get("/", async (req, res) => {
         ageGroups: coachesTable.ageGroups,
         teachingFocus: coachesTable.teachingFocus,
         experienceLevel: coachesTable.experienceLevel,
+        isProfessionalAthleteVerified: coachesTable.isProfessionalAthleteVerified,
+        isLicensedCoachVerified: coachesTable.isLicensedCoachVerified,
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
@@ -203,6 +208,8 @@ router.get("/", async (req, res) => {
         createdAt: coachesTable.createdAt,
         averageRating: sql<number | null>`AVG(${reviewsTable.rating})`,
         reviewCount: sql<number>`COUNT(DISTINCT ${reviewsTable.id})::int`,
+        profileViews: sql<number>`0::int`,
+        wishlistSaves: sql<number>`COALESCE((SELECT COUNT(*) FROM ${wishlistsTable} WHERE ${wishlistsTable.coachId} = ${coachesTable.id}), 0)::int`,
       })
       .from(coachesTable)
       .leftJoin(
@@ -230,6 +237,8 @@ router.get("/", async (req, res) => {
         pricingPlans: buildPricingPlans(c.pricingPlans, trialPrice, regularPrice),
         averageRating: c.averageRating ? parseFloat(c.averageRating as unknown as string) : null,
         reviewCount: c.reviewCount ?? 0,
+        profileViews: c.profileViews ?? 0,
+        wishlistSaves: c.wishlistSaves ?? 0,
         createdAt: c.createdAt.toISOString(),
       };
     });
@@ -259,6 +268,7 @@ router.post("/", async (req, res) => {
         nameEn: body.nameEn ?? null,
         facebookUrl: (body as any).facebookUrl ?? null,
         instagramUrl: (body as any).instagramUrl ?? null,
+        websiteUrl: (body as any).websiteUrl ?? null,
         scrcNumber: (body as any).scrcNumber ?? null,
         sportsCategory: body.sportsCategory,
         location: body.location,
@@ -269,9 +279,11 @@ router.post("/", async (req, res) => {
         ageGroups: body.ageGroups,
         teachingFocus: (body as any).teachingFocus ?? [],
         experienceLevel: body.experienceLevel,
+        isProfessionalAthleteVerified: false,
+        isLicensedCoachVerified: false,
         profileImageUrl: body.profileImageUrl ?? null,
-        coverPhotoUrl: body.coverPhotoUrl ?? null,
-        whatsappNumber: body.whatsappNumber ?? null,
+        coverPhotoUrl: (body as any).coverPhotoUrl ?? null,
+        whatsappNumber: (body as any).whatsappNumber ?? null,
         qualifications: (body as any).qualifications ?? null,
         qualificationProofUrl: (body as any).qualificationProofUrl ?? null,
         pricingPlans: (body as any).pricingPlans ?? null,
@@ -355,6 +367,75 @@ router.get("/me", async (req, res) => {
   }
 });
 
+// Get my coach stats (for coach portal)
+router.get("/me/stats", async (req, res) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Get all coaches for this user
+    const myCoaches = await db
+      .select({ id: coachesTable.id })
+      .from(coachesTable)
+      .where(eq(coachesTable.userId, auth.userId));
+
+    const coachIds = myCoaches.map(c => c.id);
+    
+    if (coachIds.length === 0) {
+      return res.json({ stats: {} });
+    }
+
+    // Get stats for all coaches
+    const stats = await db
+      .select()
+      .from(coachStatsTable)
+      .where(inArray(coachStatsTable.coachId, coachIds));
+
+    // Get today's analytics
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayStats = await db
+      .select()
+      .from(coachAnalyticsTable)
+      .where(
+        and(
+          inArray(coachAnalyticsTable.coachId, coachIds),
+          gte(coachAnalyticsTable.date, today)
+        )
+      );
+
+    // Build stats map
+    const statsMap: Record<number, {
+      profileViews: number;
+      contactUnlocks: number;
+      unlockRevenue: number;
+      wishlistSaves: number;
+      unlockPrice: number;
+      todayViews: number;
+    }> = {};
+
+    for (const coachId of coachIds) {
+      const stat = stats.find(s => s.coachId === coachId);
+      const todayStat = todayStats.find(s => s.coachId === coachId);
+      
+      statsMap[coachId] = {
+        profileViews: stat?.totalProfileViews ?? 0,
+        contactUnlocks: stat?.totalContactUnlocks ?? 0,
+        unlockRevenue: stat?.totalRevenue ? Math.round(stat.totalRevenue / 100) : 0, // convert cents to dollars
+        wishlistSaves: stat?.totalWishlistSaves ?? 0,
+        unlockPrice: stat?.unlockPrice ? Math.round(stat.unlockPrice / 100) : 30, // default $30
+        todayViews: todayStat?.profileViews ?? 0,
+      };
+    }
+
+    res.json({ stats: statsMap });
+  } catch (err) {
+    req.log.error({ err }, "getMyCoachStats error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -374,6 +455,8 @@ router.get("/:id", async (req, res) => {
         ageGroups: coachesTable.ageGroups,
         teachingFocus: coachesTable.teachingFocus,
         experienceLevel: coachesTable.experienceLevel,
+        isProfessionalAthleteVerified: coachesTable.isProfessionalAthleteVerified,
+        isLicensedCoachVerified: coachesTable.isLicensedCoachVerified,
         isFeatured: coachesTable.isFeatured,
         isApproved: coachesTable.isApproved,
         profileImageUrl: coachesTable.profileImageUrl,
@@ -387,10 +470,13 @@ router.get("/:id", async (req, res) => {
         youtubePending: coachesTable.youtubePending,
         facebookUrl: coachesTable.facebookUrl,
         instagramUrl: coachesTable.instagramUrl,
+        websiteUrl: coachesTable.websiteUrl,
         scrcNumber: coachesTable.scrcNumber,
         createdAt: coachesTable.createdAt,
         averageRating: sql<number | null>`AVG(${reviewsTable.rating})`,
         reviewCount: sql<number>`COUNT(DISTINCT ${reviewsTable.id})::int`,
+        profileViews: sql<number>`0::int`,
+        wishlistSaves: sql<number>`COALESCE((SELECT COUNT(*) FROM ${wishlistsTable} WHERE ${wishlistsTable.coachId} = ${coachesTable.id}), 0)::int`,
       })
       .from(coachesTable)
       .leftJoin(
@@ -422,6 +508,8 @@ router.get("/:id", async (req, res) => {
       pricingPlans: buildPricingPlans(coach.pricingPlans, trialPrice, regularPrice),
       averageRating: coach.averageRating ? parseFloat(coach.averageRating as unknown as string) : null,
       reviewCount: coach.reviewCount ?? 0,
+      profileViews: coach.profileViews ?? 0,
+      wishlistSaves: coach.wishlistSaves ?? 0,
       createdAt: coach.createdAt.toISOString(),
       reviews: reviews.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
       photos: photos.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })),

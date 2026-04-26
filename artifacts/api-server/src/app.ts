@@ -1,8 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import { clerkMiddleware } from "@clerk/express";
-import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
+import { supabaseAuthMiddleware } from "./middlewares/supabaseAuthMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -28,14 +27,20 @@ app.use(
   }),
 );
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
-app.use(clerkMiddleware());
+// Supabase auth middleware (replaces Clerk)
+app.use(supabaseAuthMiddleware);
 
 app.use("/api", router);
+
+app.use((err: any, _req: any, res: any, next: any) => {
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({ error: "Upload payload too large. Please use smaller images." });
+  }
+  next(err);
+});
 
 export default app;

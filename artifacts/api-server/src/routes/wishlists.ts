@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { wishlistsTable, coachesTable, reviewsTable } from "@workspace/db";
 import { eq, and, avg, count, inArray } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 
 const router = Router();
 

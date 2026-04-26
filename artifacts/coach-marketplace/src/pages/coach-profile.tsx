@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus, Facebook, Instagram, Share2, Copy, Mail } from "lucide-react";
+import { MapPin, Star, CheckCircle2, Award, Trophy, MessageSquare, Image as ImageIcon, Phone, Heart, Flag, ThumbsUp, Upload, Clock, Trash2, Loader2, Youtube, Send, X, PlusCircle, Newspaper, ImagePlus, Facebook, Instagram, Share2, Copy, Mail, Globe, MousePointerClick } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Show, useUser } from "@clerk/react";
+import { useAuth } from "@/hooks/use-auth";
+import { Show } from "@/components/show";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 
@@ -153,27 +154,78 @@ function ShareCoachButton({ coach }: { coach: any }) {
   );
 }
 
+type LinkPreview = {
+  url: string;
+  platform: "youtube" | "facebook" | "instagram" | "link";
+  youtubeEmbedUrl?: string;
+};
+
+function extractUrls(text: string): string[] {
+  const matches = text.match(/https?:\/\/[^\s]+/g);
+  return matches ?? [];
+}
+
+function getYoutubeEmbedUrl(rawUrl: string): string | null {
+  try {
+    const url = new URL(rawUrl);
+    if (url.hostname.includes("youtu.be")) {
+      const id = url.pathname.replace("/", "").split("?")[0];
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (url.hostname.includes("youtube.com")) {
+      const id = url.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getLinkPreview(url: string): LinkPreview {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const youtubeEmbedUrl = getYoutubeEmbedUrl(url);
+    if (youtubeEmbedUrl) {
+      return { url, platform: "youtube", youtubeEmbedUrl };
+    }
+    if (host.includes("facebook.com") || host.includes("fb.watch")) {
+      return { url, platform: "facebook" };
+    }
+    if (host.includes("instagram.com")) {
+      return { url, platform: "instagram" };
+    }
+  } catch {
+    // fall through to generic link
+  }
+  return { url, platform: "link" };
+}
+
 export default function CoachProfile() {
+  const MAX_UPLOAD_FILE_MB = 8;
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const { data: coach, isLoading: isCoachLoading } = useGetCoach(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id, queryKey: ["coach", id] }
   });
 
   const { data: reviews, isLoading: isReviewsLoading, refetch: refetchReviews } = useGetCoachReviews(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id, queryKey: ["coach", id] }
   });
 
   const { data: photos, isLoading: isPhotosLoading } = useGetCoachPhotos(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id, queryKey: ["coach", id] }
   });
 
   const createReview = useCreateReview();
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<number, string>>({});
+  const [replySubmittingReviewId, setReplySubmittingReviewId] = useState<number | null>(null);
 
   const [isSaved, setIsSaved] = useState(false);
   const [savingWish, setSavingWish] = useState(false);
@@ -263,6 +315,14 @@ export default function CoachProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
+    if (file.size > MAX_UPLOAD_FILE_MB * 1024 * 1024) {
+      toast({
+        title: "檔案過大",
+        description: `請上傳 ${MAX_UPLOAD_FILE_MB}MB 以內的圖片。`,
+        variant: "destructive",
+      });
+      return;
+    }
     setUploadingPhoto(true);
     try {
       const imageUrl = await new Promise<string>((resolve, reject) => {
@@ -335,6 +395,14 @@ export default function CoachProfile() {
     const file = e.target.files?.[0];
     if (!file || newPostImages.length >= 3) return;
     e.target.value = "";
+    if (file.size > MAX_UPLOAD_FILE_MB * 1024 * 1024) {
+      toast({
+        title: "檔案過大",
+        description: `每張圖片請控制在 ${MAX_UPLOAD_FILE_MB}MB 以內。`,
+        variant: "destructive",
+      });
+      return;
+    }
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = ev => {
@@ -440,16 +508,17 @@ export default function CoachProfile() {
         coachId: id,
         rating: reviewRating,
         comment: reviewText,
-        userName: user?.fullName || user?.firstName || "匿名用戶"
+        userName: (user?.user_metadata?.first_name) || "匿名用戶"
       }
     }, {
       onSuccess: () => {
         toast({
           title: "評價已提交",
-          description: "你的評價已收到，正等候審核。",
+          description: "你的評價已公開顯示；如違反守則將由管理員移除。",
         });
         setReviewText("");
         setReviewRating(5);
+        refetchReviews();
       },
       onError: (err) => {
         toast({
@@ -460,6 +529,35 @@ export default function CoachProfile() {
       }
     });
   };
+
+  async function handleSubmitReply(reviewId: number) {
+    const replyComment = (replyDraftByReviewId[reviewId] || "").trim();
+    if (!replyComment) return;
+    setReplySubmittingReviewId(reviewId);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${getBaseUrl()}/api/reviews/${reviewId}/reply`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ replyComment }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "回覆失敗");
+      }
+      setReplyDraftByReviewId((prev) => ({ ...prev, [reviewId]: "" }));
+      await refetchReviews();
+      toast({ title: "已回覆評價" });
+    } catch (e) {
+      toast({
+        title: "回覆失敗",
+        description: e instanceof Error ? e.message : "請稍後再試",
+        variant: "destructive",
+      });
+    } finally {
+      setReplySubmittingReviewId(null);
+    }
+  }
 
   if (isCoachLoading) {
     return (
@@ -499,10 +597,20 @@ export default function CoachProfile() {
             {/* Left Column: Profile Info */}
             <div className="flex-1 w-full space-y-6">
               <div className="bg-white dark:bg-card rounded-2xl p-6 md:p-8 shadow-sm border flex flex-col md:flex-row gap-6 items-start">
-                <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-white shadow-md bg-white">
-                  <AvatarImage src={coach.profileImageUrl || undefined} alt={coach.name} className="object-cover" />
-                  <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">{coach.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <div className="flex flex-col items-center gap-3 shrink-0">
+                  <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-white shadow-md bg-white">
+                    <AvatarImage src={coach.profileImageUrl || undefined} alt={coach.name} className="object-cover" />
+                    <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">{coach.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground bg-slate-50 border rounded-full px-3 py-1.5">
+                    <span className="inline-flex items-center gap-1">
+                      <MousePointerClick className="w-3.5 h-3.5" /> {(coach as any).profileViews ?? 0}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5" /> {(coach as any).wishlistSaves ?? 0}
+                    </span>
+                  </div>
+                </div>
                 
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -534,7 +642,19 @@ export default function CoachProfile() {
                         <Instagram className="w-4 h-4" />
                       </a>
                     )}
-                    <Show when="signed-in">
+                    {(coach as any).websiteUrl && (
+                      <a
+                        href={(coach as any).websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="個人網頁"
+                        title="個人網頁"
+                        className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-800 text-white transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                      </a>
+                    )}
+                    <Show when={!!user}>
                       <button
                         onClick={toggleWishlist}
                         disabled={savingWish}
@@ -605,11 +725,12 @@ export default function CoachProfile() {
 
                     {/* Credential sections */}
                     {(() => {
-                      const isPro = coach.experienceLevel?.includes("專業運動員");
-                      const isCert = coach.experienceLevel?.includes("持牌教練");
-                      let quals: { text: string; proofUrl?: string }[] = [];
+                      const isPro = (coach as any).isProfessionalAthleteVerified ?? coach.experienceLevel?.includes("專業運動員");
+                      const isCert = (coach as any).isLicensedCoachVerified ?? coach.experienceLevel?.includes("持牌教練");
+                      let quals: { text: string; proofUrl?: string; status?: "pending" | "approved" | "denied" }[] = [];
                       try { quals = coach.qualifications ? JSON.parse(coach.qualifications as unknown as string) : []; } catch {}
                       const proQuals = quals.filter(q => q.text?.trim());
+                      const shouldShowGenericQualifications = !isPro && !isCert && proQuals.length > 0;
 
                       return (
                         <>
@@ -626,8 +747,13 @@ export default function CoachProfile() {
                                 </div>
                                 {proQuals.map((q, i) => (
                                   <div key={i} className="flex items-start gap-2 text-sm">
-                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                                    <span>{q.text}</span>
+                                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${q.status === "approved" ? "text-green-500" : "text-slate-400"}`} />
+                                    <span className={q.status === "approved" ? "text-foreground" : "text-muted-foreground"}>
+                                      {q.text}
+                                      <span className={`ml-2 text-xs ${q.status === "approved" ? "text-green-600" : q.status === "denied" ? "text-red-600" : "text-slate-500"}`}>
+                                        {q.status === "approved" ? "已驗證" : q.status === "denied" ? "未通過核實" : "待核實"}
+                                      </span>
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -642,15 +768,46 @@ export default function CoachProfile() {
                               <div className="space-y-2">
                                 {proQuals.length > 0 ? proQuals.map((q, i) => (
                                   <div key={i} className="flex items-start gap-2 text-sm">
-                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                                    <span>{q.text}</span>
+                                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${q.status === "approved" ? "text-green-500" : "text-slate-400"}`} />
+                                    <span className={q.status === "approved" ? "text-foreground" : "text-muted-foreground"}>
+                                      {q.text}
+                                      <span className={`ml-2 text-xs ${q.status === "approved" ? "text-green-600" : q.status === "denied" ? "text-red-600" : "text-slate-500"}`}>
+                                        {q.status === "approved" ? "已驗證" : q.status === "denied" ? "未通過核實" : "待核實"}
+                                      </span>
+                                    </span>
                                   </div>
                                 )) : (
                                   <div className="flex items-start gap-2 text-sm">
-                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                                    <span>持認可 {coach.sportsCategory} 教練資格</span>
+                                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
+                                    <span className="text-muted-foreground">
+                                      持認可 {coach.sportsCategory} 教練資格
+                                      <span className="ml-2 text-xs text-slate-500">
+                                        待核實
+                                      </span>
+                                    </span>
                                   </div>
                                 )}
+                              </div>
+                            </div>
+                          )}
+                          {shouldShowGenericQualifications && (
+                            <div className="mt-6 pt-6 border-t">
+                              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-primary" />
+                                資歷與證書
+                              </h4>
+                              <div className="space-y-2">
+                                {proQuals.map((q, i) => (
+                                  <div key={i} className="flex items-start gap-2 text-sm">
+                                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${q.status === "approved" ? "text-green-500" : "text-slate-400"}`} />
+                                    <span className={q.status === "approved" ? "text-foreground" : "text-muted-foreground"}>
+                                      {q.text}
+                                      <span className={`ml-2 text-xs ${q.status === "approved" ? "text-green-600" : q.status === "denied" ? "text-red-600" : "text-slate-500"}`}>
+                                        {q.status === "approved" ? "已驗證" : q.status === "denied" ? "未通過核實" : "待核實"}
+                                      </span>
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -742,6 +899,8 @@ export default function CoachProfile() {
                       <div className="space-y-5">
                         {posts.map(post => {
                           const images: string[] = (() => { try { return post.mediaUrls ? JSON.parse(post.mediaUrls) : []; } catch { return []; } })();
+                          const postText = post.caption || "";
+                          const linkPreviews = extractUrls(postText).map(getLinkPreview);
                           const isPending = !post.isApproved && !post.isRejected;
                           const isRejected = post.isRejected;
                           return (
@@ -779,6 +938,43 @@ export default function CoachProfile() {
                                 {post.caption && (
                                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{post.caption}</p>
                                 )}
+                                {linkPreviews.length > 0 && (
+                                  <div className="space-y-2 pt-1">
+                                    {linkPreviews.map((preview, idx) => (
+                                      <div key={`${post.id}-link-${idx}`} className="rounded-lg border bg-slate-50 overflow-hidden">
+                                        {preview.platform === "youtube" && preview.youtubeEmbedUrl ? (
+                                          <div className="aspect-video">
+                                            <iframe
+                                              className="w-full h-full"
+                                              src={preview.youtubeEmbedUrl}
+                                              title="YouTube preview"
+                                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                              allowFullScreen
+                                            />
+                                          </div>
+                                        ) : (
+                                          <div className="px-3 py-2 text-xs">
+                                            <p className="font-semibold mb-1">
+                                              {preview.platform === "facebook"
+                                                ? "Facebook 連結"
+                                                : preview.platform === "instagram"
+                                                  ? "Instagram 連結"
+                                                  : "外部連結"}
+                                            </p>
+                                            <a
+                                              href={preview.url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-primary underline break-all"
+                                            >
+                                              {preview.url}
+                                            </a>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                                 {isOwner && isRejected && post.rejectionReason && (
                                   <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">拒絕原因：{post.rejectionReason}</p>
                                 )}
@@ -791,7 +987,7 @@ export default function CoachProfile() {
 
                     {isOwner && (
                       <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-4 py-3">
-                        💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
+                        💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。相片最多 3 張、每張 8MB 以內；影片請使用 YouTube 連結提交。
                       </p>
                     )}
                   </div>
@@ -871,7 +1067,7 @@ export default function CoachProfile() {
 
                     {isOwner && (
                       <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-4 py-3">
-                        💡 相片經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
+                        💡 相片經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。請上傳圖片格式，單張 8MB 以內。
                       </p>
                     )}
                   </div>
@@ -942,7 +1138,7 @@ export default function CoachProfile() {
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
-                          💡 影片連結經管理員審核後才會公開顯示，每位教練只可提交一條影片連結。
+                          💡 影片連結經管理員審核後才會公開顯示，每位教練只可提交一條影片連結（不支援直接上傳影片檔）。
                         </p>
                       </form>
                     )}
@@ -977,7 +1173,7 @@ export default function CoachProfile() {
                       </div>
                     </div>
 
-                    <Show when="signed-in">
+                    <Show when={!!user}>
                       <form onSubmit={handleSubmitReview} className="mb-8 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border">
                         <h4 className="font-semibold mb-3">撰寫評價</h4>
                         <div className="flex gap-1 mb-3">
@@ -1005,7 +1201,7 @@ export default function CoachProfile() {
                       </form>
                     </Show>
 
-                    <Show when="signed-out">
+                    <Show when={!user}>
                       <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border text-center">
                         <p className="text-muted-foreground mb-3">請先登入才能留下評價。</p>
                       </div>
@@ -1017,7 +1213,7 @@ export default function CoachProfile() {
                           {[1, 2].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
                         </div>
                       ) : reviews && reviews.length > 0 ? (
-                        reviews.map(review => (
+                        reviews.map((review: any) => (
                           <div key={review.id} className="pb-6 border-b last:border-0 last:pb-0">
                             <div className="flex items-center justify-between mb-2">
                               <div className="font-semibold">{review.userName || "匿名用戶"}</div>
@@ -1028,6 +1224,32 @@ export default function CoachProfile() {
                               </div>
                             </div>
                             <p className="text-muted-foreground text-sm leading-relaxed">{review.comment}</p>
+                            {review.replyComment ? (
+                              <div className="mt-3 ml-4 rounded-lg border bg-slate-50 px-3 py-2">
+                                <p className="text-xs font-semibold text-primary mb-1">教練回覆</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">{review.replyComment}</p>
+                              </div>
+                            ) : null}
+                            {isOwner && !review.replyComment ? (
+                              <div className="mt-3 ml-4 space-y-2">
+                                <Textarea
+                                  placeholder="回覆這則評價（只顯示一層回覆）..."
+                                  value={replyDraftByReviewId[review.id] ?? ""}
+                                  onChange={(e) =>
+                                    setReplyDraftByReviewId((prev) => ({ ...prev, [review.id]: e.target.value }))
+                                  }
+                                  className="bg-white"
+                                  rows={2}
+                                />
+                                <Button
+                                  size="sm"
+                                  disabled={replySubmittingReviewId === review.id || !(replyDraftByReviewId[review.id] || "").trim()}
+                                  onClick={() => handleSubmitReply(review.id)}
+                                >
+                                  {replySubmittingReviewId === review.id ? "提交中…" : "回覆評價"}
+                                </Button>
+                              </div>
+                            ) : null}
                           </div>
                         ))
                       ) : (
@@ -1125,9 +1347,9 @@ export default function CoachProfile() {
                   )}
 
                   <div className="pt-2 space-y-3">
-                    {coach.whatsappNumber ? (
+                    {(coach as any).whatsappNumber ? (
                       <a
-                        href={`https://wa.me/${coach.whatsappNumber}`}
+                        href={`https://wa.me/${(coach as any).whatsappNumber}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block"
@@ -1175,7 +1397,7 @@ export default function CoachProfile() {
                         💡 所有費用直接支付予教練，本平台不收取任何課堂費用。
                       </p>
                     </div>
-                    <Show when="signed-in">
+                    <Show when={!!user}>
                       <button
                         onClick={() => setReportOpen(true)}
                         className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors py-1"
@@ -1284,7 +1506,7 @@ export default function CoachProfile() {
               </label>
             )}
             <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
-              💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。
+              💡 動向經管理員審核後才會公開顯示，通常於 1-2 個工作天內完成。相片最多 3 張、每張 8MB 以內；暫不支援直接上傳影片檔。
             </p>
           </div>
           <DialogFooter className="gap-2">

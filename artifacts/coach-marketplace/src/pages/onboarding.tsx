@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@/hooks/use-auth";
 import { getBaseUrl } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-token";
 import { CheckCircle2 } from "lucide-react";
@@ -16,6 +16,7 @@ const SPORTS = [
   { name: "籃球", emoji: "🏀" },
   { name: "網球", emoji: "🎾" },
   { name: "羽毛球", emoji: "🏸" },
+  { name: "健身", emoji: "💪" },
   { name: "拳擊", emoji: "🥊" },
   { name: "跑步", emoji: "🏃" },
   { name: "舞蹈", emoji: "💃" },
@@ -69,7 +70,7 @@ export default function Onboarding() {
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [, navigate] = useLocation();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const toggle = (arr: string[], setArr: (v: string[]) => void, val: string) =>
     setArr(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
@@ -135,7 +136,7 @@ export default function Onboarding() {
             <span className="text-xl font-bold font-display">運對</span>
           </div>
           <p className="text-muted-foreground text-sm">
-            {user?.firstName ? `歡迎，${user.firstName}！` : "歡迎加入！"} 先讓我們了解您一下 👋
+            {(user?.user_metadata?.first_name) ? `歡迎，${user.user_metadata.first_name}！` : "歡迎加入！"} 先讓我們了解您一下 👋
           </p>
         </div>
 

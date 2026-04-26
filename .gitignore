@@ -47,3 +47,16 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local env files
+**/.env
+
+# Backup/migration leftovers
+*.bak
+*-original.ts
+*-original.tsx
+*-supabase.ts
+*-supabase.tsx
+
+# macOS Finder artifact files (e.g. "Icon\r")
+Icon?

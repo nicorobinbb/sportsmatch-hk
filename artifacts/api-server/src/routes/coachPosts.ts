@@ -1,10 +1,33 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { coachPostsTable, coachesTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, and, desc } from "drizzle-orm";
 
 const router = Router();
+const MAX_POST_IMAGES = 3;
+const MAX_POST_CAPTION_LENGTH = 1000;
+const MAX_IMAGE_DATA_URL_LENGTH = 2_500_000;
+const POST_CREATE_LIMIT_WINDOW_MS = 60_000;
+const POST_CREATE_LIMIT_COUNT = 6;
+const postCreateCounter = new Map<string, { count: number; startedAt: number }>();
+
+function isLikelyImageDataUrl(value: string): boolean {
+  return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value);
+}
+
+function checkPostCreateRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const current = postCreateCounter.get(userId);
+  if (!current || now - current.startedAt > POST_CREATE_LIMIT_WINDOW_MS) {
+    postCreateCounter.set(userId, { count: 1, startedAt: now });
+    return true;
+  }
+  if (current.count >= POST_CREATE_LIMIT_COUNT) return false;
+  current.count += 1;
+  postCreateCounter.set(userId, current);
+  return true;
+}
 
 function getAdminUserIds(): string[] {
   const raw = process.env.ADMIN_USER_IDS ?? "";
@@ -74,9 +97,33 @@ router.post("/coach/:id", async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const { caption, mediaUrls, youtubeUrl } = req.body;
+    if (!checkPostCreateRateLimit(auth.userId)) {
+      return res.status(429).json({ error: "Too many post attempts. Please try again in 1 minute." });
+    }
+
+    const { caption, mediaUrls, youtubeUrl } = req.body as {
+      caption?: string | null;
+      mediaUrls?: string[];
+      youtubeUrl?: string | null;
+    };
     if (!caption && (!mediaUrls || mediaUrls.length === 0) && !youtubeUrl) {
       return res.status(400).json({ error: "Post must have caption, media, or video" });
+    }
+    if (caption && String(caption).length > MAX_POST_CAPTION_LENGTH) {
+      return res.status(400).json({ error: `Caption too long (max ${MAX_POST_CAPTION_LENGTH} chars)` });
+    }
+    if (Array.isArray(mediaUrls)) {
+      if (mediaUrls.length > MAX_POST_IMAGES) {
+        return res.status(400).json({ error: `Too many images (max ${MAX_POST_IMAGES})` });
+      }
+      for (const media of mediaUrls) {
+        if (typeof media !== "string" || !isLikelyImageDataUrl(media)) {
+          return res.status(400).json({ error: "Invalid media format. Only images are allowed." });
+        }
+        if (media.length > MAX_IMAGE_DATA_URL_LENGTH) {
+          return res.status(413).json({ error: "One of the images is too large. Please upload smaller images." });
+        }
+      }
     }
 
     const [post] = await db

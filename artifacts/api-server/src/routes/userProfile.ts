@@ -2,22 +2,35 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { userProfilesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { getAuth, clerkClient } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
+import { createClient } from "@supabase/supabase-js";
 
 const router = Router();
 
-async function fetchClerkUserMeta(userId: string) {
+// Supabase admin client for fetching user metadata
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
+}
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+async function fetchSupabaseUserMeta(userId: string) {
   try {
-    const u = await clerkClient.users.getUser(userId);
-    const email = u.primaryEmailAddress?.emailAddress
-      ?? u.emailAddresses?.[0]?.emailAddress
-      ?? null;
-    return {
-      email,
-      imageUrl: u.imageUrl ?? null,
-      firstName: u.firstName ?? null,
-      lastName: u.lastName ?? null,
-    };
+    const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    
+    if (error || !user) {
+      return { email: null, imageUrl: null, firstName: null, lastName: null };
+    }
+
+    const email = user.email ?? null;
+    const firstName = user.user_metadata?.first_name ?? null;
+    const lastName = user.user_metadata?.last_name ?? null;
+    const imageUrl = user.user_metadata?.avatar_url ?? null;
+
+    return { email, imageUrl, firstName, lastName };
   } catch {
     return { email: null, imageUrl: null, firstName: null, lastName: null };
   }
@@ -31,7 +44,7 @@ router.get("/", async (req, res) => {
     .where(eq(userProfilesTable.userId, userId));
 
   if (!profile) {
-    const meta = await fetchClerkUserMeta(userId);
+    const meta = await fetchSupabaseUserMeta(userId);
     [profile] = await db.insert(userProfilesTable).values({
       userId,
       email: meta.email,
@@ -43,7 +56,7 @@ router.get("/", async (req, res) => {
     }).returning();
     req.log?.info({ userId, email: meta.email }, "Auto-created stub user profile on first sign-in");
   } else if (!profile.email || !profile.imageUrl) {
-    const meta = await fetchClerkUserMeta(userId);
+    const meta = await fetchSupabaseUserMeta(userId);
     if (meta.email || meta.imageUrl) {
       [profile] = await db.update(userProfilesTable)
         .set({

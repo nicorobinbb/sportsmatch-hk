@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { Navbar } from "./navbar";
 import { SupportWidget } from "./support-widget";
 
@@ -26,9 +27,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="text-sm font-semibold text-white mb-4">關於我們</h4>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="/about" className="text-white/85 hover:text-white transition-colors">
+                  <Link href="/about" className="text-white/85 hover:text-white transition-colors">
                     關於我們
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -37,9 +38,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="text-sm font-semibold text-white mb-4">支援</h4>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="/faq" className="text-white/85 hover:text-white transition-colors">
+                  <Link href="/faq" className="text-white/85 hover:text-white transition-colors">
                     常見問題
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -48,22 +49,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="text-sm font-semibold text-white mb-4">法律條款</h4>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="/terms" className="text-white/85 hover:text-white transition-colors">
+                  <Link href="/terms" className="text-white/85 hover:text-white transition-colors">
                     條款及細則
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/disclaimer" className="text-white/85 hover:text-white transition-colors">
+                  <Link href="/disclaimer" className="text-white/85 hover:text-white transition-colors">
                     免責聲明
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/privacy" className="text-white/85 hover:text-white transition-colors">
+                  <Link href="/privacy" className="text-white/85 hover:text-white transition-colors">
                     隱私權政策
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
+          </div>
+
+          <div className="mt-8 rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm">
+            <span className="font-semibold text-white">合作與查詢：</span>{" "}
+            <a
+              href="mailto:info@sportsmatch-hk.com"
+              className="text-white underline underline-offset-2 hover:text-white/85 transition-colors"
+            >
+              info@sportsmatch-hk.com
+            </a>
+            <span className="text-white/85">（教練查詢 / 廣告合作）</span>
           </div>
 
           <div className="mt-10 pt-6 border-t border-white/20 text-xs text-white/80">

@@ -10,6 +10,13 @@ export const reviewsTable = pgTable("reviews", {
   rating: integer("rating").notNull(),
   comment: text("comment").notNull(),
   isApproved: boolean("is_approved").notNull().default(false),
+  isRemoved: boolean("is_removed").notNull().default(false),
+  removedReason: text("removed_reason"),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+  removedBy: text("removed_by"),
+  replyComment: text("reply_comment"),
+  replyAt: timestamp("reply_at", { withTimezone: true }),
+  replyBy: text("reply_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

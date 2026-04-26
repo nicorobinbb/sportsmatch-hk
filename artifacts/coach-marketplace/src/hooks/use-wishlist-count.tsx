@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "./use-auth";
 import { getBaseUrl } from "@/lib/api";
 
 export function useWishlistCount() {
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, session } = useAuth();
 
   return useQuery<number>({
     queryKey: ["wishlist-count"],
-    enabled: !!isSignedIn,
+    enabled: !!isSignedIn && !!session?.access_token,
     queryFn: async () => {
-      const token = await getToken();
+      const token = session?.access_token;
       const res = await fetch(`${getBaseUrl()}/api/wishlist`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

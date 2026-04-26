@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ShieldCheck, MapPin, Star, Crown } from "lucide-react";
+import { ShieldCheck, MapPin, Star, Crown, MousePointerClick, Heart } from "lucide-react";
 import type { Coach } from "@workspace/api-client-react";
 
 type PricingRow = { sessionType: "單對單" | "小組課堂"; price: string; minStudents?: string; maxStudents?: string; duration?: string; ageGroup?: string };
@@ -20,10 +20,10 @@ function stripParens(s: string) {
 
 export function CoachCard({ coach }: { coach: Coach }) {
   const ageGroups = (coach.ageGroups || []) as string[];
-  const coachTypes = (coach.experienceLevel || "")
-    .split(/[、,]/)
-    .map(s => s.trim())
-    .filter(Boolean);
+  const verifiedCoachTypes = [
+    (coach as any).isProfessionalAthleteVerified ? "專業運動員" : null,
+    (coach as any).isLicensedCoachVerified ? "持牌教練" : null,
+  ].filter(Boolean) as string[];
   const pricingRows = parsePricingPlans(coach.pricingPlans);
 
   return (
@@ -53,7 +53,7 @@ export function CoachCard({ coach }: { coach: Coach }) {
                     已認證
                   </span>
                 )}
-                {coachTypes.map((t, i) => (
+                {verifiedCoachTypes.map((t, i) => (
                   <span
                     key={i}
                     className="inline-flex items-center px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-semibold"
@@ -104,6 +104,16 @@ export function CoachCard({ coach }: { coach: Coach }) {
                 <span>（{coach.reviewCount} 評價）</span>
               </span>
             ) : null}
+          </div>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-1">
+            <span className="inline-flex items-center gap-1">
+              <MousePointerClick className="w-3.5 h-3.5" />
+              {(coach as any).profileViews ?? 0} 點擊
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Heart className="w-3.5 h-3.5" />
+              {(coach as any).wishlistSaves ?? 0} 收藏
+            </span>
           </div>
         </div>
 

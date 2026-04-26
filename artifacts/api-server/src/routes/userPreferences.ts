@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { userCategoryClicksTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware.js";
 import { eq, and, desc } from "drizzle-orm";
 import { TrackCategoryClickBody } from "@workspace/api-zod";
 

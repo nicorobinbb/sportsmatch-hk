@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Dumbbell, DollarSign, User, MapPin, Upload, X, Plus, Trash2 } from "lucide-react";
-import { Show } from "@clerk/react";
+import { Show } from "@/components/show";
+import { useAuth } from "@/hooks/use-auth";
 import { useState, useRef } from "react";
 
 const COUNTRY_CODES = [
@@ -46,6 +47,7 @@ const coachSchema = z.object({
   whatsappLocalNumber: z.string().regex(/^\d{5,15}$/, "請輸入有效的 WhatsApp 號碼（數字，不含+號或空格）"),
   facebookUrl: z.string().url("請輸入有效的 Facebook 連結").optional().or(z.literal('')),
   instagramUrl: z.string().url("請輸入有效的 Instagram 連結").optional().or(z.literal('')),
+  websiteUrl: z.string().url("請輸入有效的網頁連結").optional().or(z.literal('')),
   scrcNumber: z.string().optional().or(z.literal('')),
 });
 
@@ -66,6 +68,7 @@ const HK_DISTRICTS = [
 export default function CoachRegister() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const createCoach = useCreateCoach();
 
   const [whatsappCC, setWhatsappCC] = useState("852");
@@ -91,6 +94,7 @@ export default function CoachRegister() {
       whatsappLocalNumber: "",
       facebookUrl: "",
       instagramUrl: "",
+      websiteUrl: "",
       scrcNumber: "",
     },
   });
@@ -118,19 +122,25 @@ export default function CoachRegister() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "檔案太大", description: "請上傳 5MB 以內的圖片。", variant: "destructive" });
+      toast({ title: "檔案太大", description: "請上傳 5MB 以內的檔案（圖片或 PDF）。", variant: "destructive" });
       return;
     }
     try {
-      const dataUrl = await compressImage(file);
+      const dataUrl = file.type === "application/pdf"
+        ? await readFileAsDataUrl(file)
+        : await compressImage(file);
       updateQual(id, { proofUrl: dataUrl });
     } catch {
-      toast({ title: "無法讀取圖片", variant: "destructive" });
+      toast({ title: "無法讀取檔案", variant: "destructive" });
     }
   };
 
   const [coachTypes, setCoachTypes] = useState<string[]>([]);
   const [coachTypeError, setCoachTypeError] = useState("");
+  const [proAthleteProofUrl, setProAthleteProofUrl] = useState("");
+  const [licensedCoachProofUrl, setLicensedCoachProofUrl] = useState("");
+  const proAthleteProofRef = useRef<HTMLInputElement>(null);
+  const licensedCoachProofRef = useRef<HTMLInputElement>(null);
   const [teachingFocus, setTeachingFocus] = useState<string[]>([]);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -159,6 +169,14 @@ export default function CoachRegister() {
       };
       img.onerror = reject;
       img.src = url;
+    });
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,6 +224,16 @@ export default function CoachRegister() {
       ? (whatsappCC + data.whatsappLocalNumber).replace(/\D/g, "")
       : undefined;
 
+    const qualificationEntries = [
+      ...qualList.filter(q => q.text.trim()).map(({ id: _id, ...rest }) => rest),
+      ...(coachTypes.includes("專業運動員") && proAthleteProofUrl
+        ? [{ text: "專業運動員證明文件", proofUrl: proAthleteProofUrl }]
+        : []),
+      ...(coachTypes.includes("持牌教練") && licensedCoachProofUrl
+        ? [{ text: "持牌教練牌照證明", proofUrl: licensedCoachProofUrl }]
+        : []),
+    ];
+
     createCoach.mutate({
       data: {
         name: data.name,
@@ -221,12 +249,13 @@ export default function CoachRegister() {
         profileImageUrl: data.profileImageUrl || undefined,
         packageDetails: data.packageDetails || undefined,
         whatsappNumber,
-        qualifications: JSON.stringify(qualList.filter(q => q.text.trim()).map(({ id: _id, ...rest }) => rest)) || undefined,
+        qualifications: qualificationEntries.length ? JSON.stringify(qualificationEntries) : undefined,
         pricingPlans: JSON.stringify(pricingRows.map(({ id: _id, ...r }) => r)),
         teachingAchievements: data.teachingAchievements || undefined,
         sportsAchievements: data.sportsAchievements || undefined,
         facebookUrl: data.facebookUrl || undefined,
         instagramUrl: data.instagramUrl || undefined,
+        websiteUrl: data.websiteUrl || undefined,
         scrcNumber: data.scrcNumber || undefined,
         teachingFocus,
       } as any
@@ -248,11 +277,31 @@ export default function CoachRegister() {
     });
   };
 
+  const handleSpecialProofUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onSuccess: (url: string) => void,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "檔案太大", description: "請上傳 5MB 以內的檔案（圖片或 PDF）。", variant: "destructive" });
+      return;
+    }
+    try {
+      const dataUrl = file.type === "application/pdf"
+        ? await readFileAsDataUrl(file)
+        : await compressImage(file);
+      onSuccess(dataUrl);
+    } catch {
+      toast({ title: "無法讀取檔案", variant: "destructive" });
+    }
+  };
+
   return (
     <Layout>
       <div className="bg-slate-50 dark:bg-background py-12 flex-1">
         <div className="container max-w-4xl px-4 md:px-6">
-          <Show when="signed-out">
+          <Show when={!user}>
             <div className="text-center py-20 bg-white dark:bg-card rounded-2xl border shadow-sm">
               <h2 className="text-2xl font-bold font-display mb-4">請先登入</h2>
               <p className="text-muted-foreground mb-6">你需要帳戶才能登記成為教練。</p>
@@ -260,7 +309,7 @@ export default function CoachRegister() {
             </div>
           </Show>
 
-          <Show when="signed-in">
+          <Show when={!!user}>
             <div className="mb-10 text-center">
               <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-full mb-4">
                 <Dumbbell className="w-8 h-8" />
@@ -338,7 +387,7 @@ export default function CoachRegister() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent position="popper" className="max-h-[40vh] overflow-y-auto">
-                                {["游泳", "瑜伽", "籃球", "網球", "拳擊", "普拉提", "足球", "羽毛球", "跑步", "舞蹈", "高爾夫球", "乒乓球", "體操", "跆拳道", "空手道", "排球", "劍擊", "匹克球", "田徑"].map(sport => (
+                                {["游泳", "瑜伽", "籃球", "網球", "拳擊", "普拉提", "足球", "羽毛球", "健身", "跑步", "舞蹈", "高爾夫球", "乒乓球", "體操", "跆拳道", "空手道", "排球", "劍擊", "匹克球", "田徑"].map(sport => (
                                   <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                                 ))}
                                 <SelectItem value="其他">其他</SelectItem>
@@ -491,7 +540,7 @@ export default function CoachRegister() {
                     />
 
                     {/* Social Media */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="facebookUrl"
@@ -513,6 +562,19 @@ export default function CoachRegister() {
                             <FormLabel>Instagram 帳戶（選填）</FormLabel>
                             <FormControl>
                               <Input placeholder="https://instagram.com/your-handle" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="websiteUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>個人網頁（選填）</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://your-website.com" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -597,6 +659,81 @@ export default function CoachRegister() {
                         ))}
                       </div>
                       {coachTypeError && <p className="text-sm text-destructive">{coachTypeError}</p>}
+                      {coachTypes.includes("專業運動員") && (
+                        <div className="rounded-xl border bg-slate-50/60 p-3 space-y-2">
+                          <p className="text-sm font-medium">專業運動員證明文件 <span className="text-muted-foreground text-xs">（建議上傳）</span></p>
+                          <p className="text-xs text-muted-foreground">可上傳證明你運動員身份的文件（圖片或 PDF）。如未上傳，你仍可提交申請，但個人頁會顯示待核實。</p>
+                          {proAthleteProofUrl ? (
+                            <div className="relative w-full max-w-xs">
+                              {proAthleteProofUrl.startsWith("data:application/pdf") ? (
+                                <div className="w-full rounded-lg border bg-white p-3 text-xs">
+                                  <p className="font-medium mb-2">已上傳 PDF 文件</p>
+                                  <a href={proAthleteProofUrl} target="_blank" rel="noreferrer" className="text-primary underline break-all">開啟 PDF 檔案</a>
+                                </div>
+                              ) : (
+                                <img src={proAthleteProofUrl} alt="專業運動員證明" className="w-full rounded-lg border object-cover max-h-32" />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setProAthleteProofUrl("")}
+                                className="absolute top-1.5 right-1.5 bg-white/90 hover:bg-white rounded-full p-1 shadow border"
+                              >
+                                <X className="w-3 h-3 text-destructive" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 border border-dashed border-border rounded-lg px-3 py-2 cursor-pointer hover:border-primary/50 hover:bg-white transition-all" onClick={() => proAthleteProofRef.current?.click()}>
+                              <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <p className="text-xs text-muted-foreground">上傳證明文件（PNG / JPG / PDF）</p>
+                            </div>
+                          )}
+                          <input
+                            ref={proAthleteProofRef}
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={e => handleSpecialProofUpload(e, setProAthleteProofUrl)}
+                          />
+                        </div>
+                      )}
+
+                      {coachTypes.includes("持牌教練") && (
+                        <div className="rounded-xl border bg-slate-50/60 p-3 space-y-2">
+                          <p className="text-sm font-medium">持牌教練牌照證明 <span className="text-muted-foreground text-xs">（建議上傳）</span></p>
+                          <p className="text-xs text-muted-foreground">可上傳有效教練牌照或認證文件（圖片或 PDF）。如未上傳，你仍可提交申請，但個人頁會顯示待核實。</p>
+                          {licensedCoachProofUrl ? (
+                            <div className="relative w-full max-w-xs">
+                              {licensedCoachProofUrl.startsWith("data:application/pdf") ? (
+                                <div className="w-full rounded-lg border bg-white p-3 text-xs">
+                                  <p className="font-medium mb-2">已上傳 PDF 文件</p>
+                                  <a href={licensedCoachProofUrl} target="_blank" rel="noreferrer" className="text-primary underline break-all">開啟 PDF 檔案</a>
+                                </div>
+                              ) : (
+                                <img src={licensedCoachProofUrl} alt="持牌教練證明" className="w-full rounded-lg border object-cover max-h-32" />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setLicensedCoachProofUrl("")}
+                                className="absolute top-1.5 right-1.5 bg-white/90 hover:bg-white rounded-full p-1 shadow border"
+                              >
+                                <X className="w-3 h-3 text-destructive" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 border border-dashed border-border rounded-lg px-3 py-2 cursor-pointer hover:border-primary/50 hover:bg-white transition-all" onClick={() => licensedCoachProofRef.current?.click()}>
+                              <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <p className="text-xs text-muted-foreground">上傳牌照文件（PNG / JPG / PDF）</p>
+                            </div>
+                          )}
+                          <input
+                            ref={licensedCoachProofRef}
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={e => handleSpecialProofUpload(e, setLicensedCoachProofUrl)}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Teaching focus checkboxes */}
@@ -627,7 +764,10 @@ export default function CoachRegister() {
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm font-medium leading-none mb-1">資歷 <span className="text-muted-foreground text-xs">（選填）</span></p>
-                        <p className="text-xs text-muted-foreground">每行填寫一項認證、資格或學歷，並可上傳對應證書圖片供管理員審核</p>
+                        <p className="text-xs text-muted-foreground">每行填寫一項認證、資格或學歷，並可上傳對應證書（圖片或 PDF）供管理員審核。</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          你輸入的資歷標題會顯示在教練個人頁：審核前以灰色顯示「待核實」，管理員核對證書並批准後會變為黑色文字，並顯示綠色驗證圖示。
+                        </p>
                       </div>
                       {qualList.map((q, idx) => (
                         <div key={q.id} className="rounded-xl border bg-slate-50/60 p-3 space-y-2">
@@ -651,7 +791,21 @@ export default function CoachRegister() {
                           {/* Per-entry proof upload */}
                           {q.proofUrl ? (
                             <div className="relative w-full max-w-xs">
-                              <img src={q.proofUrl} alt="資歷證明" className="w-full rounded-lg border object-cover max-h-32" />
+                              {q.proofUrl.startsWith("data:application/pdf") ? (
+                                <div className="w-full rounded-lg border bg-white p-3 text-xs">
+                                  <p className="font-medium mb-2">已上傳 PDF 證書</p>
+                                  <a
+                                    href={q.proofUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-primary underline break-all"
+                                  >
+                                    開啟 PDF 檔案
+                                  </a>
+                                </div>
+                              ) : (
+                                <img src={q.proofUrl} alt="資歷證明" className="w-full rounded-lg border object-cover max-h-32" />
+                              )}
                               <button
                                 type="button"
                                 onClick={() => updateQual(q.id, { proofUrl: "" })}
@@ -666,13 +820,13 @@ export default function CoachRegister() {
                               onClick={() => qualFileRefs.current[idx]?.click()}
                             >
                               <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
-                              <p className="text-xs text-muted-foreground">上傳證書圖片（選填，PNG / JPG）</p>
+                              <p className="text-xs text-muted-foreground">上傳證書檔案（選填，PNG / JPG / PDF）</p>
                             </div>
                           )}
                           <input
                             ref={el => { qualFileRefs.current[idx] = el; }}
                             type="file"
-                            accept="image/*"
+                            accept="image/*,application/pdf"
                             className="hidden"
                             onChange={e => handleQualFileChange(q.id, e)}
                           />
