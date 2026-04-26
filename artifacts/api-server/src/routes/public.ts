@@ -32,11 +32,77 @@ function getAdminUserIdSet(): Set<string> {
   );
 }
 
+function isAdminRequest(req: any): boolean {
+  const userId = req.user?.id;
+  if (!userId) return false;
+  return getAdminUserIdSet().has(userId);
+}
+
 router.get("/admin/status", (req, res) => {
   const userId = req.user?.id ?? null;
   const adminSet = getAdminUserIdSet();
   const isAdmin = !!userId && adminSet.has(userId);
   res.json({ isAdmin, userId });
+});
+
+router.get("/admin/coaches/all", async (req, res) => {
+  try {
+    if (!isAdminRequest(req)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const status = typeof req.query.status === "string" ? req.query.status : "all";
+
+    let query = supabaseAdmin
+      .from("coaches")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (search) {
+      const escaped = search.replace(/,/g, " ");
+      query = query.or(
+        [
+          `name.ilike.%${escaped}%`,
+          `sports_category.ilike.%${escaped}%`,
+          `location.ilike.%${escaped}%`,
+          `bio.ilike.%${escaped}%`,
+        ].join(",")
+      );
+    }
+
+    if (status === "active") query = query.eq("is_approved", true).eq("is_rejected", false);
+    if (status === "inactive") query = query.eq("is_approved", false).eq("is_rejected", false);
+    if (status === "rejected") query = query.eq("is_rejected", true);
+
+    const { data, error } = await query.limit(500);
+    if (error) throw error;
+
+    const coaches = (data ?? []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      sportsCategory: c.sports_category,
+      location: c.location,
+      isApproved: !!c.is_approved,
+      isRejected: !!c.is_rejected,
+      isFeatured: !!c.is_featured,
+      isProfessionalAthleteVerified: !!c.is_professional_athlete_verified,
+      isLicensedCoachVerified: !!c.is_licensed_coach_verified,
+      experienceLevel: c.experience_level ?? null,
+      whatsappNumber: c.whatsapp_number ?? null,
+      bio: c.bio ?? null,
+      packageDetails: c.package_details ?? null,
+      pricingPlans: c.pricing_plans ?? null,
+      qualifications: c.qualifications ?? null,
+      youtubePending: c.youtube_pending ?? null,
+      createdAt: new Date(c.created_at).toISOString(),
+    }));
+
+    return res.json({ coaches });
+  } catch (err) {
+    req.log.error({ err }, "public admin coaches all error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/coaches", async (req, res) => {
@@ -86,6 +152,39 @@ router.get("/coaches", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "public list coaches error");
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/coaches/me", async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("coaches")
+      .select("id,name,sports_category,location,is_approved,pending_edits,profile_image_url,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const coaches = (data ?? []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      sportsCategory: c.sports_category,
+      location: c.location,
+      isApproved: !!c.is_approved,
+      pendingEdits: c.pending_edits ?? null,
+      profileImageUrl: c.profile_image_url ?? null,
+      createdAt: new Date(c.created_at).toISOString(),
+    }));
+
+    return res.json({ coaches });
+  } catch (err) {
+    req.log.error({ err }, "public get my coaches error");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
