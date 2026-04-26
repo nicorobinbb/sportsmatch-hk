@@ -1,6 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import { supabaseAuthMiddleware } from "./middlewares/supabaseAuthMiddleware";
+import { supabaseAuthMiddleware } from "./middlewares/supabaseAuthMiddleware.js";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
