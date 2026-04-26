@@ -215,6 +215,23 @@ export default function AdminDashboard() {
     }
   }
 
+  function resolveProofUrl(raw: string | undefined): string | null {
+    const value = String(raw ?? "").trim();
+    if (!value) return null;
+    if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:")) {
+      return value;
+    }
+    // Backward compatibility: some old rows stored bare base64 payloads.
+    const isLikelyBase64 = /^[A-Za-z0-9+/=\s]+$/.test(value) && value.length > 100;
+    if (isLikelyBase64) {
+      const compact = value.replace(/\s+/g, "");
+      // PDF base64 usually starts with "JVBERi0x"
+      if (compact.startsWith("JVBERi0")) return `data:application/pdf;base64,${compact}`;
+      return `data:image/jpeg;base64,${compact}`;
+    }
+    return null;
+  }
+
   const updateQualificationStatus = async (
     coach: CoachListItem,
     qualificationIndex: number,
@@ -716,9 +733,17 @@ export default function AdminDashboard() {
                                         </span>
                                       </div>
                                       {q.proofUrl ? (
-                                        <a className="text-primary underline break-all" href={q.proofUrl} target="_blank" rel="noreferrer">
-                                          {q.proofUrl.startsWith("data:application/pdf") ? "查看 PDF 證書" : "查看證書"}
-                                        </a>
+                                        (() => {
+                                          const proofUrl = resolveProofUrl(q.proofUrl);
+                                          if (!proofUrl) {
+                                            return <div className="text-amber-700">證書連結格式無效（請教練重新上傳）</div>;
+                                          }
+                                          return (
+                                            <a className="text-primary underline break-all" href={proofUrl} target="_blank" rel="noreferrer">
+                                              {proofUrl.startsWith("data:application/pdf") ? "查看 PDF 證書" : "查看證書"}
+                                            </a>
+                                          );
+                                        })()
                                       ) : (
                                         <div className="text-muted-foreground">未附證書</div>
                                       )}
